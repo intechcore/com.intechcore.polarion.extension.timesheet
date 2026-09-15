@@ -5,7 +5,7 @@
     <parent>
         <groupId>ch.sbb.polarion.extensions</groupId>
         <artifactId>ch.sbb.polarion.extension.generic</artifactId>
-        <version>16.0.0</version>
+        <version>16.1.0</version>
     </parent>
 
     <groupId>com.intechcore.polarion.extensions</groupId>
@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Timesheet Reports for Polarion ALM</name>
-    <description>This Polarion extension provides additional functionality</description>
+    <description>This Polarion extension provides timesheet reports</description>
     <url>https://github.com/intechcore/com.intechcore.polarion.extension.timesheet</url>
 
     <licenses>
@@ -34,14 +34,14 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/intechcore/ch.sbb.polarion.extension.timesheet.git</connection>
-        <developerConnection>scm:git:ssh://github.com/intechcore/ch.sbb.polarion.extension.timesheet.git</developerConnection>
-        <url>https://github.com/intechcore/ch.sbb.polarion.extension.timesheet/tree/main</url>
+        <connection>scm:git:git://github.com/intechcore/com.intechcore.polarion.extension.timesheet.git</connection>
+        <developerConnection>scm:git:ssh://github.com/intechcore/com.intechcore.polarion.extension.timesheet.git</developerConnection>
+        <url>https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/tree/main</url>
     </scm>
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/intechcore/ch.sbb.polarion.extension.timesheet/issues</url>
+        <url>https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/issues</url>
     </issueManagement>
 
     <properties>
@@ -50,9 +50,6 @@
         <web.app.name>${maven-jar-plugin.Extension-Context}</web.app.name>
         <maven-jar-plugin.Bundle-Vendor>Intechcore GmbH</maven-jar-plugin.Bundle-Vendor>
 
-        <!--suppress UnresolvedMavenProperty -->
-        <markdown2html-maven-plugin.failOnError>${env.MARKDOWN2HTML_MAVEN_PLUGIN_FAIL_ON_ERROR}</markdown2html-maven-plugin.failOnError>
-
         <maven-jar-plugin.Automatic-Module-Name>com.intechcore.polarion.extension.timesheet</maven-jar-plugin.Automatic-Module-Name>
         <maven-jar-plugin.Discover-Base-Package>com.intechcore.polarion.extension.timesheet</maven-jar-plugin.Discover-Base-Package>
         <maven-jar-plugin.Configuration-Properties-Prefix>com.intechcore.polarion.extension.timesheet</maven-jar-plugin.Configuration-Properties-Prefix>
@@ -60,11 +57,6 @@
         <!-- The Playwright end-to-end layer. It is this extension's own addition on top of the
              frontend build the parent contributes, so it carries its own skip flag. -->
         <skipE2eTests>false</skipE2eTests>
-
-        <!-- markdown2html 1.7 renders the README locally and ignores this token, but the parent
-             still passes the parameter, which made both Maven and the plugin log a deprecation
-             warning on every build. Maven skips the warning when the value resolves to empty. -->
-        <markdown2html-maven-plugin.tokenEnvVarName/>
 
     </properties>
 
@@ -93,7 +85,13 @@
                 <artifactId>maven-jar-plugin</artifactId>
             </plugin>
 
-            <!-- Restates the parent's vite-ui execution to replace the deprecated `overwrite` flag
+            <!-- Fails the build when the bundle or a nested jar refers to a package Polarion 2606 rejects. -->
+            <plugin>
+                <groupId>com.intechcore</groupId>
+                <artifactId>polarion-compatibility-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Restates the parent's copy-vite-build execution to replace the deprecated `overwrite` flag
                  with its documented equivalent, `changeDetection=always`. Maven merges plugin
                  configuration, so dropping one element takes overriding the block as a whole - keep
                  the rest in step with the parent's copy-vite-build on every generic bump. -->
@@ -104,10 +102,10 @@
                     <execution>
                         <id>copy-vite-build</id>
                         <configuration combine.self="override">
-                            <outputDirectory>${vite.destination.root}</outputDirectory>
+                            <outputDirectory>${ui.destination.root}</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${vite.sources.root}/dist</directory>
+                                    <directory>${ui.sources.root}/dist</directory>
                                     <filtering>false</filtering>
                                     <includes>
                                         <include>**/*</include>
