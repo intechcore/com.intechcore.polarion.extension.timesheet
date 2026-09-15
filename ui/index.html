@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timesheet</title>
+    <!-- Baseline Polarion look. Served by Polarion in production; 404s harmlessly during `vite dev`. -->
+    <link rel="stylesheet" href="/polarion/wiki/skins/sidecar/presentation.css" />
+    <!-- Control tokens, the control CSS and the markdown styling of the About page all ship bundled
+         in @sbb-polarion/react-sbb-polarion (imported in main.tsx). Nothing is linked from generic:
+         since generic 16.0.0 its webapp serves no stylesheets at all. -->
+  </head>
+  <!-- .sbb-ui scopes generic's --sbb-* design tokens (bundled in the lib) to the app. -->
+  <body class="sbb-ui">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

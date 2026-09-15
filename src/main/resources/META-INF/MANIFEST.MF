@@ -1,0 +1,3 @@
+Support-Email: polarion@intechcore.com
+Bundle-Name: Timesheet Reports for Polarion ALM
+Export-Package: com.intechcore.polarion.extension.timesheet

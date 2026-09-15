@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module id="ch.sbb.polarion.extension.timesheet" version="1.0.0">
+
+    <contribution configuration-id="com.polarion.xray.webui.administrationPageExtenders">
+        <extender id="about"
+                  name="About"
+                  parentNodeId="timesheet"
+                  parentNodeName="Timesheet"
+                  parentNodeIconUrl="/polarion/timesheet-app/ui/images/30x30/timesheet.svg"
+                  iconUrl="/polarion/timesheet-app/ui/images/16x16/about.svg"
+                  pageUrl="/polarion/timesheet-app/ui/app/index.html?feature=about&amp;embedded=true&amp;scope=$scope$"
+                  projectScope="true"
+                  projectGroupScope="true"
+                  repositoryScope="true"/>
+
+        <extender id="restapi"
+                  name="REST API"
+                  parentNodeId="timesheet"
+                  iconUrl="/polarion/timesheet-app/ui/images/16x16/rest_api.svg"
+                  pageUrl="/polarion/timesheet/rest/swagger"
+                  projectScope="true"
+                  projectGroupScope="true"
+                  repositoryScope="true"/>
+    </contribution>
+
+    <contribution configuration-id="com.polarion.alm.richpages.widgets">
+        <widget id="com.intechcore.polarion.extension.timesheet.widget.TimesheetReportWidget" instance="instance:com.intechcore.polarion.extension.timesheet.widget.TimesheetReportWidget"/>
+    </contribution>
+
+</module>
