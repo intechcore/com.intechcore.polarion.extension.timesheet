@@ -1,4 +1,4 @@
-# Time Sheet extension for Polarion ALM
+# Timesheet Reports for Polarion ALM
 
 This Polarion extension provides the ability to generate timesheet reports.
 
@@ -10,19 +10,19 @@ This extension can be produced using Maven:
 mvn clean package
 ```
 
-The build also compiles the React user interface: the `frontend-maven-plugin` installs a local Node, runs `npm install` and `npm run build` in `ui/`, and the result is bundled into the extension under `webapp/timesheet-app`. No separate Node installation is required.
+The build also compiles the React user interface in `ui/` and bundles it into the extension under `webapp/timesheet-app`. No separate Node installation is required.
 
 ## Installation to Polarion
 
-To install this extension, the `com.intechcore.polarion.extension.timesheet-<version>.jar` should be copied to `<polarion_home>/polarion/extensions/com.intechcore.polarion.extension.timesheet/eclipse/plugins`. It can be done manually or automated using the Maven build:
+To install this extension, copy `com.intechcore.polarion.extension.timesheet-<version>.jar` to `<polarion_home>/polarion/extensions/com.intechcore.polarion.extension.timesheet/eclipse/plugins`. The Maven build can do it for you:
 
 ```bash
-mvn clean install -P install-to-local-polarion
+mvn clean install -P local-install-into-polarion
 ```
 
-For the automated installation, the `POLARION_HOME` environment variable must be defined and point to the folder where Polarion is installed.
+The `POLARION_HOME` environment variable must point to the Polarion installation folder.
 
-Changes only take effect after a restart of Polarion.
+Changes take effect only after a restart of Polarion.
 
 ## Polarion configuration
 
