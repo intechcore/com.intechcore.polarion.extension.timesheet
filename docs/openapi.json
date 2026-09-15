@@ -1,516 +1,556 @@
 {
-  "openapi" : "3.0.1",
-  "paths" : {
-    "/api/configuration-properties" : {
-      "get" : {
-        "operationId" : "getConfigurationProperties",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ConfigurationPropertiesModel"
+  "openapi": "3.0.1",
+  "paths": {
+    "/api/configuration-properties": {
+      "get": {
+        "operationId": "getConfigurationProperties",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationPropertiesModel"
                 }
               }
             },
-            "description" : "Configuration properties"
+            "description": "Configuration properties"
           }
         },
-        "summary" : "Returns the extension configuration properties (active and obsolete)",
-        "tags" : [ "Extension Information" ]
+        "summary": "Returns the extension configuration properties (active and obsolete)",
+        "tags": [
+          "Extension Information"
+        ]
       }
     },
-    "/api/configuration-status" : {
-      "get" : {
-        "operationId" : "getConfigurationStatus",
-        "parameters" : [ {
-          "description" : "Scope to evaluate the status for, e.g. 'project/elibrary/'",
-          "in" : "query",
-          "name" : "scope",
-          "schema" : {
-            "type" : "string"
+    "/api/configuration-status": {
+      "get": {
+        "operationId": "getConfigurationStatus",
+        "parameters": [
+          {
+            "description": "Scope to evaluate the status for, e.g. 'project/elibrary/'",
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "type": "string"
+            }
           }
-        } ],
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/ConfigurationStatus"
-                  }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConfigurationStatus"
+                  },
+                  "type": "array"
                 }
               }
             },
-            "description" : "Configuration status entries"
+            "description": "Configuration status entries"
           }
         },
-        "summary" : "Returns the extension configuration status for the given scope",
-        "tags" : [ "Extension Information" ]
+        "summary": "Returns the extension configuration status for the given scope",
+        "tags": [
+          "Extension Information"
+        ]
       }
     },
-    "/api/context" : {
-      "get" : {
-        "operationId" : "getContext",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Context"
+    "/api/context": {
+      "get": {
+        "operationId": "getContext",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Context"
                 }
               }
             },
-            "description" : "Context information"
+            "description": "Context information"
           }
         },
-        "summary" : "Returns basic context information of Polarion's extension",
-        "tags" : [ "Extension Information" ]
+        "summary": "Returns basic context information of Polarion's extension",
+        "tags": [
+          "Extension Information"
+        ]
       }
     },
-    "/api/current-user" : {
-      "get" : {
-        "operationId" : "getCurrentUser",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/User"
+    "/api/current-user": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
                 }
               }
             },
-            "description" : "default response"
+            "description": "default response"
           }
         },
-        "summary" : "Returns the id and name of the current user",
-        "tags" : [ "Timesheet reports" ]
+        "summary": "Returns the id and name of the current user",
+        "tags": [
+          "Timesheet reports"
+        ]
       }
     },
-    "/api/disclaimer" : {
-      "get" : {
-        "operationId" : "getDisclaimer",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "text/html" : {
-                "schema" : {
-                  "type" : "string"
+    "/api/disclaimer": {
+      "get": {
+        "operationId": "getDisclaimer",
+        "responses": {
+          "default": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
                 }
               }
             },
-            "description" : "HTML help article"
+            "description": "HTML help article"
           }
         },
-        "summary" : "Returns the build-generated DISCLAIMER help article shown on the Usage Disclaimer page",
-        "tags" : [ "Extension Information" ]
+        "summary": "Returns the build-generated DISCLAIMER help article shown on the Usage Disclaimer page",
+        "tags": [
+          "Extension Information"
+        ]
       }
     },
-    "/api/readme" : {
-      "get" : {
-        "operationId" : "getDocumentation",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "text/html" : {
-                "schema" : {
-                  "type" : "string"
+    "/api/readme": {
+      "get": {
+        "operationId": "getDocumentation",
+        "responses": {
+          "default": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
                 }
               }
             },
-            "description" : "HTML help article"
+            "description": "HTML help article"
           }
         },
-        "summary" : "Returns the build-generated README help article shown on the About page",
-        "tags" : [ "Extension Information" ]
+        "summary": "Returns the build-generated README help article shown on the About page",
+        "tags": [
+          "Extension Information"
+        ]
       }
     },
-    "/api/scopes" : {
-      "get" : {
-        "operationId" : "getScopes",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/ScopeInfo"
-                  }
+    "/api/scopes": {
+      "get": {
+        "operationId": "getScopes",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScopeInfo"
+                  },
+                  "type": "array"
                 }
               }
             },
-            "description" : "default response"
+            "description": "default response"
           }
         },
-        "summary" : "Returns the selectable report scopes (root, project groups and projects)",
-        "tags" : [ "Timesheet reports" ]
+        "summary": "Returns the selectable report scopes (root, project groups and projects)",
+        "tags": [
+          "Timesheet reports"
+        ]
       }
     },
-    "/api/timesheet" : {
-      "get" : {
-        "operationId" : "getTimesheetForUsers",
-        "parameters" : [ {
-          "in" : "query",
-          "name" : "user_ids",
-          "schema" : {
-            "type" : "string"
+    "/api/timesheet": {
+      "get": {
+        "operationId": "getTimesheetForUsers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_ids",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_path",
+            "schema": {
+              "type": "string"
+            }
           }
-        }, {
-          "in" : "query",
-          "name" : "start_date",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "in" : "query",
-          "name" : "end_date",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "in" : "query",
-          "name" : "scope_path",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Timesheet"
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Timesheet"
                 }
               }
             },
-            "description" : "default response"
+            "description": "default response"
           }
         },
-        "summary" : "Returns timesheet report for several users for a given period",
-        "tags" : [ "Timesheet reports" ]
+        "summary": "Returns timesheet report for several users for a given period",
+        "tags": [
+          "Timesheet reports"
+        ]
       }
     },
-    "/api/user-guide" : {
-      "get" : {
-        "operationId" : "getUserGuide",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "text/html" : {
-                "schema" : {
-                  "type" : "string"
+    "/api/user-guide": {
+      "get": {
+        "operationId": "getUserGuide",
+        "responses": {
+          "default": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
                 }
               }
             },
-            "description" : "HTML help article"
+            "description": "HTML help article"
           }
         },
-        "summary" : "Returns the build-generated USER_GUIDE help article shown on the User Guide page",
-        "tags" : [ "Extension Information" ]
+        "summary": "Returns the build-generated USER_GUIDE help article shown on the User Guide page",
+        "tags": [
+          "Extension Information"
+        ]
       }
     },
-    "/api/users" : {
-      "get" : {
-        "operationId" : "getUsers",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/User"
-                  }
+    "/api/users": {
+      "get": {
+        "operationId": "getUsers",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "type": "array"
                 }
               }
             },
-            "description" : "default response"
+            "description": "default response"
           }
         },
-        "summary" : "Returns all enabled Polarion users",
-        "tags" : [ "Timesheet reports" ]
+        "summary": "Returns all enabled Polarion users",
+        "tags": [
+          "Timesheet reports"
+        ]
       }
     },
-    "/api/users/{user_id}/timesheet" : {
-      "get" : {
-        "operationId" : "getTimesheet",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "user_id",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
+    "/api/users/{user_id}/timesheet": {
+      "get": {
+        "operationId": "getTimesheet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_path",
+            "schema": {
+              "type": "string"
+            }
           }
-        }, {
-          "in" : "query",
-          "name" : "start_date",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "in" : "query",
-          "name" : "end_date",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "in" : "query",
-          "name" : "scope_path",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Timesheet"
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Timesheet"
                 }
               }
             },
-            "description" : "default response"
+            "description": "default response"
           }
         },
-        "summary" : "Returns timesheet report for a user for a given period",
-        "tags" : [ "Timesheet reports" ]
+        "summary": "Returns timesheet report for a user for a given period",
+        "tags": [
+          "Timesheet reports"
+        ]
       }
     },
-    "/api/version" : {
-      "get" : {
-        "operationId" : "getVersion",
-        "responses" : {
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Version"
+    "/api/version": {
+      "get": {
+        "operationId": "getVersion",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Version"
                 }
               }
             },
-            "description" : "Version information"
+            "description": "Version information"
           }
         },
-        "summary" : "Returns version of Polarion's extension",
-        "tags" : [ "Extension Information" ]
+        "summary": "Returns version of Polarion's extension",
+        "tags": [
+          "Extension Information"
+        ]
       }
     }
   },
-  "components" : {
-    "schemas" : {
-      "ConfigurationPropertiesModel" : {
-        "type" : "object",
-        "description" : "Extension configuration properties shown on the About page",
-        "properties" : {
-          "obsoleteProperties" : {
-            "type" : "array",
-            "description" : "Obsolete or non-valid configuration properties (only key and value are set), sorted by key",
-            "items" : {
-              "$ref" : "#/components/schemas/ConfigurationPropertyModel"
-            }
+  "components": {
+    "schemas": {
+      "ConfigurationPropertiesModel": {
+        "description": "Extension configuration properties shown on the About page",
+        "properties": {
+          "obsoleteProperties": {
+            "description": "Obsolete or non-valid configuration properties (only key and value are set), sorted by key",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationPropertyModel"
+            },
+            "type": "array"
           },
-          "properties" : {
-            "type" : "array",
-            "description" : "Active configuration properties, sorted by key",
-            "items" : {
-              "$ref" : "#/components/schemas/ConfigurationPropertyModel"
-            }
+          "properties": {
+            "description": "Active configuration properties, sorted by key",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationPropertyModel"
+            },
+            "type": "array"
           }
-        }
+        },
+        "type": "object"
       },
-      "ConfigurationPropertyModel" : {
-        "type" : "object",
-        "description" : "A single extension configuration property as shown on the About page",
-        "properties" : {
-          "defaultValue" : {
-            "type" : "string",
-            "description" : "Default value of the property, if any"
+      "ConfigurationPropertyModel": {
+        "description": "A single extension configuration property as shown on the About page",
+        "properties": {
+          "defaultValue": {
+            "description": "Default value of the property, if any",
+            "type": "string"
           },
-          "description" : {
-            "type" : "string",
-            "description" : "Human readable description of the property, if any"
+          "description": {
+            "description": "Human readable description of the property, if any",
+            "type": "string"
           },
-          "key" : {
-            "type" : "string",
-            "description" : "Property key"
+          "key": {
+            "description": "Property key",
+            "type": "string"
           },
-          "value" : {
-            "type" : "string",
-            "description" : "Current value of the property"
+          "value": {
+            "description": "Current value of the property",
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "ConfigurationStatus" : {
-        "type" : "object",
-        "properties" : {
-          "details" : {
-            "type" : "string"
+      "ConfigurationStatus": {
+        "properties": {
+          "details": {
+            "type": "string"
           },
-          "name" : {
-            "type" : "string"
+          "name": {
+            "type": "string"
           },
-          "status" : {
-            "type" : "string",
-            "enum" : [ "OK", "WARNING", "ERROR" ]
+          "status": {
+            "enum": [
+              "OK",
+              "WARNING",
+              "ERROR"
+            ],
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "Context" : {
-        "type" : "object",
-        "description" : "Represents the context for building URLs related to Polarion services",
-        "properties" : {
-          "baseUrl" : {
-            "type" : "string",
-            "description" : "Returns the base URL constructed with the extension context"
+      "Context": {
+        "description": "Represents the context for building URLs related to Polarion services",
+        "properties": {
+          "baseUrl": {
+            "description": "Returns the base URL constructed with the extension context",
+            "type": "string"
           },
-          "extensionContext" : {
-            "type" : "string",
-            "description" : "The extension context used as a base for URL construction"
+          "extensionContext": {
+            "description": "The extension context used as a base for URL construction",
+            "type": "string"
           },
-          "restUrl" : {
-            "type" : "string",
-            "description" : "Returns the REST API URL constructed with the extension context"
+          "restUrl": {
+            "description": "Returns the REST API URL constructed with the extension context",
+            "type": "string"
           },
-          "swaggerUiUrl" : {
-            "type" : "string",
-            "description" : "Returns the Swagger UI URL for the REST API"
+          "swaggerUiUrl": {
+            "description": "Returns the Swagger UI URL for the REST API",
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "Project" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string"
+      "Project": {
+        "properties": {
+          "id": {
+            "type": "string"
           },
-          "name" : {
-            "type" : "string"
+          "name": {
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "ScopeInfo" : {
-        "type" : "object",
-        "properties" : {
-          "depth" : {
-            "type" : "integer",
-            "format" : "int32"
+      "ScopeInfo": {
+        "properties": {
+          "depth": {
+            "format": "int32",
+            "type": "integer"
           },
-          "name" : {
-            "type" : "string"
+          "name": {
+            "type": "string"
           },
-          "path" : {
-            "type" : "string"
+          "path": {
+            "type": "string"
           },
-          "type" : {
-            "type" : "string"
+          "type": {
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "Timesheet" : {
-        "type" : "object",
-        "properties" : {
-          "finishDate" : {
-            "type" : "string"
+      "Timesheet": {
+        "properties": {
+          "finishDate": {
+            "type": "string"
           },
-          "startDate" : {
-            "type" : "string"
+          "startDate": {
+            "type": "string"
           },
-          "totalHours" : {
-            "type" : "number",
-            "format" : "double"
+          "totalHours": {
+            "format": "double",
+            "type": "number"
           },
-          "workRecords" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/WorkRecord"
-            }
+          "workRecords": {
+            "items": {
+              "$ref": "#/components/schemas/WorkRecord"
+            },
+            "type": "array"
           }
-        }
+        },
+        "type": "object"
       },
-      "User" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string"
+      "User": {
+        "properties": {
+          "id": {
+            "type": "string"
           },
-          "name" : {
-            "type" : "string"
+          "name": {
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "Version" : {
-        "type" : "object",
-        "description" : "Details about the software version",
-        "properties" : {
-          "automaticModuleName" : {
-            "type" : "string",
-            "description" : "The automatic module name"
+      "Version": {
+        "description": "Details about the software version",
+        "properties": {
+          "automaticModuleName": {
+            "description": "The automatic module name",
+            "type": "string"
           },
-          "bundleBuildTimestamp" : {
-            "type" : "string",
-            "description" : "The build timestamp of the bundle"
+          "bundleBuildTimestamp": {
+            "description": "The build timestamp of the bundle",
+            "type": "string"
           },
-          "bundleName" : {
-            "type" : "string",
-            "description" : "The name of the bundle"
+          "bundleName": {
+            "description": "The name of the bundle",
+            "type": "string"
           },
-          "bundleVendor" : {
-            "type" : "string",
-            "description" : "The vendor of the bundle"
+          "bundleVendor": {
+            "description": "The vendor of the bundle",
+            "type": "string"
           },
-          "bundleVersion" : {
-            "type" : "string",
-            "description" : "The version of the bundle"
+          "bundleVersion": {
+            "description": "The version of the bundle",
+            "type": "string"
           },
-          "projectURL" : {
-            "type" : "string",
-            "description" : "The project URL"
+          "projectURL": {
+            "description": "The project URL",
+            "type": "string"
           },
-          "supportEmail" : {
-            "type" : "string",
-            "description" : "Support email for the bundle"
+          "supportEmail": {
+            "description": "Support email for the bundle",
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "WorkItem" : {
-        "type" : "object",
-        "properties" : {
-          "html" : {
-            "type" : "string"
+      "WorkItem": {
+        "properties": {
+          "html": {
+            "type": "string"
           },
-          "iconUrl" : {
-            "type" : "string"
+          "iconUrl": {
+            "type": "string"
           },
-          "id" : {
-            "type" : "string"
+          "id": {
+            "type": "string"
           },
-          "project" : {
-            "$ref" : "#/components/schemas/Project"
+          "project": {
+            "$ref": "#/components/schemas/Project"
           },
-          "title" : {
-            "type" : "string"
+          "title": {
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "WorkRecord" : {
-        "type" : "object",
-        "properties" : {
-          "date" : {
-            "type" : "string"
+      "WorkRecord": {
+        "properties": {
+          "date": {
+            "type": "string"
           },
-          "hours" : {
-            "type" : "number",
-            "format" : "double"
+          "hours": {
+            "format": "double",
+            "type": "number"
           },
-          "user" : {
-            "$ref" : "#/components/schemas/User"
+          "user": {
+            "$ref": "#/components/schemas/User"
           },
-          "workItem" : {
-            "$ref" : "#/components/schemas/WorkItem"
+          "workItem": {
+            "$ref": "#/components/schemas/WorkItem"
           }
-        }
+        },
+        "type": "object"
       }
     }
   }
