@@ -7,19 +7,32 @@ repos:
       - id: yamlfix
         args: [-c, .yamlfix.toml]
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
+      - id: check-added-large-files
+        args: [--maxkb=5120]
+      - id: check-case-conflict
       - id: check-merge-conflict
       - id: trailing-whitespace
+        exclude_types: [markdown]  # Avoid conflicts with markdown formatting
       - id: check-xml
       - id: check-json
+      - id: check-toml
       - id: check-yaml
       - id: no-commit-to-branch
       - id: mixed-line-ending
+      - id: end-of-file-fixer
+      - id: pretty-format-json
+        alias: pretty-format-openapi-json
+        args: [--autofix, --no-ensure-ascii, '--top-keys=openapi,info,servers,paths,components']
+        files: docs/openapi.json
+      - id: mixed-line-ending
+        alias: mixed-line-ending-openapi-json
+        args: [--fix=lf]
+        files: docs/openapi.json
   - repo: local
     hooks:
-      # React app (ui/) - check-only (block the commit, never modify the tree); run
-      # `npm --prefix ui run format`/`lint:fix` to fix.
+      # The ui/ gates, check-only and scoped to ui/ so a Java-only commit does not pay for them.
       - id: ui-prettier
         name: UI Prettier (format:check)
         entry: npm --prefix ui run format:check
@@ -32,8 +45,8 @@ repos:
         language: system
         pass_filenames: false
         files: ^ui/.*\.(ts|tsx|js|mjs)$
-      # Dockerized Vitest (behavior + visual regression) with the 90% coverage gate. Heavy
-      # (~30-60s+, needs Docker running); gated on ui/ source changes.
+      # Dockerized Vitest (behavior + visual regression) with the 90% coverage gate. Heavy (~30-60s+,
+      # needs Docker running); gated on ui/ source changes.
       - id: ui-test-coverage-docker
         name: UI Vitest + coverage gate (Docker)
         entry: npm --prefix ui run test:coverage:docker
@@ -41,16 +54,15 @@ repos:
         pass_filenames: false
         files: ^ui/.*\.(ts|tsx|css)$
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.18.4
+    rev: v8.30.1
     hooks:
       - id: gitleaks
   - repo: https://github.com/grigoriev/pre-commit-check-git-user
-    rev: v0.9.0
+    rev: v0.9.3
     hooks:
       - id: check-git-config-user-email
-        # The fork is maintained outside Intechcore, so its owner's address is accepted too.
-        args: [--templates, ^\S+\.\S+@intechcore\.com$, ^grigoriev@fastmail\.com$]
+        args: [--templates, ^\S+\.\S+@intechcore\.com$]
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.28.0
+    rev: v4.18.0
     hooks:
       - id: commitizen
