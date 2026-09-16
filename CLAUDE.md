@@ -38,7 +38,7 @@ npx tsc --noEmit                     # type-check (vite build does NOT type-chec
 
 ## CI
 
-GitHub Actions runs three workflows:
+GitHub Actions runs five workflows:
 
 - `ci.yml`: the `build` job runs `mvn -s .mvn/settings.xml clean verify` with the Java, UI and e2e
   tests and the Polarion compatibility check. It fails when the build changes `docs/openapi.json`.
@@ -46,6 +46,13 @@ GitHub Actions runs three workflows:
   Docker UI tests.
 - `actionlint.yml`: lints the workflows when they change.
 - `pr.yml`: checks the pull request title and its commits with commitizen.
+- `bump-version.yml`: dispatched by hand with `patch`, `minor` or `major`. It sets the release
+  version in the pom, commits it, tags it `v<version>` and pushes. It checks out with `PAT_TOKEN`
+  on purpose: a tag pushed with the default `GITHUB_TOKEN` starts no further workflow, so
+  `release.yml` would never see it.
+- `release.yml`: runs on a `v*` tag. It builds and tests the tag, then attaches the jars to a
+  GitHub release. It stops at `verify` - nothing is published to a Maven repository yet. A second
+  job returns `main` to the next `-SNAPSHOT`.
 
 The Polarion artifacts come from the Intechcore Nexus through the repository secrets `NEXUS_URL`,
 `NEXUS_USERNAME` and `NEXUS_PASSWORD`. `.mvn/settings.xml` declares Central first, so Nexus only
