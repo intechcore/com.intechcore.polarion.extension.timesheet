@@ -7,7 +7,6 @@
   "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": true,
-  "pinDigests": true,
   "pre-commit": {
     "enabled": true
   },
@@ -18,6 +17,20 @@
         "major"
       ],
       "dependencyDashboardApproval": false
+    },
+    {
+      "description": "Digest pinning belongs to GitHub Actions, where every workflow here already pins by digest with the version in a trailing comment. Applied globally it also reaches the pre-commit manager, which pins hook revisions to commit SHAs; that update fails and shows up as 'Error updating branch: update failure'.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "pinDigests": true
+    },
+    {
+      "description": "The JDK in the workflows follows Polarion, not the newest release: Polarion 2606 runs on Java 21 and the generic parent compiles for 21. Moving to another JDK is a deliberate decision, not a dependency update, and with automerge on it would otherwise land on its own.",
+      "matchDepNames": [
+        "java-jdk"
+      ],
+      "enabled": false
     },
     {
       "description": "The committed reference screenshots are pixel-locked to the Playwright Docker image, and ui/scripts/docker-test.mjs derives that image tag from the installed playwright package. Vitest, its browser provider and playwright therefore belong in one pull request, which needs regenerated references (npm run test:update:docker) before it can be green. The end-to-end suite runs on the same Playwright.",
