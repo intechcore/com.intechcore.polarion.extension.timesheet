@@ -1,0 +1,557 @@
+{
+  "openapi": "3.0.1",
+  "paths": {
+    "/api/configuration-properties": {
+      "get": {
+        "operationId": "getConfigurationProperties",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationPropertiesModel"
+                }
+              }
+            },
+            "description": "Configuration properties"
+          }
+        },
+        "summary": "Returns the extension configuration properties (active and obsolete)",
+        "tags": [
+          "Extension Information"
+        ]
+      }
+    },
+    "/api/configuration-status": {
+      "get": {
+        "operationId": "getConfigurationStatus",
+        "parameters": [
+          {
+            "description": "Scope to evaluate the status for, e.g. 'project/elibrary/'",
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConfigurationStatus"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Configuration status entries"
+          }
+        },
+        "summary": "Returns the extension configuration status for the given scope",
+        "tags": [
+          "Extension Information"
+        ]
+      }
+    },
+    "/api/context": {
+      "get": {
+        "operationId": "getContext",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Context"
+                }
+              }
+            },
+            "description": "Context information"
+          }
+        },
+        "summary": "Returns basic context information of Polarion's extension",
+        "tags": [
+          "Extension Information"
+        ]
+      }
+    },
+    "/api/current-user": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "default response"
+          }
+        },
+        "summary": "Returns the id and name of the current user",
+        "tags": [
+          "Timesheet reports"
+        ]
+      }
+    },
+    "/api/disclaimer": {
+      "get": {
+        "operationId": "getDisclaimer",
+        "responses": {
+          "default": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "HTML help article"
+          }
+        },
+        "summary": "Returns the build-generated DISCLAIMER help article shown on the Usage Disclaimer page",
+        "tags": [
+          "Extension Information"
+        ]
+      }
+    },
+    "/api/readme": {
+      "get": {
+        "operationId": "getDocumentation",
+        "responses": {
+          "default": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "HTML help article"
+          }
+        },
+        "summary": "Returns the build-generated README help article shown on the About page",
+        "tags": [
+          "Extension Information"
+        ]
+      }
+    },
+    "/api/scopes": {
+      "get": {
+        "operationId": "getScopes",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScopeInfo"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "default response"
+          }
+        },
+        "summary": "Returns the selectable report scopes (root, project groups and projects)",
+        "tags": [
+          "Timesheet reports"
+        ]
+      }
+    },
+    "/api/timesheet": {
+      "get": {
+        "operationId": "getTimesheetForUsers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_ids",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Timesheet"
+                }
+              }
+            },
+            "description": "default response"
+          }
+        },
+        "summary": "Returns timesheet report for several users for a given period",
+        "tags": [
+          "Timesheet reports"
+        ]
+      }
+    },
+    "/api/user-guide": {
+      "get": {
+        "operationId": "getUserGuide",
+        "responses": {
+          "default": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "HTML help article"
+          }
+        },
+        "summary": "Returns the build-generated USER_GUIDE help article shown on the User Guide page",
+        "tags": [
+          "Extension Information"
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "operationId": "getUsers",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "default response"
+          }
+        },
+        "summary": "Returns all enabled Polarion users",
+        "tags": [
+          "Timesheet reports"
+        ]
+      }
+    },
+    "/api/users/{user_id}/timesheet": {
+      "get": {
+        "operationId": "getTimesheet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Timesheet"
+                }
+              }
+            },
+            "description": "default response"
+          }
+        },
+        "summary": "Returns timesheet report for a user for a given period",
+        "tags": [
+          "Timesheet reports"
+        ]
+      }
+    },
+    "/api/version": {
+      "get": {
+        "operationId": "getVersion",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Version"
+                }
+              }
+            },
+            "description": "Version information"
+          }
+        },
+        "summary": "Returns version of Polarion's extension",
+        "tags": [
+          "Extension Information"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConfigurationPropertiesModel": {
+        "description": "Extension configuration properties shown on the About page",
+        "properties": {
+          "obsoleteProperties": {
+            "description": "Obsolete or non-valid configuration properties (only key and value are set), sorted by key",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationPropertyModel"
+            },
+            "type": "array"
+          },
+          "properties": {
+            "description": "Active configuration properties, sorted by key",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationPropertyModel"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ConfigurationPropertyModel": {
+        "description": "A single extension configuration property as shown on the About page",
+        "properties": {
+          "defaultValue": {
+            "description": "Default value of the property, if any",
+            "type": "string"
+          },
+          "description": {
+            "description": "Human readable description of the property, if any",
+            "type": "string"
+          },
+          "key": {
+            "description": "Property key",
+            "type": "string"
+          },
+          "value": {
+            "description": "Current value of the property",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ConfigurationStatus": {
+        "properties": {
+          "details": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "OK",
+              "WARNING",
+              "ERROR"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Context": {
+        "description": "Represents the context for building URLs related to Polarion services",
+        "properties": {
+          "baseUrl": {
+            "description": "Returns the base URL constructed with the extension context",
+            "type": "string"
+          },
+          "extensionContext": {
+            "description": "The extension context used as a base for URL construction",
+            "type": "string"
+          },
+          "restUrl": {
+            "description": "Returns the REST API URL constructed with the extension context",
+            "type": "string"
+          },
+          "swaggerUiUrl": {
+            "description": "Returns the Swagger UI URL for the REST API",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Project": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ScopeInfo": {
+        "properties": {
+          "depth": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Timesheet": {
+        "properties": {
+          "finishDate": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "totalHours": {
+            "format": "double",
+            "type": "number"
+          },
+          "workRecords": {
+            "items": {
+              "$ref": "#/components/schemas/WorkRecord"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "User": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Version": {
+        "description": "Details about the software version",
+        "properties": {
+          "automaticModuleName": {
+            "description": "The automatic module name",
+            "type": "string"
+          },
+          "bundleBuildTimestamp": {
+            "description": "The build timestamp of the bundle",
+            "type": "string"
+          },
+          "bundleName": {
+            "description": "The name of the bundle",
+            "type": "string"
+          },
+          "bundleVendor": {
+            "description": "The vendor of the bundle",
+            "type": "string"
+          },
+          "bundleVersion": {
+            "description": "The version of the bundle",
+            "type": "string"
+          },
+          "projectURL": {
+            "description": "The project URL",
+            "type": "string"
+          },
+          "supportEmail": {
+            "description": "Support email for the bundle",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WorkItem": {
+        "properties": {
+          "html": {
+            "type": "string"
+          },
+          "iconUrl": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/Project"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WorkRecord": {
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "hours": {
+            "format": "double",
+            "type": "number"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "workItem": {
+            "$ref": "#/components/schemas/WorkItem"
+          }
+        },
+        "type": "object"
+      }
+    }
+  }
+}

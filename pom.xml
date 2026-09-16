@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ch.sbb.polarion.extensions</groupId>
+        <artifactId>ch.sbb.polarion.extension.generic</artifactId>
+        <version>16.1.0</version>
+    </parent>
+
+    <groupId>com.intechcore.polarion.extensions</groupId>
+    <artifactId>com.intechcore.polarion.extension.timesheet</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Timesheet Reports for Polarion ALM</name>
+    <description>This Polarion extension provides timesheet reports</description>
+    <url>https://github.com/intechcore/com.intechcore.polarion.extension.timesheet</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Intechcore GmbH</name>
+            <email>polarion@intechcore.com</email>
+            <organization>Intechcore GmbH</organization>
+            <organizationUrl>https://www.intechcore.com</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/intechcore/com.intechcore.polarion.extension.timesheet.git</connection>
+        <developerConnection>scm:git:ssh://github.com/intechcore/com.intechcore.polarion.extension.timesheet.git</developerConnection>
+        <url>https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/tree/main</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/issues</url>
+    </issueManagement>
+
+    <properties>
+        <maven-jar-plugin.Extension-Context>timesheet</maven-jar-plugin.Extension-Context>
+
+        <web.app.name>${maven-jar-plugin.Extension-Context}</web.app.name>
+        <maven-jar-plugin.Bundle-Vendor>Intechcore GmbH</maven-jar-plugin.Bundle-Vendor>
+
+        <maven-jar-plugin.Automatic-Module-Name>com.intechcore.polarion.extension.timesheet</maven-jar-plugin.Automatic-Module-Name>
+        <maven-jar-plugin.Discover-Base-Package>com.intechcore.polarion.extension.timesheet</maven-jar-plugin.Discover-Base-Package>
+        <maven-jar-plugin.Configuration-Properties-Prefix>com.intechcore.polarion.extension.timesheet</maven-jar-plugin.Configuration-Properties-Prefix>
+
+        <!-- The Playwright end-to-end layer. It is this extension's own addition on top of the
+             frontend build the parent contributes, so it carries its own skip flag. -->
+        <skipE2eTests>false</skipE2eTests>
+
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>ch.sbb.polarion.extensions</groupId>
+            <artifactId>ch.sbb.polarion.extension.generic.app</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>ch.sbb.maven.plugins</groupId>
+                <artifactId>markdown2html-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
+
+            <!-- Fails the build when the bundle or a nested jar refers to a package Polarion 2606 rejects. -->
+            <plugin>
+                <groupId>com.intechcore</groupId>
+                <artifactId>polarion-compatibility-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Restates the parent's copy-vite-build execution to replace the deprecated `overwrite` flag
+                 with its documented equivalent, `changeDetection=always`. Maven merges plugin
+                 configuration, so dropping one element takes overriding the block as a whole - keep
+                 the rest in step with the parent's copy-vite-build on every generic bump. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-vite-build</id>
+                        <configuration combine.self="override">
+                            <outputDirectory>${ui.destination.root}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${ui.sources.root}/dist</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <changeDetection>always</changeDetection>
+                            <includeEmptyDirs>true</includeEmptyDirs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- Lombok is the only processor here, and javac notes on every compile that a
+                         future release may stop discovering processors implicitly. -->
+                    <proc>full</proc>
+                    <!-- Drops the parent's -Alog4j.graalvm.* options. They configure log4j-core's
+                         GraalVM processor, which this extension does not run, so javac reported them
+                         as unrecognized. -->
+                    <compilerArgs combine.self="override"/>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-maven-plugin-jakarta</artifactId>
+                <configuration>
+                    <outputFormat>JSON</outputFormat>
+                    <resourcePackages>
+                        <package>ch.sbb.polarion.extension.generic.rest.controller.info</package>
+                        <package>ch.sbb.polarion.extension.generic.rest.model</package>
+                        <package>com.intechcore.polarion.extension.timesheet.rest.controller</package>
+                    </resourcePackages>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.github.grigoriev</groupId>
+                <artifactId>pre-commit-run-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- The end-to-end suite runs alongside the unit tests the parent already wires in. It
+                 starts its own Vite dev server and mocks REST through page.route, so it needs no
+                 running Polarion - only the Playwright browser, hence the install step. -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>e2e-install-browser</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>npx</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>playwright install --with-deps chromium</arguments>
+                            <skip>${skipE2eTests}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>e2e-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run e2e</arguments>
+                            <skip>${skipE2eTests}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

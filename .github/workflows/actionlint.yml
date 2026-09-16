@@ -1,0 +1,24 @@
+---
+name: actionlint
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/**]
+  pull_request:
+    paths: [.github/workflows/**]
+permissions:
+  contents: read
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # The image is pinned by digest. It is actionlint 1.7.12 with shellcheck and pyflakes.
+      - name: Lint the workflows
+        run: >-
+          docker run --rm -v "${GITHUB_WORKSPACE}:/repo" --workdir /repo
+          rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+          -color

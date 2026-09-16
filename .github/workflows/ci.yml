@@ -1,0 +1,77 @@
+---
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+# A new push to a pull request makes the run in flight pointless. On main every
+# commit keeps its own run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  build:
+    # A pull request from a fork gets no secrets, so Nexus refuses the Polarion artifacts.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
+        with:
+          java-version: '21'
+          distribution: temurin
+      # Generic formats the generated docs/openapi.json through pre-commit during the build.
+      # Without pre-commit the file keeps its raw layout, and the check below fails.
+      - name: Install pre-commit
+        run: pipx install pre-commit==4.6.1
+
+      # The Polarion artifacts stay out of the cache. Pull requests from forks can
+      # restore caches of main, and those artifacts must not leave Nexus.
+      - name: Cache Maven packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/com/polarion
+            !~/.m2/repository/com/siemens
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+      - name: Build and test
+        env:
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: mvn --batch-mode -s .mvn/settings.xml clean verify
+      # The build regenerates docs/openapi.json from the REST annotations.
+      - name: Check that docs/openapi.json is up to date
+        run: git diff --exit-code -- docs/openapi.json
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # The same Node.js version that generic installs for the UI build.
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 24.18.0
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Install the UI dependencies
+        run: npm ci --prefix ui
+      - name: Install pre-commit
+        run: pipx install pre-commit==4.6.1
+      - name: Run the hooks
+        env:
+          # no-commit-to-branch fails on main. check-git-config-user-email needs a local identity.
+          # The build job already runs the Docker UI tests.
+          SKIP: no-commit-to-branch,check-git-config-user-email,ui-test-coverage-docker
+        run: pre-commit run --all-files --show-diff-on-failure

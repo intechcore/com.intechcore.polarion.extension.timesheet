@@ -1,0 +1,28 @@
+---
+name: PR checks
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  conventional-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The same commitizen version as the commit-msg hook in .pre-commit-config.yaml.
+      - name: Install commitizen
+        run: pipx install commitizen==4.18.0
+      - name: Check the pull request title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: cz check --message "${PR_TITLE}"
+      - name: Check the commit messages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: cz check --rev-range "${BASE_SHA}..${HEAD_SHA}"

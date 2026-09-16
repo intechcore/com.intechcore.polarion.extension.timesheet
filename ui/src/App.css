@@ -1,0 +1,243 @@
+/* Use Polarion's standard font stack. Keep the browser default body margin (8px) for the
+   admin pages (the admin About page is styled by the generic stylesheets). */
+body {
+  font-family: 'Segoe UI', 'Selawik', 'Open Sans', Arial, sans-serif;
+}
+
+.timesheet-report {
+  padding-bottom: 12px;
+}
+
+.timesheet-report h3 {
+  margin-top: 0;
+}
+
+.timesheet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+
+  /* Polarion's 23px form-control height suits a dense administration form; in the report widget,
+     which is a page of its own, it reads as squashed. Raising the token lifts every control in the
+     row at once - RSP's pickers and the date fields all size off it - and 28px is the height of the
+     toolbar button beside them, so the row comes out on one height. */
+  --sbb-control-height: 28px;
+}
+
+.timesheet-controls .control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.timesheet-controls .control > span {
+  font-weight: bold;
+}
+
+/* RSP's inputs.css styles text/number/password/search/color, but not the date field, so the two
+   period inputs kept the browser's own look: taller than the pickers next to them, rounded, and in
+   the system font. This restates RSP's rule for `date` off the same --sbb-* tokens, which is what
+   makes every control in the row one height again. Move it into RSP's inputs.css - it belongs with
+   the other input types, and every extension with a date field has the same problem. */
+.standard-admin-page input[type='date'] {
+  box-sizing: border-box;
+  height: var(--sbb-control-height);
+  border: 1px solid var(--sbb-control-border);
+  border-radius: var(--sbb-control-radius);
+  padding: 2px 6px;
+  background-color: var(--sbb-control-bg);
+  font-family: var(--sbb-control-font-family);
+  font-size: var(--sbb-control-font-size);
+  font-weight: var(--sbb-control-font-weight);
+  color: var(--sbb-control-text);
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.standard-admin-page input[type='date']:not(:disabled):hover {
+  box-shadow: var(--sbb-control-shadow-hover);
+}
+
+.standard-admin-page input[type='date']:focus {
+  border-color: var(--sbb-control-border-focus);
+  outline: none;
+  box-shadow: var(--sbb-control-shadow-hover);
+}
+
+/* Fits "31.08.2026" and the calendar button with room to spare; the 20px it gives up against the
+   old 150px go to the pickers, which are the two controls that run out of room. */
+.timesheet-controls input[type='date'] {
+  width: 130px;
+}
+
+/* The scope and user pickers are react-sbb-polarion's SearchableSelect: it hides the <select> and
+   puts .searchable-dropdown in its place, so the width has to be set there.
+   Both pickers take the width the period fields and the button leave over, instead of the fixed
+   240/280px they inherited from the hand-rolled controls they replaced - a scope path or a couple of
+   user chips outgrew that on any screen. The users picker grows twice as fast, since it is the one
+   holding chips. The basis is the width each keeps when the row has nothing to spare; below that the
+   row wraps. */
+.timesheet-controls .control-scope {
+  flex: 1 1 240px;
+}
+
+.timesheet-controls .control-users {
+  flex: 2 1 300px;
+}
+
+.timesheet-controls .control-scope .searchable-dropdown,
+.timesheet-controls .control-users .searchable-dropdown {
+  width: 100%;
+}
+
+.timesheet-status {
+  color: #555;
+  font-style: italic;
+}
+
+/* Export PDF is RSP's `sbb-btn sbb-btn--control`, so it carries no colours of its own. Its cell uses
+   the same empty label as the other controls to line the row up. */
+
+/* The multi-select grows with its chips (min-height, not height), and RSP's 4px padding puts a
+   single chip row at 29px next to 23px controls. 1px leaves the chip its 17px line and lands the
+   trigger on the control height exactly, while a second chip row still makes it grow. */
+.timesheet-controls .control-users .sd-trigger-multi {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
+.user-timesheet {
+  margin-bottom: 20px;
+}
+
+.user-timesheet h4 {
+  margin: 8px 0 4px;
+  font-size: 14px;
+}
+
+.timesheet-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  margin-bottom: 10px;
+
+  /* A month is wider than the widget in any realistic placement, so these tables scroll. macOS draws
+     overlay scrollbars that stay hidden until you scroll, which made the table read as cut off
+     rather than scrollable - hence a scrollbar that is always painted. */
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.timesheet-table-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+
+.timesheet-table-wrap::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.timesheet-table-wrap::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 5px;
+}
+
+.timesheet-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Style Polarion's native work-item rendering (injected into the WorkItem cell) to match the
+   standard renderer: dark work-item id, blue title, orange title on hover (no underline). */
+.timesheet a.polarion-Hyperlink {
+  color: #333333; /* work item id */
+  text-decoration: none;
+}
+
+.timesheet a.polarion-Hyperlink > span:last-child {
+  color: #197fa2; /* title */
+}
+
+.timesheet a.polarion-Hyperlink:hover > span:last-child {
+  color: #e3700f; /* title on hover */
+}
+
+.timesheet .polarion-Icons {
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+.timesheet-error {
+  color: #b00020;
+}
+
+/* `fixed` is what keeps every month block identical. Under the automatic layout a table is capped at
+   the width of its container and the leftover is shared out between the columns, so a 28-day month
+   handed its extra room to the WorkItem column: February drew that column twice as wide as January's
+   and, being narrower overall, was the only block whose right edge fit on screen. With the widths
+   fixed the blocks line up and a short month is simply a shorter table. */
+table.timesheet {
+  border: 1px solid #000000;
+  /* `max-content` keeps the declared column widths even when the block is wider than the report:
+     with `auto` the browser still squeezes the table into the container, which is the behavior this
+     rule set exists to stop. The wrapper scrolls instead. */
+  width: max-content;
+  table-layout: fixed;
+  text-align: center;
+  border-collapse: collapse;
+}
+
+/* Day columns hold "dd.MM" at 13px bold, which needs ~36px plus the cell padding. */
+table.timesheet th,
+table.timesheet td {
+  width: 48px;
+}
+
+table.timesheet td,
+table.timesheet th {
+  white-space: nowrap;
+}
+
+table.timesheet thead tr th:first-child,
+table.timesheet tbody tr td:first-child,
+table.timesheet tfoot tr td:first-child {
+  text-align: left;
+  /* 400px where there is room, but never more than 40% of what the widget actually gets: placed in a
+     column of a multi-column Live Report the whole report is ~690px wide, and a fixed 400px label
+     spent nearly two thirds of that on one column. `vw` is the iframe's own width, and it is the
+     same for every block, so the blocks still line up. */
+  width: min(400px, 40vw);
+  /* The work item title is the one cell that may be longer than its column. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table.timesheet td,
+table.timesheet th {
+  border: 1px solid #000000;
+  padding: 5px;
+  font-size: 13px;
+}
+
+table.timesheet tbody td {
+  font-size: 13px;
+  padding: 5px;
+}
+
+table.timesheet thead {
+  background: #cfcfcf;
+  font-size: 13px;
+}
+
+table.timesheet td.weekend {
+  background: #eaeaea;
+}
+
+table.timesheet tfoot td.full-time {
+  font-weight: bold;
+}
+
+table.timesheet tfoot td.part-time {
+  font-style: italic;
+}
