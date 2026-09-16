@@ -2,12 +2,14 @@ import type React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
 import { page } from 'vitest/browser';
+import App from '../src/App';
 import ReportView from '../src/components/ReportView';
 import TimesheetBlock from '../src/components/TimesheetBlock';
 import UserTimesheet from '../src/components/UserTimesheet';
 import type { ScopeInfo, Timesheet, User, WorkItem, WorkRecord } from '../src/types';
 import { datesInPeriod, parseDate } from '../src/utils/dates';
 import { installFetchMock } from './mockFetch';
+import { settleBeforeCapture, settleLayout } from './visualHelpers';
 
 // Visual-regression states for the report. Kept separate from the behavior tests (Docker-only, since
 // any toMatchScreenshot file diffs on non-Linux font antialiasing). References live in
@@ -107,5 +109,34 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
 
     await vi.waitFor(() => expect(document.querySelector('table')).not.toBeNull());
     await shot('table', 'timesheet-block');
+  });
+
+  /**
+   * The page as the widget embeds it: App puts the `.app standard-admin-page feature-report` shell
+   * around ReportView, and that shell is what the component captures above cannot show.
+   *
+   * It runs LAST on purpose. It is the only case here that resizes the viewport (the others inherit the
+   * instance default from vitest.config.ts) and that parks the pointer, and both of those outlive a
+   * test - the whole file shares one browser page. Put it first and every reference below it is
+   * captured under a layout it was not generated with.
+   */
+  it('the whole report page, through the feature router', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 5, 17)); // 2026-06-17, the month of TIMESHEET
+    window.history.replaceState({}, '', '?feature=report&embedded=true&scope=elibrary&userIds=sDeveloper');
+    installFetchMock([
+      { method: 'GET', match: /\/users$/, json: USERS },
+      { method: 'GET', match: /\/scopes$/, json: SCOPES },
+      { method: 'GET', match: /\/current-user$/, json: USERS[0] },
+      { method: 'GET', match: /\/timesheet\?/, json: TIMESHEET },
+    ]);
+    render(<App />);
+
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    const app = document.querySelector('.app') as HTMLElement;
+    await settleLayout();
+    await page.viewport(1280, Math.ceil(app.scrollHeight) + 40);
+    await settleBeforeCapture();
+    await expect(page.elementLocator(app)).toMatchScreenshot('report-page');
   });
 });
