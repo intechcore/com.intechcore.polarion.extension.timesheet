@@ -1,0 +1,101 @@
+---
+name: Bump Version & Release
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: Version bump type
+        required: true
+        type: choice
+        options: [patch, minor, major]
+permissions:
+  contents: read
+jobs:
+  bump-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # PAT_TOKEN, not GITHUB_TOKEN: a tag pushed with the default token does not
+      # start another workflow, so release.yml would never run for this tag.
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN }}
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
+        with:
+          java-version: '21'
+          distribution: temurin
+      # Maven resolves the generic parent pom here, which is why this step needs the
+      # Nexus credentials like every other Maven invocation in this repository.
+      - name: Get current version
+        id: current
+        env:
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          VERSION=$(mvn --batch-mode -s .mvn/settings.xml help:evaluate \
+            -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Current development version: $VERSION"
+      - name: Calculate new version
+        id: new
+        env:
+          CURRENT: ${{ steps.current.outputs.version }}
+          BUMP_TYPE: ${{ inputs.bump_type }}
+        run: |
+          # The pom already holds the next development version: release.yml advanced
+          # it after the previous release. A patch release therefore publishes it as
+          # it stands. Incrementing here as well would skip a number, and would make
+          # the very first release 0.1.1 rather than 0.1.0.
+          IFS='.' read -r major minor patch <<< "$CURRENT"
+          case "$BUMP_TYPE" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch) ;;
+          esac
+          echo "version=${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
+          echo "Releasing: ${major}.${minor}.${patch}"
+      - name: Update the version in pom.xml
+        env:
+          NEW_VERSION: ${{ steps.new.outputs.version }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          mvn --batch-mode -s .mvn/settings.xml versions:set \
+            -DnewVersion="$NEW_VERSION" -DgenerateBackupPoms=false
+      - name: Commit and tag
+        env:
+          NEW_VERSION: ${{ steps.new.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pom.xml
+          git commit -m "chore: bump version to $NEW_VERSION"
+          git tag "v$NEW_VERSION"
+          git push origin main
+          git push origin "v$NEW_VERSION"
+      - name: Summary
+        env:
+          NEW_VERSION: ${{ steps.new.outputs.version }}
+          CURRENT: ${{ steps.current.outputs.version }}
+        run: |-
+          {
+            echo "## Release v$NEW_VERSION"
+            echo ""
+            echo "Releasing \`$NEW_VERSION\` from development version \`$CURRENT-SNAPSHOT\`."
+            echo ""
+            echo "The [release workflow](../../actions/workflows/release.yml) now builds the"
+            echo "tag and publishes the jars as GitHub release assets."
+          } >> "$GITHUB_STEP_SUMMARY"
