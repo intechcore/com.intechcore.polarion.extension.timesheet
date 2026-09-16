@@ -51,12 +51,6 @@ jobs:
       # The build regenerates docs/openapi.json from the REST annotations.
       - name: Check that docs/openapi.json is up to date
         run: git diff --exit-code -- docs/openapi.json
-      - name: Upload the extension jar
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: extension-jar
-          path: target/*.jar
-          if-no-files-found: error
   pre-commit:
     runs-on: ubuntu-latest
     steps:
