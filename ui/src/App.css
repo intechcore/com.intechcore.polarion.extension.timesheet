@@ -4,6 +4,15 @@ body {
   font-family: 'Segoe UI', 'Selawik', 'Open Sans', Arial, sans-serif;
 }
 
+/* The About page is the shared @sbb-polarion/react-sbb-polarion component and ships its own styles.
+   Only the app icon is adjusted here: it is a white card on a white page, so its edges disappear.
+   `drop-shadow` follows the drawing rather than the image box, which matters here - the SVG keeps a
+   transparent margin around the card, and a box-shadow would hang in that gap instead of hugging
+   the card. */
+.about-page .app-icon {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.22)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.14));
+}
+
 .timesheet-report {
   padding-bottom: 12px;
 }
