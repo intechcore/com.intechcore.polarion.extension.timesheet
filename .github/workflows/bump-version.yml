@@ -50,7 +50,7 @@ jobs:
           # The pom already holds the next development version: release.yml advanced
           # it after the previous release. A patch release therefore publishes it as
           # it stands. Incrementing here as well would skip a number, and would make
-          # the very first release 1.0.1 rather than 1.0.0.
+          # the very first release 0.1.1 rather than 0.1.0.
           IFS='.' read -r major minor patch <<< "$CURRENT"
           case "$BUMP_TYPE" in
             major)
