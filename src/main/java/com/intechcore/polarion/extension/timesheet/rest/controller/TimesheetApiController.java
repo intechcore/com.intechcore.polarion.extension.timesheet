@@ -5,11 +5,13 @@ import com.intechcore.polarion.extension.timesheet.model.ScopeInfo;
 import com.intechcore.polarion.extension.timesheet.model.Timesheet;
 import com.intechcore.polarion.extension.timesheet.model.User;
 
+import jakarta.inject.Singleton;
 import jakarta.ws.rs.Path;
 import java.util.List;
 
 @Secured
 @Path("/api")
+@Singleton
 public class TimesheetApiController extends TimesheetInternalController {
 
     @Override
