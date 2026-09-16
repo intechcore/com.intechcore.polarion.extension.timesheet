@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "dependencyDashboard": true,
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "pinDigests": true,
+  "pre-commit": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Major updates go straight to a pull request instead of waiting on the dependency dashboard.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": false
+    },
+    {
+      "description": "The committed reference screenshots are pixel-locked to the Playwright Docker image, and ui/scripts/docker-test.mjs derives that image tag from the installed playwright package. Vitest, its browser provider and playwright therefore belong in one pull request, which needs regenerated references (npm run test:update:docker) before it can be green. The end-to-end suite runs on the same Playwright.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "playwright",
+        "@playwright/test",
+        "vitest",
+        "@vitest/**"
+      ],
+      "groupName": "vitest and playwright",
+      "automerge": false
+    },
+    {
+      "description": "The generic parent carries the Polarion platform baseline. It travels alone and is reviewed by a person.",
+      "matchManagers": [
+        "maven"
+      ],
+      "matchPackageNames": [
+        "ch.sbb.polarion.extensions:ch.sbb.polarion.extension.generic"
+      ],
+      "automerge": false
+    }
+  ]
+}
