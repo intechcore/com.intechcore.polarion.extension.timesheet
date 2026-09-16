@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import jakarta.inject.Singleton;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.Set;
 @Tag(name = "Timesheet reports")
 @Hidden
 @Path("/internal")
+@Singleton
 public class TimesheetInternalController {
 
     protected final PolarionService polarionService;

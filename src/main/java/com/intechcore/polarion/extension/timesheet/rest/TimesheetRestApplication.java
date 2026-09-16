@@ -10,10 +10,10 @@ import java.util.Set;
 public class TimesheetRestApplication extends GenericRestApplication {
 
     @Override
-    protected @NotNull Set<Object> getExtensionControllerSingletons() {
+    protected @NotNull Set<Class<?>> getExtensionControllerClasses() {
         return Set.of(
-                new TimesheetApiController(),
-                new TimesheetInternalController()
+                TimesheetApiController.class,
+                TimesheetInternalController.class
         );
     }
 }
