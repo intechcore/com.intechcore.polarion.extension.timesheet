@@ -81,6 +81,34 @@ describe('TimesheetBlock', () => {
     expect(document.querySelector('td a')?.getAttribute('href')).toBe('/polarion/#/project/elibrary/workitem?id=EL-2');
   });
 
+  it('keeps the state styling Polarion sets and drops the rest of the CSS', async () => {
+    const styled = item(
+      'EL-4',
+      'Resolved',
+      '<span style="text-decoration: line-through; color: rgb(128, 128, 128); position: fixed; ' +
+        'z-index: 9999; background: url(https://example.invalid/pixel.png)">EL-4 - Resolved</span>' +
+        '<span style="position: fixed">covering</span>',
+    );
+    await show(
+      <TimesheetBlock
+        workItems={[styled]}
+        records={[rec('2026-06-01', 2, styled)]}
+        dates={[monday]}
+        workingDayHours={8}
+      />,
+    );
+
+    const span = document.querySelector<HTMLElement>('tbody td span[style]');
+    expect(span?.style.textDecorationLine).toBe('line-through');
+    expect(span?.style.color).toBe('rgb(128, 128, 128)');
+    // position and z-index would let a cell cover the report, a url() would call out of the page.
+    expect(span?.style.position).toBe('');
+    expect(span?.style.zIndex).toBe('');
+    expect(span?.getAttribute('style')).not.toContain('example.invalid');
+    // Nothing of that declaration survives, so the attribute goes with it.
+    expect(document.querySelectorAll('tbody td span[style]')).toHaveLength(1);
+  });
+
   // Polarion escapes what it renders, so this is the second barrier: whatever arrives through the
   // REST API is written into the DOM, and it must not be able to run.
   it('strips script, event handlers and javascript links from the rendered HTML', async () => {
