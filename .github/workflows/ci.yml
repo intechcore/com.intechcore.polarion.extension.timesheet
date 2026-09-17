@@ -16,11 +16,17 @@ jobs:
     # A pull request from a fork gets no secrets, so Nexus refuses the Polarion artifacts.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    # At job level, so the analysis step can ask whether the token is there. A step cannot read
+    # its own env in an if condition, and the secrets context is not available there at all.
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+          # SonarCloud reads the history to tell new code from old.
+          fetch-depth: 0
       - name: Set up JDK 21
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
         with:
@@ -42,6 +48,12 @@ jobs:
             !~/.m2/repository/com/siemens
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2-
+      - name: Cache SonarCloud packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
       - name: Build and test
         env:
           NEXUS_URL: ${{ secrets.NEXUS_URL }}
@@ -51,6 +63,29 @@ jobs:
       # The build regenerates docs/openapi.json from the REST annotations.
       - name: Check that docs/openapi.json is up to date
         run: git diff --exit-code -- docs/openapi.json
+      # The scanner reuses the tree the step above built, so the project is not compiled twice.
+      # Without SONAR_TOKEN the step is skipped, so the analysis starts as soon as the secret
+      # is added and no run fails while it is missing.
+      - name: Analyze with SonarCloud
+        if: env.SONAR_TOKEN != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            mvn --batch-mode -s .mvn/settings.xml sonar:sonar \
+              -Dsonar.pullrequest.key="$PR_NUMBER" \
+              -Dsonar.pullrequest.branch="$HEAD_REF" \
+              -Dsonar.pullrequest.base="$BASE_REF" \
+              -Dsonar.qualitygate.wait=true
+          else
+            mvn --batch-mode -s .mvn/settings.xml sonar:sonar -Dsonar.qualitygate.wait=true
+          fi
   pre-commit:
     runs-on: ubuntu-latest
     steps:
