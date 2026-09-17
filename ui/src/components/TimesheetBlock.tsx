@@ -1,5 +1,6 @@
 import type { WorkItem, WorkRecord } from '../types';
 import { formatDayMonth, formatISO, isWeekend } from '../utils/dates';
+import { sanitizeWorkItemHtml } from '../utils/html';
 import { formatHours, sumHours, workItemKey, workItemUrl } from '../utils/workRecords';
 
 interface Props {
@@ -33,7 +34,7 @@ export default function TimesheetBlock({ workItems, records, dates, workingDayHo
               <tr key={key}>
                 <td>
                   {wi.html ? (
-                    <span dangerouslySetInnerHTML={{ __html: wi.html }} />
+                    <span dangerouslySetInnerHTML={{ __html: sanitizeWorkItemHtml(wi.html) }} />
                   ) : (
                     <a href={workItemUrl(wi)} target="_blank" rel="noreferrer">
                       {wi.id} - {wi.title}
