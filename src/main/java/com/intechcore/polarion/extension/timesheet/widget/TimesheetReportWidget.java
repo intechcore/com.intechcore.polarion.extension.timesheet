@@ -27,7 +27,7 @@ public class TimesheetReportWidget extends RichPageWidget {
 
     @Override
     public @NotNull String getIcon(@NotNull RichPageWidgetContext richPageWidgetContext) {
-        return "/polarion/timesheet-app/ui/images/menu/30x30/_parent.svg";
+        return "/polarion/timesheet-app/ui/images/widget-icon.svg";
     }
 
     @Override
