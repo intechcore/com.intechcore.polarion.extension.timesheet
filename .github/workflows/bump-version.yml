@@ -16,12 +16,17 @@ jobs:
     permissions:
       contents: write
     steps:
+      # ref: main, because the dispatch can start from any branch of the repository while the
+      # steps below commit the release version and push it to main. Without it a dispatch from
+      # a feature branch would publish that branch as main.
+      #
       # persist-credentials: false, so no token is written into .git/config. The steps below
       # run Maven with third-party plugins, and a credential in the working copy is one file
       # read away from them. PAT_TOKEN reaches the one step which pushes, and nothing else.
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          ref: main
           fetch-depth: 0
           persist-credentials: false
       - name: Set up JDK 21
