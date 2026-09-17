@@ -14,6 +14,7 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![GitHub Release](https://img.shields.io/github/v/release/intechcore/com.intechcore.polarion.extension.timesheet)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases)
+[![Maven Central](https://img.shields.io/maven-central/v/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)](https://central.sonatype.com/artifact/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)
 [![Java 21](https://img.shields.io/badge/java-21-blue.svg)](https://openjdk.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
@@ -30,6 +31,10 @@ mvn clean package
 The build also compiles the React user interface in `ui/` and bundles it into the extension under `webapp/timesheet-app`. No separate Node installation is required.
 
 ## Installation to Polarion
+
+The released jar is published to
+[Maven Central](https://central.sonatype.com/artifact/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)
+and attached to every [GitHub release](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases).
 
 To install this extension, copy `com.intechcore.polarion.extension.timesheet-<version>.jar` to `<polarion_home>/polarion/extensions/com.intechcore.polarion.extension.timesheet/eclipse/plugins`. The Maven build can do it for you:
 
