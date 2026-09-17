@@ -48,6 +48,13 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+  // The Playwright suites: what page.evaluate takes runs in the browser, not in Node.
+  {
+    files: ['e2e/**/*.{js,mjs}', 'systest/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
   // Keep last: turns off ESLint rules that would conflict with Prettier's formatting.
   prettier,
 );
