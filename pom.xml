@@ -58,6 +58,9 @@
              frontend build the parent contributes, so it carries its own skip flag. -->
         <skipE2eTests>false</skipE2eTests>
 
+        <!-- SonarCloud. The parent points projectKey and organization at SBB, so both are set here. -->
+        <sonar.projectKey>intechcore_com.intechcore.polarion.extension.timesheet</sonar.projectKey>
+        <sonar.organization>intechcore</sonar.organization>
     </properties>
 
     <dependencies>
@@ -70,9 +73,20 @@
 
     <build>
         <plugins>
+            <!-- README.md is converted to the About page shown inside Polarion. The parent already
+                 drops the SonarCloud badges from it; the other two badge kinds are dropped here. A
+                 badge on that page would be a broken external image behind Polarion's CSP. Maven
+                 replaces the whole list, so the parent's entry is restated. -->
             <plugin>
                 <groupId>ch.sbb.maven.plugins</groupId>
                 <artifactId>markdown2html-maven-plugin</artifactId>
+                <configuration>
+                    <removeLinesWithStrings>
+                        <removeLinesWithString>https://sonarcloud.io/api/project_badges/</removeLinesWithString>
+                        <removeLinesWithString>https://img.shields.io/</removeLinesWithString>
+                        <removeLinesWithString>/badge.svg</removeLinesWithString>
+                    </removeLinesWithStrings>
+                </configuration>
             </plugin>
 
             <plugin>
