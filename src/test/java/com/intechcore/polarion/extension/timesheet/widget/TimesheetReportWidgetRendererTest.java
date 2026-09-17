@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_SELF;
@@ -192,6 +194,34 @@ class TimesheetReportWidgetRendererTest {
         assertThat(script.getValue())
                 .contains(readResource("/js/widget-height.js"))
                 .endsWith("timesheetSyncIframeHeight('" + id.getValue() + "');");
+    }
+
+    // --- Reading the script out of the bundle ---
+
+    @Test
+    void readScript_returnsTheText() {
+        InputStream resource = new ByteArrayInputStream("function f() {}".getBytes(StandardCharsets.UTF_8));
+
+        assertThat(TimesheetReportWidgetRenderer.readScript(resource, "/js/any.js")).isEqualTo("function f() {}");
+    }
+
+    /** A bundle without the script leaves the widget without its listener, so the call ends there. */
+    @Test
+    void readScript_refusesAResourceTheBundleDoesNotCarry() {
+        assertThatThrownBy(() -> TimesheetReportWidgetRenderer.readScript(null, "/js/absent.js"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Resource is missing from the bundle: /js/absent.js");
+    }
+
+    @Test
+    void readScript_reportsAResourceItCannotRead() throws IOException {
+        InputStream failing = mock(InputStream.class);
+        when(failing.readAllBytes()).thenThrow(new IOException("no"));
+
+        assertThatThrownBy(() -> TimesheetReportWidgetRenderer.readScript(failing, "/js/broken.js"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Cannot read /js/broken.js")
+                .cause().isInstanceOf(IOException.class);
     }
 
     private static String readResource(String path) {

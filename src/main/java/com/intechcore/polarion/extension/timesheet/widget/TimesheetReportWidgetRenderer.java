@@ -11,6 +11,7 @@ import com.polarion.alm.shared.api.model.rp.widget.RichPageWidgetCommonContext;
 import com.polarion.alm.shared.api.utils.html.HtmlFragmentBuilder;
 import com.polarion.alm.shared.api.utils.html.HtmlTagBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,13 +75,28 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     }
 
     private static @NotNull String readHeightSyncScript() {
-        try (InputStream resource = TimesheetReportWidgetRenderer.class.getResourceAsStream(HEIGHT_SYNC_RESOURCE)) {
-            if (resource == null) {
-                throw new IllegalStateException("Resource is missing from the bundle: " + HEIGHT_SYNC_RESOURCE);
-            }
+        return readScript(TimesheetReportWidgetRenderer.class.getResourceAsStream(HEIGHT_SYNC_RESOURCE), HEIGHT_SYNC_RESOURCE);
+    }
+
+    /**
+     * Reads a script of the bundle. Both failures leave the widget without its listener, which is a
+     * broken build rather than a state to recover from, so each one ends the call.
+     *
+     * <p>Package-private and taking the stream: the resource is opened by the caller, so a test can
+     * hand this method the streams a jar cannot produce on demand.
+     *
+     * @param resource the open resource, or null when the bundle does not carry it
+     * @param name the resource path, for the message
+     * @return the text of the script
+     */
+    static @NotNull String readScript(@Nullable InputStream resource, @NotNull String name) {
+        if (resource == null) {
+            throw new IllegalStateException("Resource is missing from the bundle: " + name);
+        }
+        try (resource) {
             return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new IllegalStateException("Cannot read " + HEIGHT_SYNC_RESOURCE, e);
+            throw new IllegalStateException("Cannot read " + name, e);
         }
     }
 
