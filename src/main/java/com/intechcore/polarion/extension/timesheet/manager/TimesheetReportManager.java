@@ -148,6 +148,11 @@ public class TimesheetReportManager {
     }
 
     @Nullable String createUserWorkRecordsQuery(@NotNull List<String> userIds) {
+        if (userIds.isEmpty()) {
+            // Joining an empty list gives "", and the caller would add an empty "AND ()" group,
+            // which Polarion rejects. No user filter means every user in the scope.
+            return null;
+        }
         return userIds.stream()
                 .map(userId -> "workRecords.user.id:" + userId)
                 .collect(Collectors.joining(" OR "));
