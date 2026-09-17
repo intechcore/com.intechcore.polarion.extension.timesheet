@@ -186,6 +186,24 @@ class TimesheetReportWidgetRendererTest {
                 .contains("timesheet-app-height");
     }
 
+    /**
+     * Any window on the page may post a message, so the listener takes the height from the frame it
+     * created and from nothing else, and only when the height is a number.
+     */
+    @Test
+    void theScriptAnswersItsOwnFrameOnly() {
+        when(scope.projectId()).thenReturn("elibrary");
+        new TimesheetReportWidgetRenderer(context).render(builder);
+
+        ArgumentCaptor<String> script = ArgumentCaptor.forClass(String.class);
+        verify(scriptContent).javaScript(script.capture());
+
+        assertThat(script.getValue())
+                .contains("event.source !== frame.contentWindow")
+                .contains("typeof data.height !== 'number'")
+                .contains("!isFinite(data.height)");
+    }
+
     @Test
     void theIframeCarriesNoBorderAndNoScrollbars() {
         when(scope.projectId()).thenReturn("elibrary");

@@ -56,14 +56,23 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
                 .width("100%")
                 .style("border:0;width:100%;min-height:200px;");
 
+        // The listener answers one sender only: the frame this render call created. Every window
+        // may post to this page, so the message is matched by source identity, which cannot be
+        // spoofed, and the height is used only when it is a real number.
         //language=JS
         builder.tag().script().append().javaScript("""
                 (function () {
                     var frame = document.getElementById('%s');
                     window.addEventListener('message', function (event) {
-                        if (frame && event.data && event.data.type === 'timesheet-app-height') {
-                            frame.style.height = (event.data.height + 2) + 'px';
+                        if (!frame || !event.source || event.source !== frame.contentWindow) {
+                            return;
                         }
+                        var data = event.data;
+                        if (!data || data.type !== 'timesheet-app-height'
+                                || typeof data.height !== 'number' || !isFinite(data.height)) {
+                            return;
+                        }
+                        frame.style.height = (data.height + 2) + 'px';
                     });
                 })();""".formatted(iframeId));
     }

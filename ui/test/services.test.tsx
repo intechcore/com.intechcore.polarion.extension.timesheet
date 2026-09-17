@@ -157,18 +157,20 @@ describe('useTimesheet', () => {
 
 describe('useIframeAutoHeight', () => {
   it('posts the content height to the embedding widget', async () => {
-    const posted: unknown[] = [];
+    const posted: { msg: unknown; origin: string }[] = [];
     const original = window.parent.postMessage.bind(window.parent);
     vi.spyOn(window.parent, 'postMessage').mockImplementation(((msg: unknown, origin: string) => {
-      posted.push(msg);
+      posted.push({ msg, origin });
       return original(msg as never, origin as never);
     }) as typeof window.parent.postMessage);
 
     probe(useIframeAutoHeight);
 
     await vi.waitFor(() => expect(posted.length).toBeGreaterThan(0));
-    expect(posted[0]).toMatchObject({ type: 'timesheet-app-height' });
-    expect((posted[0] as { height: number }).height).toBeGreaterThanOrEqual(0);
+    expect(posted[0].msg).toMatchObject({ type: 'timesheet-app-height' });
+    expect((posted[0].msg as { height: number }).height).toBeGreaterThanOrEqual(0);
+    // Addressed to this origin, never to '*': a page embedding the app from elsewhere gets nothing.
+    expect(posted[0].origin).toBe(window.location.origin);
   });
 
   // The browser context is shared by every test file, so the viewport this suite shrinks has to go
