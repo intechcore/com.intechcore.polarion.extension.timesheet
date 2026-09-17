@@ -100,8 +100,10 @@ jobs:
           node-version: 24.18.0
           cache: npm
           cache-dependency-path: ui/package-lock.json
+      # --ignore-scripts: the hooks below only need the Prettier and ESLint packages, so no
+      # dependency gets to run a lifecycle script here (SonarCloud rule githubactions:S6505).
       - name: Install the UI dependencies
-        run: npm ci --prefix ui
+        run: npm ci --ignore-scripts --prefix ui
       - name: Install pre-commit
         run: pipx install pre-commit==4.6.1
       - name: Run the hooks
