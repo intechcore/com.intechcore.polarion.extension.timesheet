@@ -22,6 +22,12 @@ try {
 }
 const image = `mcr.microsoft.com/playwright:v${playwrightVersion}-noble`;
 
+// The widget's height listener lives in the Java resources and test/globalSetup.ts reads it from
+// there (see test/widgetHeight.test.ts). Only ui/ is mounted into the container, so that one file
+// is mounted read-only at the path the setup resolves, relative to /work.
+const widgetHeightScript = resolve(uiDir, '../src/main/resources/js/widget-height.js');
+const widgetHeightScriptInContainer = '/src/main/resources/js/widget-height.js';
+
 const args = [
   'run',
   '--rm',
@@ -36,6 +42,8 @@ const args = [
   'PIXEL_REFERENCES=1',
   '-v',
   `${uiDir}:/work`,
+  '-v',
+  `${widgetHeightScript}:${widgetHeightScriptInContainer}:ro`,
   // Shadow node_modules so the container's Linux install does not overwrite host binaries.
   '-v',
   '/work/node_modules',

@@ -17,7 +17,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -167,8 +171,12 @@ class TimesheetReportWidgetRendererTest {
     }
 
     /**
-     * The script resizes the iframe from the height the app posts, and it finds the frame by the id
-     * the same render call wrote. A mismatch leaves the report clipped at its minimum height.
+     * The script resizes the iframe from the height the app posts, and it is bound to the frame by
+     * the id the same render call wrote. A mismatch leaves the report clipped at its minimum height.
+     *
+     * <p>What the listener does with a message is asserted where it can run, in
+     * {@code ui/test/widgetHeight.test.ts}. This test covers the seam: the resource is served whole,
+     * and the call names this iframe.
      */
     @Test
     void theScriptAddressesTheIframeItJustCreated() {
@@ -182,26 +190,17 @@ class TimesheetReportWidgetRendererTest {
 
         assertThat(id.getValue()).startsWith("timesheet-report-");
         assertThat(script.getValue())
-                .contains("getElementById('" + id.getValue() + "')")
-                .contains("timesheet-app-height");
+                .contains(readResource("/js/widget-height.js"))
+                .endsWith("timesheetSyncIframeHeight('" + id.getValue() + "');");
     }
 
-    /**
-     * Any window on the page may post a message, so the listener takes the height from the frame it
-     * created and from nothing else, and only when the height is a number.
-     */
-    @Test
-    void theScriptAnswersItsOwnFrameOnly() {
-        when(scope.projectId()).thenReturn("elibrary");
-        new TimesheetReportWidgetRenderer(context).render(builder);
-
-        ArgumentCaptor<String> script = ArgumentCaptor.forClass(String.class);
-        verify(scriptContent).javaScript(script.capture());
-
-        assertThat(script.getValue())
-                .contains("event.source !== frame.contentWindow")
-                .contains("typeof data.height !== 'number'")
-                .contains("!isFinite(data.height)");
+    private static String readResource(String path) {
+        try (InputStream resource = TimesheetReportWidgetRendererTest.class.getResourceAsStream(path)) {
+            assertThat(resource).as("resource %s", path).isNotNull();
+            return new String(Objects.requireNonNull(resource).readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new AssertionError("Cannot read " + path, e);
+        }
     }
 
     @Test

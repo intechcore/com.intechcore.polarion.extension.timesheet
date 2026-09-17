@@ -12,6 +12,8 @@ import com.polarion.alm.shared.api.utils.html.HtmlFragmentBuilder;
 import com.polarion.alm.shared.api.utils.html.HtmlTagBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -20,6 +22,15 @@ import java.util.UUID;
 public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
     private static final String APP_URL = "/polarion/timesheet-app/ui/app/index.html";
+
+    /**
+     * The height listener of the widget. It is a file rather than a string in this class because a
+     * Java test can assert the text of a script and never what it does; {@code
+     * ui/test/widgetHeight.test.ts} loads this same file and drives it in a browser.
+     */
+    private static final String HEIGHT_SYNC_RESOURCE = "/js/widget-height.js";
+
+    private static final String HEIGHT_SYNC_SCRIPT = readHeightSyncScript();
 
     private final Scope scope;
     private final List<String> userIds;
@@ -56,25 +67,21 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
                 .width("100%")
                 .style("border:0;width:100%;min-height:200px;");
 
-        // The listener answers one sender only: the frame this render call created. Every window
-        // may post to this page, so the message is matched by source identity, which cannot be
-        // spoofed, and the height is used only when it is a real number.
-        //language=JS
-        builder.tag().script().append().javaScript("""
-                (function () {
-                    var frame = document.getElementById('%s');
-                    window.addEventListener('message', function (event) {
-                        if (!frame || !event.source || event.source !== frame.contentWindow) {
-                            return;
-                        }
-                        var data = event.data;
-                        if (!data || data.type !== 'timesheet-app-height'
-                                || typeof data.height !== 'number' || !isFinite(data.height)) {
-                            return;
-                        }
-                        frame.style.height = (data.height + 2) + 'px';
-                    });
-                })();""".formatted(iframeId));
+        // The script of the resource, followed by the call that binds it to the iframe above. The
+        // id is a UUID this method generated, so it needs no escaping.
+        builder.tag().script().append().javaScript(
+                HEIGHT_SYNC_SCRIPT + "%ntimesheetSyncIframeHeight('%s');".formatted(iframeId));
+    }
+
+    private static @NotNull String readHeightSyncScript() {
+        try (InputStream resource = TimesheetReportWidgetRenderer.class.getResourceAsStream(HEIGHT_SYNC_RESOURCE)) {
+            if (resource == null) {
+                throw new IllegalStateException("Resource is missing from the bundle: " + HEIGHT_SYNC_RESOURCE);
+            }
+            return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read " + HEIGHT_SYNC_RESOURCE, e);
+        }
     }
 
     private @NotNull String buildAppUrl() {
