@@ -91,6 +91,29 @@ class RequestValidatorTest {
                 .hasMessage("No more than 50 user ids are allowed");
     }
 
+    /**
+     * A hyphen inside an id is a character; the same hyphen in front of it is where the query syntax
+     * reads an operator, and {@code workRecords.user.id:-aSeller} would select every other user.
+     */
+    @Test
+    void userId_takesAHyphenButNotAsTheFirstCharacter() {
+        assertThat(RequestValidator.validateUserId("a-seller")).isEqualTo("a-seller");
+        assertThatThrownBy(() -> RequestValidator.validateUserId("-aSeller"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User id holds characters which are not allowed");
+        assertThatThrownBy(() -> RequestValidator.validateUserIds("aSeller,-mTest"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User id holds characters which are not allowed");
+    }
+
+    @Test
+    void scopePath_takesAHyphenButNotAsTheFirstCharacter() {
+        assertThat(RequestValidator.validateScopePath("e-library")).isEqualTo("e-library");
+        assertThatThrownBy(() -> RequestValidator.validateScopePath("-elibrary"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Scope path holds characters which are not allowed");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"a b", "a:b", "a*", "aSeller OR workRecords.user.id:mTest", "a\"b", "a(b)", "ä"})
     void userId_rejectsQuerySyntaxAndWhitespace(String userId) {

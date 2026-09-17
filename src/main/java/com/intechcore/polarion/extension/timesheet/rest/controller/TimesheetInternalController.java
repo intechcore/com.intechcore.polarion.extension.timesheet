@@ -15,6 +15,7 @@ import com.polarion.alm.projects.model.IUser;
 import com.polarion.alm.shared.api.Scope;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +46,10 @@ public class TimesheetInternalController {
     @GET
     @Path("/users/{user_id}/timesheet")
     @Produces(MediaType.APPLICATION_JSON)
-    public Timesheet getTimesheet(@PathParam("user_id") String userId, @QueryParam("start_date") String startDate, @QueryParam("end_date") String endDate, @QueryParam("scope_path") String scopePath) {
+    public Timesheet getTimesheet(@PathParam("user_id") String userId,
+                                  @Parameter(required = true) @QueryParam("start_date") String startDate,
+                                  @Parameter(required = true) @QueryParam("end_date") String endDate,
+                                  @QueryParam("scope_path") String scopePath) {
         RequestValidator.validatePeriod(startDate, endDate);
         Scope scope = new ScopeFactoryImpl().fromPath(RequestValidator.validateScopePath(scopePath));
 
@@ -57,7 +61,10 @@ public class TimesheetInternalController {
     @GET
     @Path("/timesheet")
     @Produces(MediaType.APPLICATION_JSON)
-    public Timesheet getTimesheetForUsers(@QueryParam("user_ids") String userIds, @QueryParam("start_date") String startDate, @QueryParam("end_date") String endDate, @QueryParam("scope_path") String scopePath) {
+    public Timesheet getTimesheetForUsers(@Parameter(required = true) @QueryParam("user_ids") String userIds,
+                                          @Parameter(required = true) @QueryParam("start_date") String startDate,
+                                          @Parameter(required = true) @QueryParam("end_date") String endDate,
+                                          @QueryParam("scope_path") String scopePath) {
         RequestValidator.validatePeriod(startDate, endDate);
         Scope scope = new ScopeFactoryImpl().fromPath(RequestValidator.validateScopePath(scopePath));
         List<String> users = RequestValidator.validateUserIds(userIds);

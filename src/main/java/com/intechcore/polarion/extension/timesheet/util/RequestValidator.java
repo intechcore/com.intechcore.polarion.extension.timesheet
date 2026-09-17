@@ -35,11 +35,18 @@ public class RequestValidator {
      * The id of a user. The set is wider than the ids Polarion itself creates, because an
      * LDAP-backed installation can carry an e-mail-like login, and it still holds no character
      * the Lucene query syntax gives a meaning to.
+     *
+     * <p>A hyphen is allowed inside an id and refused as its first character: a leading one lands
+     * where the query syntax reads an operator, and {@code workRecords.user.id:-aSeller} would
+     * prohibit that user rather than select them.
      */
-    private static final Pattern USER_ID = Pattern.compile("[A-Za-z0-9._@-]{1,64}");
+    private static final Pattern USER_ID = Pattern.compile("[A-Za-z0-9._@][A-Za-z0-9._@-]{0,63}");
 
-    /** A project id, or the location path of a project group, which adds the separator. */
-    private static final Pattern SCOPE_PATH = Pattern.compile("[A-Za-z0-9._/-]{1,256}");
+    /**
+     * A project id, or the location path of a project group, which adds the separator. A leading
+     * hyphen is refused for the reason above; a leading separator is the path of a group.
+     */
+    private static final Pattern SCOPE_PATH = Pattern.compile("[A-Za-z0-9._/][A-Za-z0-9._/-]{0,255}");
 
     /**
      * Checks that the period is complete, ordered and bounded.
