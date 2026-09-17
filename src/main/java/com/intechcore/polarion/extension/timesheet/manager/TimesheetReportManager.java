@@ -87,7 +87,9 @@ public class TimesheetReportManager {
     // Fills each work item with Polarion's native rendering (icon + linked id + title), as shown
     // by the standard report widgets. Rendered once per unique work item inside one read-only
     // transaction.
-    private void renderWorkItemsHtml(@NotNull Timesheet timesheet) {
+    // Package-private, not private: getTimesheet always passes a filled list, so the empty cases
+    // are reachable only from a test. Timesheet itself allows a null list, hence the guard.
+    void renderWorkItemsHtml(@NotNull Timesheet timesheet) {
         List<WorkRecord> workRecords = timesheet.getWorkRecords();
         if (workRecords == null || workRecords.isEmpty()) {
             return;

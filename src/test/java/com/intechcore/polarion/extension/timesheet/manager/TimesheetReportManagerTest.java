@@ -347,6 +347,18 @@ class TimesheetReportManagerTest {
         });
     }
 
+    /**
+     * A timesheet holding no records opens no transaction. Both shapes of "nothing to render" are
+     * covered here, because getTimesheet itself always builds a list.
+     */
+    @Test
+    void renderWorkItemsHtml_withoutRecordsDoesNothing() {
+        manager.renderWorkItemsHtml(new Timesheet("2026-08-01", "2026-08-31", null));
+        manager.renderWorkItemsHtml(new Timesheet("2026-08-01", "2026-08-31", List.of()));
+
+        transactions.verifyNoInteractions();
+    }
+
     /** A work item Polarion cannot render leaves the report without its html, not without the record. */
     @Test
     void getTimesheet_survivesAWorkItemThatCannotBeRendered() {
