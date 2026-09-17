@@ -50,9 +50,13 @@ GitHub Actions runs five workflows:
   version in the pom, commits it, tags it `v<version>` and pushes. It checks out with `PAT_TOKEN`
   on purpose: a tag pushed with the default `GITHUB_TOKEN` starts no further workflow, so
   `release.yml` would never see it.
-- `release.yml`: runs on a `v*` tag. It builds and tests the tag, then attaches the jars to a
-  GitHub release. It stops at `verify` - nothing is published to a Maven repository yet. A second
-  job returns `main` to the next `-SNAPSHOT`.
+- `release.yml`: runs on a `v*` tag. It runs `deploy` with the parent's `gpg-sign` and
+  `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
+  `com.intechcore.polarion.extensions`, and the jars are attached to a GitHub release. A second job
+  returns `main` to the next `-SNAPSHOT`. The Central credentials are the organization secrets
+  `SONATYPE_USERNAME`, `SONATYPE_TOKEN`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`. The `central`
+  server lives in `.mvn/settings.xml`, because the release build passes that file with `-s` and
+  never reads the one `setup-java` writes.
 
 The Polarion artifacts come from the Intechcore Nexus through the repository secrets `NEXUS_URL`,
 `NEXUS_USERNAME` and `NEXUS_PASSWORD`. `.mvn/settings.xml` declares Central first, so Nexus only

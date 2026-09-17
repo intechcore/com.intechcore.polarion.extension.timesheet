@@ -20,18 +20,22 @@ jobs:
         with:
           java-version: '21'
           distribution: temurin
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
       # The build runs pre-commit through the Maven lifecycle, the same as in ci.yml.
       - name: Install pre-commit
         run: pipx install pre-commit==4.6.1
-      # verify, not deploy: nothing is published to a Maven repository yet. The whole
-      # lifecycle runs here, so the release is built from the tested tree rather than
-      # from a separate build.
-      - name: Build and test
+      # deploy walks the whole lifecycle, so the tests run here and the artifacts published are
+      # the ones that were tested. The two profiles come from the generic parent: gpg-sign adds
+      # the signatures Central requires, central-publishing uploads and releases the bundle.
+      - name: Test and publish to Maven Central
         env:
           NEXUS_URL: ${{ secrets.NEXUS_URL }}
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-        run: mvn --batch-mode -s .mvn/settings.xml clean verify
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn --batch-mode -s .mvn/settings.xml -P gpg-sign,central-publishing clean deploy
       - name: Create the GitHub release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
