@@ -40,5 +40,14 @@
             <username>${env.NEXUS_USERNAME}</username>
             <password>${env.NEXUS_PASSWORD}</password>
         </server>
+
+        <!-- Maven Central, used by release.yml only. The release build passes this file with -s,
+             so the settings that setup-java writes into ~/.m2 are never read. The GPG passphrase
+             needs no entry here: maven-gpg-plugin reads MAVEN_GPG_PASSPHRASE from the environment. -->
+        <server>
+            <id>central</id>
+            <username>${env.MAVEN_USERNAME}</username>
+            <password>${env.MAVEN_PASSWORD}</password>
+        </server>
     </servers>
 </settings>
