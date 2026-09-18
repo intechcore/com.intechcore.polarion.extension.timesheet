@@ -59,16 +59,7 @@ const args = [
   `npm ci && (node systest/host-bridge.mjs &) && sleep 2 && npx playwright test -c playwright.systest.config.js ${extraArgs.join(' ')}`,
 ];
 
-const sensitiveEnvKeys = new Set(['POLARION_PASSWORD', 'POLARION_TOKEN']);
-const safeArgs = args.map((arg) => {
-  if (typeof arg !== 'string') return arg;
-  const eqIndex = arg.indexOf('=');
-  if (eqIndex <= 0) return arg;
-  const key = arg.slice(0, eqIndex);
-  return sensitiveEnvKeys.has(key) ? `${key}=***REDACTED***` : arg;
-});
-
-console.log(`> docker ${safeArgs.join(' ')}`);
+console.log('> docker run ... (omitting env argument values)');
 const result = spawnSync('docker', args, { stdio: 'inherit' });
 if (result.error) {
   console.error(`Failed to launch docker: ${result.error.message}. Is Docker installed and running?`);
