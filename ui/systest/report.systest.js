@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   BASE_URL,
+  MARKER,
   PERIOD,
   PROJECT,
   TOKEN,
@@ -34,8 +35,8 @@ test('shows the seeded week of both users', async ({ page }) => {
   await openReport(page, users);
 
   const text = await page.locator('body').innerText();
-  expect(text).toContain('systest timesheet one');
-  expect(text).toContain('systest timesheet two');
+  expect(text).toContain(`${MARKER} one`);
+  expect(text).toContain(`${MARKER} two`);
   // 8 + 4 + 3.5 hours for the first user, 6 + 2 + 4 for the second.
   expect(text).toContain('total: 15.5 h');
   expect(text).toContain('total: 12 h');

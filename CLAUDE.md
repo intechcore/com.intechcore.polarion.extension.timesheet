@@ -54,8 +54,11 @@ POLARION_TOKEN=... npm run systest:update:docker    # rewrites ui/systest/expect
   profile includes only those. Without a Polarion answering, every one of them **skips**.
 - **The data is prepared by the tests**, in `elibrary` (override with `POLARION_SYSTEST_PROJECT`) and
   in **March 2030**, far from any real record. Work records are created per run and deleted
-  afterwards. Work items are not: Polarion's REST API refuses to delete one (405), so they carry
-  `systest timesheet` in their title and are found again.
+  afterwards. Work items are not: Polarion's REST API refuses to delete one (405), so they carry a
+  marker in their title and are found again.
+- **Each suite owns its fixtures**: the Java one books on `systest timesheet java`, the Playwright
+  one on `systest timesheet ui`. Running both at the same time is therefore safe. Running the *same*
+  suite twice at once is not: the second run reseeds the fixture the first one is reading.
 - **Polarion writes a duration as `3d 1/2h`**: a half hour is a fraction, not `30m`. `3h 30m`,
   `3.5h` and `210m` are all rejected with 400.
 - **REST v1 takes a token and nothing else**: a session is answered with 401. The files of the webapp

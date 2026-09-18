@@ -25,7 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TimesheetReportSystemTest {
 
     private static final String PROJECT = System.getenv().getOrDefault("POLARION_SYSTEST_PROJECT", "elibrary");
-    private static final String MARKER = "systest timesheet";
+    // Each suite owns its fixtures: the Playwright suite in ui/systest books on "systest
+    // timesheet ui" instead, so running both at once cannot make them delete each other's records.
+    private static final String MARKER = "systest timesheet java";
     private static final String START = "2030-03-04";
     private static final String END = "2030-03-08";
     private static final String OUTSIDE = "2030-02-28";

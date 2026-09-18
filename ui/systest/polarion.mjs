@@ -15,7 +15,9 @@ export const PROJECT = process.env.POLARION_SYSTEST_PROJECT || 'elibrary';
 const USER = process.env.POLARION_USER || 'admin';
 const PASSWORD = process.env.POLARION_PASSWORD || 'admin';
 
-const MARKER = 'systest timesheet';
+// Each suite owns its fixtures: the Java suite books on "systest timesheet java" instead, so
+// running both at once cannot make them delete each other's records.
+export const MARKER = 'systest timesheet ui';
 export const PERIOD = { start: '2030-03-04', end: '2030-03-08' };
 
 export async function signIn(page) {
