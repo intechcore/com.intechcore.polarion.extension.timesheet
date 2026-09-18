@@ -7,6 +7,8 @@
   "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": true,
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
   "pre-commit": {
     "enabled": true
   },
@@ -55,6 +57,25 @@
         "ch.sbb.polarion.extensions:ch.sbb.polarion.extension.generic"
       ],
       "automerge": false
+    },
+    {
+      "description": "What ships to a Polarion installation is reviewed by a person. A runtime dependency is part of the published extension, so a compromised release of one would travel into it unread; the build-time ones stay on automerge, held back by minimumReleaseAge.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "automerge": false
     }
-  ]
+  ],
+  "lockFileMaintenance": {
+    "description": "Renovate keeps this off by default and nothing here turns it on. The flag stands so that enabling it later does not quietly refresh every transitive package into main without a person reading the update.",
+    "automerge": false
+  },
+  "vulnerabilityAlerts": {
+    "description": "A fix for a known vulnerability is the one update which must not wait: minimumReleaseAge does not apply to it, and it opens a pull request at once.",
+    "minimumReleaseAge": null,
+    "dependencyDashboardApproval": false
+  }
 }
