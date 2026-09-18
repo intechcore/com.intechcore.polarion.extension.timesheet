@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@sbb-polarion/react-sbb-polarion": "^2.3.0",
+    "dompurify": "^3.4.15",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "react": "^19.1.0",
