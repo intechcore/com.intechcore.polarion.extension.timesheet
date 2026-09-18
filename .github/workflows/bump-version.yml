@@ -93,7 +93,15 @@ jobs:
           git add pom.xml
           git commit -m "chore: bump version to $NEW_VERSION"
           git tag "v$NEW_VERSION"
-          REMOTE="https://x-access-token:${PAT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # The token reaches git through GIT_ASKPASS, so the remote URL carries no credential:
+          # a URL with the token in it stands in the command line of the push, which every
+          # process on the runner can read, and in whatever git prints when a push fails.
+          # The helper file holds no secret either, it reads the one in the environment.
+          # shellcheck disable=SC2016  # $PAT_TOKEN is read when the helper runs, not written here
+          printf '#!/bin/sh\nexec echo "$PAT_TOKEN"\n' > "$RUNNER_TEMP/askpass.sh"
+          chmod +x "$RUNNER_TEMP/askpass.sh"
+          export GIT_ASKPASS="$RUNNER_TEMP/askpass.sh"
+          REMOTE="https://x-access-token@github.com/${GITHUB_REPOSITORY}.git"
           git push "$REMOTE" main
           git push "$REMOTE" "v$NEW_VERSION"
       - name: Summary
