@@ -30,7 +30,9 @@ export default function useIframeAutoHeight() {
   useLayoutEffect(() => {
     const postHeight = () => {
       const height = Math.max(document.body.scrollHeight, Math.ceil(popupsBottom()));
-      window.parent?.postMessage({ type: 'timesheet-app-height', height }, '*');
+      // Addressed to this origin, not to '*': the widget serves the app from the same Polarion
+      // instance, and a page which embedded it from anywhere else learns nothing about it.
+      window.parent?.postMessage({ type: 'timesheet-app-height', height }, window.location.origin);
     };
     postHeight();
 

@@ -17,9 +17,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_SELF;
@@ -167,8 +173,12 @@ class TimesheetReportWidgetRendererTest {
     }
 
     /**
-     * The script resizes the iframe from the height the app posts, and it finds the frame by the id
-     * the same render call wrote. A mismatch leaves the report clipped at its minimum height.
+     * The script resizes the iframe from the height the app posts, and it is bound to the frame by
+     * the id the same render call wrote. A mismatch leaves the report clipped at its minimum height.
+     *
+     * <p>What the listener does with a message is asserted where it can run, in
+     * {@code ui/test/widgetHeight.test.ts}. This test covers the seam: the resource is served whole,
+     * and the call names this iframe.
      */
     @Test
     void theScriptAddressesTheIframeItJustCreated() {
@@ -182,8 +192,45 @@ class TimesheetReportWidgetRendererTest {
 
         assertThat(id.getValue()).startsWith("timesheet-report-");
         assertThat(script.getValue())
-                .contains("getElementById('" + id.getValue() + "')")
-                .contains("timesheet-app-height");
+                .contains(readResource("/js/widget-height.js"))
+                .endsWith("timesheetSyncIframeHeight('" + id.getValue() + "');");
+    }
+
+    // --- Reading the script out of the bundle ---
+
+    @Test
+    void readScript_returnsTheText() {
+        InputStream resource = new ByteArrayInputStream("function f() {}".getBytes(StandardCharsets.UTF_8));
+
+        assertThat(TimesheetReportWidgetRenderer.readScript(resource, "/js/any.js")).isEqualTo("function f() {}");
+    }
+
+    /** A bundle without the script leaves the widget without its listener, so the call ends there. */
+    @Test
+    void readScript_refusesAResourceTheBundleDoesNotCarry() {
+        assertThatThrownBy(() -> TimesheetReportWidgetRenderer.readScript(null, "/js/absent.js"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Resource is missing from the bundle: /js/absent.js");
+    }
+
+    @Test
+    void readScript_reportsAResourceItCannotRead() throws IOException {
+        InputStream failing = mock(InputStream.class);
+        when(failing.readAllBytes()).thenThrow(new IOException("no"));
+
+        assertThatThrownBy(() -> TimesheetReportWidgetRenderer.readScript(failing, "/js/broken.js"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Cannot read /js/broken.js")
+                .cause().isInstanceOf(IOException.class);
+    }
+
+    private static String readResource(String path) {
+        try (InputStream resource = TimesheetReportWidgetRendererTest.class.getResourceAsStream(path)) {
+            assertThat(resource).as("resource %s", path).isNotNull();
+            return new String(Objects.requireNonNull(resource).readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new AssertionError("Cannot read " + path, e);
+        }
     }
 
     @Test

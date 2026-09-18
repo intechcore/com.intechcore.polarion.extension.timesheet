@@ -43,6 +43,8 @@ export default defineConfig({
   test: {
     include: ['test/**/*.{test,spec}.{ts,tsx}'],
     setupFiles: ['./test/setup.ts'],
+    // Reads the widget's height listener out of the Java resources and provides it to the tests.
+    globalSetup: ['./test/globalSetup.ts'],
     // Run test files one at a time. Under high parallelism the Playwright browser provider
     // intermittently fails a worker with "Vitest failed to find the runner"; serializing the files
     // avoids that race. The suite is small and each file is fast, so the cost is minor.
