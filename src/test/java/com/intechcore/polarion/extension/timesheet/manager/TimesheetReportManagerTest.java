@@ -256,7 +256,7 @@ class TimesheetReportManagerTest {
 
         assertThatThrownBy(() -> manager.getTimesheet(scope, List.of("aSeller"), "2026-08-01", "2026-08-31"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageStartingWith("Can not create query for provided scope:");
+                .hasMessage("Can not create query for the provided scope");
     }
 
     // --- Turning the work records into the report ---

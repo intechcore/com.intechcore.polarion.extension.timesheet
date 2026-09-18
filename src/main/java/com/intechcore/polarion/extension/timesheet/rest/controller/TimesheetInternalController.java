@@ -7,6 +7,7 @@ import com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManage
 import com.intechcore.polarion.extension.timesheet.model.ScopeInfo;
 import com.intechcore.polarion.extension.timesheet.model.Timesheet;
 import com.intechcore.polarion.extension.timesheet.model.User;
+import com.intechcore.polarion.extension.timesheet.util.RequestValidator;
 import com.intechcore.polarion.extension.timesheet.util.ScopeFactoryImpl;
 import com.polarion.alm.projects.model.IProject;
 import com.polarion.alm.projects.model.IProjectGroup;
@@ -14,6 +15,7 @@ import com.polarion.alm.projects.model.IUser;
 import com.polarion.alm.shared.api.Scope;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +24,6 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -45,29 +46,28 @@ public class TimesheetInternalController {
     @GET
     @Path("/users/{user_id}/timesheet")
     @Produces(MediaType.APPLICATION_JSON)
-    public Timesheet getTimesheet(@PathParam("user_id") String userId, @QueryParam("start_date") String startDate, @QueryParam("end_date") String endDate, @QueryParam("scope_path") String scopePath) {
-        Scope scope = new ScopeFactoryImpl().fromPath(scopePath);
-        if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("Start date and end date are required");
-        }
+    public Timesheet getTimesheet(@PathParam("user_id") String userId,
+                                  @Parameter(required = true) @QueryParam("start_date") String startDate,
+                                  @Parameter(required = true) @QueryParam("end_date") String endDate,
+                                  @QueryParam("scope_path") String scopePath) {
+        RequestValidator.validatePeriod(startDate, endDate);
+        Scope scope = new ScopeFactoryImpl().fromPath(RequestValidator.validateScopePath(scopePath));
 
         return new TimesheetReportManager(polarionService)
-                .getTimesheet(scope, List.of(userId), startDate, endDate);
+                .getTimesheet(scope, List.of(RequestValidator.validateUserId(userId)), startDate, endDate);
     }
 
     @Operation(summary = "Returns timesheet report for several users for a given period")
     @GET
     @Path("/timesheet")
     @Produces(MediaType.APPLICATION_JSON)
-    public Timesheet getTimesheetForUsers(@QueryParam("user_ids") String userIds, @QueryParam("start_date") String startDate, @QueryParam("end_date") String endDate, @QueryParam("scope_path") String scopePath) {
-        Scope scope = new ScopeFactoryImpl().fromPath(scopePath);
-        if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("Start date and end date are required");
-        }
-
-        List<String> users = userIds == null || userIds.isBlank()
-                ? List.of()
-                : Arrays.stream(userIds.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+    public Timesheet getTimesheetForUsers(@Parameter(required = true) @QueryParam("user_ids") String userIds,
+                                          @Parameter(required = true) @QueryParam("start_date") String startDate,
+                                          @Parameter(required = true) @QueryParam("end_date") String endDate,
+                                          @QueryParam("scope_path") String scopePath) {
+        RequestValidator.validatePeriod(startDate, endDate);
+        Scope scope = new ScopeFactoryImpl().fromPath(RequestValidator.validateScopePath(scopePath));
+        List<String> users = RequestValidator.validateUserIds(userIds);
 
         return new TimesheetReportManager(polarionService)
                 .getTimesheet(scope, users, startDate, endDate);
