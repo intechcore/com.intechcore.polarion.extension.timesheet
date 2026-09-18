@@ -26,6 +26,9 @@ const image = `mcr.microsoft.com/playwright:v${playwrightVersion}-noble`;
 // answers only requests whose Host header matches its base.url, and a browser writes that header
 // from the URL it opens.
 const polarionUrl = process.env.POLARION_URL || 'http://localhost';
+// The bridge answers on the port of that URL, not always on 80: a browser writes the Host header
+// from the URL it opens, so an instance on http://localhost:8080 has to find the bridge there.
+const bridgePort = new URL(polarionUrl).port || (polarionUrl.startsWith('https:') ? '443' : '80');
 
 const args = [
   'run',
@@ -37,6 +40,8 @@ const args = [
   'PIXEL_REFERENCES=1',
   '-e',
   `POLARION_URL=${polarionUrl}`,
+  '-e',
+  `BRIDGE_PORT=${bridgePort}`,
   '-e',
   `POLARION_USER=${process.env.POLARION_USER || 'admin'}`,
   '-e',
