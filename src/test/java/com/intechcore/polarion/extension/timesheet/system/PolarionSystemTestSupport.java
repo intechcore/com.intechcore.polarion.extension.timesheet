@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.net.ssl.SSLException;
+
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -46,21 +48,39 @@ final class PolarionSystemTestSupport {
             .build();
 
     /**
-     * Skips the test when there is no Polarion to talk to, or no token to talk with. A system test
-     * that cannot run is not a failing test: it is one that was not asked for.
+     * Skips the test when there is no Polarion to talk to. A system test that cannot run is not a
+     * failing test: it is one that was not asked for. A server that answers without a token to talk
+     * with is another matter: the suite was asked for, and skipping it would report a green run that
+     * prepared nothing and called nothing.
      */
     static void assumeAPolarionIsRunning() {
-        assumeTrue(TOKEN != null && !TOKEN.isBlank(), "POLARION_TOKEN is not set");
         assumeTrue(answers(), "No Polarion answers at " + BASE_URL);
+        if (TOKEN == null || TOKEN.isBlank()) {
+            throw new IllegalStateException(
+                    "POLARION_TOKEN is not set, and the REST v1 endpoints that prepare the data of this suite take one");
+        }
     }
 
     private static boolean answers() {
         try {
-            HttpResponse<Void> response = HttpClient.newHttpClient().send(
+            // Any answer means there is a Polarion at that address. One that fails with 500 is a
+            // broken server, and the tests have to say so rather than skip and report nothing.
+            HttpClient.newHttpClient().send(
                     HttpRequest.newBuilder(URI.create(BASE_URL + "/polarion/")).timeout(Duration.ofSeconds(10)).GET().build(),
                     HttpResponse.BodyHandlers.discarding());
-            return response.statusCode() < 500;
-        } catch (IOException | InterruptedException e) {
+            return true;
+        } catch (SSLException e) {
+            // A certificate this JVM does not trust is a server that answers. Skipping here would
+            // report a green run of a suite that made no call. The browser suite accepts such a
+            // certificate; this client does not, and it says so.
+            throw new IllegalStateException(
+                    "Polarion at %s answers, but its certificate is not trusted: %s. Import it into the trust store of this JVM."
+                            .formatted(BASE_URL, e.getMessage()), e);
+        } catch (IOException e) {
+            return false;
+        } catch (InterruptedException e) {
+            // Only a real interruption restores the flag: doing it for a refused connection would
+            // leave the flag set on the JUnit worker and break whatever blocks next.
             Thread.currentThread().interrupt();
             return false;
         }
@@ -105,17 +125,30 @@ final class PolarionSystemTestSupport {
         return send(request(path).DELETE(), path);
     }
 
+    /**
+     * Reads an answer as JSON. A call that lost its session is answered with the login page and
+     * status 200, not with a redirect and not with 401, so the status alone proves nothing: what
+     * comes back has to be JSON, and it has to hold something. Read as "null", an answer like that
+     * would arrive at the caller as an empty report.
+     */
     @NotNull JsonNode json(@NotNull String path) {
         HttpResponse<String> response = get(path);
         if (response.statusCode() != 200) {
             throw new IllegalStateException("GET %s answered %d: %s".formatted(path, response.statusCode(), response.body()));
         }
+        String contentType = response.headers().firstValue("content-type").orElse("");
+        if (contentType.contains("text/html")) {
+            throw new IllegalStateException("GET %s was answered with a page rather than JSON: there is no session".formatted(path));
+        }
         return parse(response.body());
     }
 
     static @NotNull JsonNode parse(@Nullable String body) {
+        if (body == null || body.isBlank()) {
+            throw new IllegalStateException("An empty body is not an answer");
+        }
         try {
-            return JSON.readTree(body == null || body.isBlank() ? "null" : body);
+            return JSON.readTree(body);
         } catch (IOException e) {
             throw new IllegalStateException("Not JSON: " + body, e);
         }
@@ -137,9 +170,11 @@ final class PolarionSystemTestSupport {
         }
         try {
             return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (IOException e) {
             throw new IllegalStateException("Request to " + BASE_URL + " failed", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Request to " + BASE_URL + " was interrupted", e);
         }
     }
 }

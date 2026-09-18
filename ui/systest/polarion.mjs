@@ -68,14 +68,23 @@ async function clearRecords(api, workItem, users) {
   const response = await api.get(
     `projects/${PROJECT}/workitems/${workItem}/workrecords?fields[workrecords]=date,user&page[size]=100`,
   );
-  if (!response.ok()) return;
+  // A read this suite skipped over would leave the fixture of an interrupted run on the instance,
+  // and the next run would assert against a doubled report.
+  if (!response.ok()) {
+    throw new Error(`Reading the records of ${workItem} answered ${response.status()}: ${await response.text()}`);
+  }
   for (const record of (await response.json()).data || []) {
     const date = String(record.attributes?.date ?? '');
     const user = record.relationships?.user?.data?.id;
     // The fixture year and one of the two users it books for. A booking of anybody else, on the same
     // work item and in the same year, is none of this suite's business.
     if (!date.startsWith(FIXTURE_YEAR) || !users.includes(user)) continue;
-    await api.delete(`projects/${PROJECT}/workitems/${workItem}/workrecords/${record.id.split('/')[2]}`);
+    const deleted = await api.delete(
+      `projects/${PROJECT}/workitems/${workItem}/workrecords/${record.id.split('/')[2]}`,
+    );
+    if (!deleted.ok()) {
+      throw new Error(`Deleting the record ${record.id} answered ${deleted.status()}: ${await deleted.text()}`);
+    }
   }
 }
 
@@ -129,6 +138,12 @@ export async function removeSeededRecords(users) {
 /** The users the report is asserted for, as the extension lists them. */
 export async function twoUsers(page) {
   const response = await page.request.get(`${BASE_URL}/polarion/timesheet/rest/internal/users`);
+  // A call without a session is answered with the login page and status 200, not with a redirect and
+  // not with 401, so the status alone proves nothing about this answer.
+  if ((response.headers()['content-type'] ?? '').includes('text/html')) {
+    throw new Error('The users were answered with a page rather than a list: there is no session');
+  }
+  if (!response.ok()) throw new Error(`Listing the users answered ${response.status()}: ${await response.text()}`);
   const listed = await response.json();
   if (listed.length < 2) throw new Error('The instance needs two enabled users');
   return listed.slice(0, 2).map((user) => user.id);

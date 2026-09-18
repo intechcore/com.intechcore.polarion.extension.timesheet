@@ -18,7 +18,9 @@ let users;
 test.describe.configure({ mode: 'serial' });
 
 test.beforeAll(async ({ browser }) => {
-  test.skip(!TOKEN, 'POLARION_TOKEN is needed to prepare the work records');
+  // Not a skip: the suite was asked for, and skipping it would report a green run that prepared
+  // nothing and asserted nothing.
+  if (!TOKEN) throw new Error('POLARION_TOKEN is not set, and the records of the fixture are written through REST v1');
   const page = await browser.newPage();
   await signIn(page);
   users = await twoUsers(page);
@@ -43,7 +45,9 @@ test('shows the seeded week of both users', async ({ page }) => {
 });
 
 test('the report looks the way it is published', async ({ page }) => {
-  test.skip(!process.env.PIXEL_REFERENCES, 'The reference is locked to the pinned Playwright image');
+  // The exact value: an inherited PIXEL_REFERENCES=0 must not turn a pixel comparison on outside
+  // the pinned image.
+  test.skip(process.env.PIXEL_REFERENCES !== '1', 'The reference is locked to the pinned Playwright image');
 
   await signIn(page);
   await openReport(page, users);
