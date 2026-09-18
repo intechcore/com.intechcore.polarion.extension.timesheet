@@ -16,13 +16,19 @@ jobs:
     permissions:
       contents: write
     steps:
-      # PAT_TOKEN, not GITHUB_TOKEN: a tag pushed with the default token does not
-      # start another workflow, so release.yml would never run for this tag.
+      # ref: main, because the dispatch can start from any branch of the repository while the
+      # steps below commit the release version and push it to main. Without it a dispatch from
+      # a feature branch would publish that branch as main.
+      #
+      # persist-credentials: false, so no token is written into .git/config. The steps below
+      # run Maven with third-party plugins, and a credential in the working copy is one file
+      # read away from them. PAT_TOKEN reaches the one step which pushes, and nothing else.
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          ref: main
           fetch-depth: 0
-          token: ${{ secrets.PAT_TOKEN }}
+          persist-credentials: false
       - name: Set up JDK 21
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
         with:
@@ -75,17 +81,29 @@ jobs:
         run: |
           mvn --batch-mode -s .mvn/settings.xml versions:set \
             -DnewVersion="$NEW_VERSION" -DgenerateBackupPoms=false
+      # PAT_TOKEN, not GITHUB_TOKEN: a tag pushed with the default token starts no further
+      # workflow, so release.yml would never see this tag.
       - name: Commit and tag
         env:
           NEW_VERSION: ${{ steps.new.outputs.version }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add pom.xml
           git commit -m "chore: bump version to $NEW_VERSION"
           git tag "v$NEW_VERSION"
-          git push origin main
-          git push origin "v$NEW_VERSION"
+          # The token reaches git through GIT_ASKPASS, so the remote URL carries no credential:
+          # a URL with the token in it stands in the command line of the push, which every
+          # process on the runner can read, and in whatever git prints when a push fails.
+          # The helper file holds no secret either, it reads the one in the environment.
+          # shellcheck disable=SC2016  # $PAT_TOKEN is read when the helper runs, not written here
+          printf '#!/bin/sh\nexec echo "$PAT_TOKEN"\n' > "$RUNNER_TEMP/askpass.sh"
+          chmod +x "$RUNNER_TEMP/askpass.sh"
+          export GIT_ASKPASS="$RUNNER_TEMP/askpass.sh"
+          REMOTE="https://x-access-token@github.com/${GITHUB_REPOSITORY}.git"
+          git push "$REMOTE" main
+          git push "$REMOTE" "v$NEW_VERSION"
       - name: Summary
         env:
           NEW_VERSION: ${{ steps.new.outputs.version }}
