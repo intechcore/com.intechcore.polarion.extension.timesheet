@@ -29,6 +29,8 @@ class TimesheetReportSystemTest {
     private static final String START = "2030-03-04";
     private static final String END = "2030-03-08";
     private static final String OUTSIDE = "2030-02-28";
+    /** Everything the fixture books sits in 2030, which is what tells its records from anybody else's. */
+    private static final String FIXTURE_YEAR = "2030-";
 
     private final PolarionSystemTestSupport polarion = new PolarionSystemTestSupport();
     private final List<String> createdRecords = new ArrayList<>();
@@ -89,6 +91,11 @@ class TimesheetReportSystemTest {
         workItem = workItemFor(MARKER + " one");
         otherWorkItem = workItemFor(MARKER + " two");
 
+        // The work items outlive the run, so a run which was interrupted before removeTheRecords
+        // left its records on them. Adding to those gives the next run a doubled report.
+        clearFixtureRecords(workItem);
+        clearFixtureRecords(otherWorkItem);
+
         // Two users, two work items, one day outside the period and one record of a third shape.
         addRecord(workItem, firstUser, START, "2h");
         // Polarion parses a duration as "3d 1/2h": halves are written as a fraction, not as minutes.
@@ -97,11 +104,29 @@ class TimesheetReportSystemTest {
         addRecord(workItem, firstUser, OUTSIDE, "8h");
     }
 
+    /**
+     * Removes the records of the fixture from a work item, and only those: a booking of somebody
+     * else on the same item is none of this test's business.
+     */
+    private void clearFixtureRecords(String workItemId) {
+        JsonNode records = polarion.json(v1("/projects/%s/workitems/%s/workrecords?fields[workrecords]=date&page[size]=100"
+                .formatted(PROJECT, workItemId)));
+        for (JsonNode record : records.path("data")) {
+            if (record.path("attributes").path("date").asText().startsWith(FIXTURE_YEAR)) {
+                deleteRecord(record.path("id").asText());
+            }
+        }
+    }
+
+    private void deleteRecord(String recordId) {
+        String[] parts = recordId.split("/");
+        polarion.delete(v1("/projects/%s/workitems/%s/workrecords/%s".formatted(parts[0], parts[1], parts[2])));
+    }
+
     @AfterAll
     void removeTheRecords() {
         for (String record : createdRecords) {
-            String[] parts = record.split("/");
-            polarion.delete(v1("/projects/%s/workitems/%s/workrecords/%s".formatted(parts[0], parts[1], parts[2])));
+            deleteRecord(record);
         }
     }
 

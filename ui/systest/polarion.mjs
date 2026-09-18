@@ -53,10 +53,22 @@ async function workItemFor(api, title) {
   return (await created.json()).data[0].id.split('/')[1];
 }
 
+// Everything the fixtures book sits in 2030, this suite and the Java one alike, which is what tells
+// their records from anybody else's on the same work item.
+const FIXTURE_YEAR = '2030-';
+
+/**
+ * Removes the records of the fixture, and only those. Deleting whatever else hangs on the work item
+ * would take a booking that belongs to someone else; keeping just the ids of this run instead would
+ * leave behind what an interrupted run wrote, which is what the exact assertions then trip over.
+ */
 async function clearRecords(api, workItem) {
-  const response = await api.get(`projects/${PROJECT}/workitems/${workItem}/workrecords?page[size]=100`);
+  const response = await api.get(
+    `projects/${PROJECT}/workitems/${workItem}/workrecords?fields[workrecords]=date&page[size]=100`,
+  );
   if (!response.ok()) return;
   for (const record of (await response.json()).data || []) {
+    if (!String(record.attributes?.date ?? '').startsWith(FIXTURE_YEAR)) continue;
     await api.delete(`projects/${PROJECT}/workitems/${workItem}/workrecords/${record.id.split('/')[2]}`);
   }
 }
