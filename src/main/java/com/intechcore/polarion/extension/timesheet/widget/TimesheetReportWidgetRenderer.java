@@ -11,7 +11,10 @@ import com.polarion.alm.shared.api.model.rp.widget.RichPageWidgetCommonContext;
 import com.polarion.alm.shared.api.utils.html.HtmlFragmentBuilder;
 import com.polarion.alm.shared.api.utils.html.HtmlTagBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -20,6 +23,15 @@ import java.util.UUID;
 public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
     private static final String APP_URL = "/polarion/timesheet-app/ui/app/index.html";
+
+    /**
+     * The height listener of the widget. It is a file rather than a string in this class because a
+     * Java test can assert the text of a script and never what it does; {@code
+     * ui/test/widgetHeight.test.ts} loads this same file and drives it in a browser.
+     */
+    private static final String HEIGHT_SYNC_RESOURCE = "/js/widget-height.js";
+
+    private static final String HEIGHT_SYNC_SCRIPT = readHeightSyncScript();
 
     private final Scope scope;
     private final List<String> userIds;
@@ -56,16 +68,36 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
                 .width("100%")
                 .style("border:0;width:100%;min-height:200px;");
 
-        //language=JS
-        builder.tag().script().append().javaScript("""
-                (function () {
-                    var frame = document.getElementById('%s');
-                    window.addEventListener('message', function (event) {
-                        if (frame && event.data && event.data.type === 'timesheet-app-height') {
-                            frame.style.height = (event.data.height + 2) + 'px';
-                        }
-                    });
-                })();""".formatted(iframeId));
+        // The script of the resource, followed by the call that binds it to the iframe above. The
+        // id is a UUID this method generated, so it needs no escaping.
+        builder.tag().script().append().javaScript(
+                HEIGHT_SYNC_SCRIPT + "%ntimesheetSyncIframeHeight('%s');".formatted(iframeId));
+    }
+
+    private static @NotNull String readHeightSyncScript() {
+        return readScript(TimesheetReportWidgetRenderer.class.getResourceAsStream(HEIGHT_SYNC_RESOURCE), HEIGHT_SYNC_RESOURCE);
+    }
+
+    /**
+     * Reads a script of the bundle. Both failures leave the widget without its listener, which is a
+     * broken build rather than a state to recover from, so each one ends the call.
+     *
+     * <p>Package-private and taking the stream: the resource is opened by the caller, so a test can
+     * hand this method the streams a jar cannot produce on demand.
+     *
+     * @param resource the open resource, or null when the bundle does not carry it
+     * @param name the resource path, for the message
+     * @return the text of the script
+     */
+    static @NotNull String readScript(@Nullable InputStream resource, @NotNull String name) {
+        if (resource == null) {
+            throw new IllegalStateException("Resource is missing from the bundle: " + name);
+        }
+        try (resource) {
+            return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read " + name, e);
+        }
     }
 
     private @NotNull String buildAppUrl() {

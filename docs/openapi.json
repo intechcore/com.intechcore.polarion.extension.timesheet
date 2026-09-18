@@ -171,6 +171,7 @@
           {
             "in": "query",
             "name": "user_ids",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -178,6 +179,7 @@
           {
             "in": "query",
             "name": "start_date",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -185,6 +187,7 @@
           {
             "in": "query",
             "name": "end_date",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -275,6 +278,7 @@
           {
             "in": "query",
             "name": "start_date",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -282,6 +286,7 @@
           {
             "in": "query",
             "name": "end_date",
+            "required": true,
             "schema": {
               "type": "string"
             }
