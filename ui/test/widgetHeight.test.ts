@@ -100,6 +100,40 @@ describe('the widget height listener', () => {
     expect(frame.style.height).toBe('');
   });
 
+  /**
+   * The case source identity alone does not cover: `contentWindow` is the same object after the
+   * frame navigates, so a document from elsewhere loaded into this very frame keeps passing that
+   * check. A sandbox without `allow-same-origin` gives the frame an opaque origin, which is what
+   * such a document would post from.
+   */
+  it('ignores a foreign document loaded into its own frame', async () => {
+    const frame = document.createElement('iframe');
+    frame.id = FRAME_ID;
+    frame.setAttribute('sandbox', 'allow-scripts');
+    document.body.appendChild(frame);
+    bindListener(FRAME_ID);
+
+    const delivered = new Promise<MessageEvent>((resolve) => {
+      window.addEventListener('message', (event) => resolve(event), { once: true });
+    });
+    frame.srcdoc = `<script>parent.postMessage({ type: 'timesheet-app-height', height: 4000 }, '*')` + `<` + `/script>`;
+    const event = await delivered;
+
+    // The premise of the test: same window object, different origin.
+    expect(event.source).toBe(frame.contentWindow);
+    expect(event.origin).not.toBe(window.location.origin);
+    expect(frame.style.height).toBe('');
+  });
+
+  it('ignores a negative height, which would collapse the report', async () => {
+    const frame = addFrame(FRAME_ID);
+    bindListener(FRAME_ID);
+
+    await postFromFrame(frame, '-1');
+
+    expect(frame.style.height).toBe('');
+  });
+
   it('does nothing when the frame it was bound to is not on the page', async () => {
     const frame = addFrame(FRAME_ID);
     bindListener('timesheet-report-absent');

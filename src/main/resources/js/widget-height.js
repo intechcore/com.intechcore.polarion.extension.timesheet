@@ -9,16 +9,21 @@ function timesheetSyncIframeHeight(frameId) {
     var frame = document.getElementById(frameId);
 
     window.addEventListener('message', function (event) {
-        // One sender only: the frame this widget created. Every window may post to this page, and a
-        // message is matched by source identity, which cannot be spoofed, rather than by its origin,
-        // which a proxied Polarion changes.
-        if (!frame || !event.source || event.source !== frame.contentWindow) {
+        // The frame this widget created, and the document it was given. Source identity alone is
+        // not enough: contentWindow stays the same object across a navigation, so a document from
+        // somewhere else loaded into this very frame would keep passing that check. The widget
+        // embeds the app by a relative URL, so its document is always same origin with this page,
+        // whatever host Polarion answers on.
+        if (!frame || !event.source || event.source !== frame.contentWindow
+                || event.origin !== window.location.origin) {
             return;
         }
 
+        // A height is a number of pixels the app measured, so it is finite and not negative.
+        // A -1 would otherwise collapse the report to a single pixel.
         var data = event.data;
         if (!data || data.type !== 'timesheet-app-height'
-                || typeof data.height !== 'number' || !isFinite(data.height)) {
+                || typeof data.height !== 'number' || !isFinite(data.height) || data.height < 0) {
             return;
         }
 
