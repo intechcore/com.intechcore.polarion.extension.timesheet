@@ -1,5 +1,7 @@
 /**
- * Forwards localhost:80 inside the container to the Polarion running on the host.
+ * Forwards localhost inside the container to the Polarion running on the host, on the port
+ * BRIDGE_PORT names. The wrapper takes that port from POLARION_URL, so it is 80 by default, 443
+ * under https, and whatever the URL names when it names one.
  *
  * Polarion answers only requests whose Host header matches its base.url, which is
  * http://localhost; anything else is a 400. A browser writes the Host header from the URL it opens,
