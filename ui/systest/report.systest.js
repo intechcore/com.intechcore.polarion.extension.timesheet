@@ -26,7 +26,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.afterAll(async () => {
-  if (users) await removeSeededRecords();
+  if (users) await removeSeededRecords(users);
 });
 
 test('shows the seeded week of both users', async ({ page }) => {

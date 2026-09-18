@@ -62,13 +62,17 @@ const FIXTURE_YEAR = '2030-';
  * would take a booking that belongs to someone else; keeping just the ids of this run instead would
  * leave behind what an interrupted run wrote, which is what the exact assertions then trip over.
  */
-async function clearRecords(api, workItem) {
+async function clearRecords(api, workItem, users) {
   const response = await api.get(
-    `projects/${PROJECT}/workitems/${workItem}/workrecords?fields[workrecords]=date&page[size]=100`,
+    `projects/${PROJECT}/workitems/${workItem}/workrecords?fields[workrecords]=date,user&page[size]=100`,
   );
   if (!response.ok()) return;
   for (const record of (await response.json()).data || []) {
-    if (!String(record.attributes?.date ?? '').startsWith(FIXTURE_YEAR)) continue;
+    const date = String(record.attributes?.date ?? '');
+    const user = record.relationships?.user?.data?.id;
+    // The fixture year and one of the two users it books for. A booking of anybody else, on the same
+    // work item and in the same year, is none of this suite's business.
+    if (!date.startsWith(FIXTURE_YEAR) || !users.includes(user)) continue;
     await api.delete(`projects/${PROJECT}/workitems/${workItem}/workrecords/${record.id.split('/')[2]}`);
   }
 }
@@ -81,8 +85,8 @@ export async function seed(users) {
   const api = await v1();
   const first = await workItemFor(api, `${MARKER} one`);
   const second = await workItemFor(api, `${MARKER} two`);
-  await clearRecords(api, first);
-  await clearRecords(api, second);
+  await clearRecords(api, first, users);
+  await clearRecords(api, second, users);
 
   // Polarion writes a duration as "3d 1/2h": halves are a fraction, not minutes. The two users get
   // different totals, 15.5 and 12 hours, so a report that mixes them up cannot pass.
@@ -112,10 +116,10 @@ export async function seed(users) {
   return { first, second };
 }
 
-export async function removeSeededRecords() {
+export async function removeSeededRecords(users) {
   const api = await v1();
   for (const title of [`${MARKER} one`, `${MARKER} two`]) {
-    await clearRecords(api, await workItemFor(api, title));
+    await clearRecords(api, await workItemFor(api, title), users);
   }
   await api.dispose();
 }

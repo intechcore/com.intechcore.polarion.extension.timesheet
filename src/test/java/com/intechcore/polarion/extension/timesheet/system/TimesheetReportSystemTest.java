@@ -109,10 +109,14 @@ class TimesheetReportSystemTest {
      * else on the same item is none of this test's business.
      */
     private void clearFixtureRecords(String workItemId) {
-        JsonNode records = polarion.json(v1("/projects/%s/workitems/%s/workrecords?fields[workrecords]=date&page[size]=100"
+        JsonNode records = polarion.json(v1("/projects/%s/workitems/%s/workrecords?fields[workrecords]=date,user&page[size]=100"
                 .formatted(PROJECT, workItemId)));
         for (JsonNode record : records.path("data")) {
-            if (record.path("attributes").path("date").asText().startsWith(FIXTURE_YEAR)) {
+            String date = record.path("attributes").path("date").asText();
+            String user = record.path("relationships").path("user").path("data").path("id").asText();
+            // The fixture year and one of the two users it books for. A booking of anybody else, on
+            // the same work item and in the same year, is none of this test's business.
+            if (date.startsWith(FIXTURE_YEAR) && (user.equals(firstUser) || user.equals(secondUser))) {
                 deleteRecord(record.path("id").asText());
             }
         }
