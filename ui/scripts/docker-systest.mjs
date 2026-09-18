@@ -10,6 +10,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const uiDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+// Defaults live in this process, not in the docker arguments, so they can be passed by name below.
+process.env.POLARION_USER ??= 'admin';
+process.env.POLARION_PASSWORD ??= 'admin';
+process.env.POLARION_SYSTEST_PROJECT ??= 'elibrary';
 const extraArgs = process.argv.slice(2);
 
 let playwrightVersion;
@@ -42,15 +47,17 @@ const args = [
   `POLARION_URL=${polarionUrl}`,
   '-e',
   `BRIDGE_PORT=${bridgePort}`,
+  // The names alone: docker takes the values from this process, so neither the password nor the
+  // token reaches argv, where the process list of the machine would show them. The token is what
+  // Polarion's REST API takes to prepare the work records.
   '-e',
-  `POLARION_USER=${process.env.POLARION_USER || 'admin'}`,
+  'POLARION_USER',
   '-e',
-  `POLARION_PASSWORD=${process.env.POLARION_PASSWORD || 'admin'}`,
-  // Preparing the work records goes through Polarion's REST API, which takes a token and nothing else.
+  'POLARION_PASSWORD',
   '-e',
-  `POLARION_TOKEN=${process.env.POLARION_TOKEN || ''}`,
+  'POLARION_TOKEN',
   '-e',
-  `POLARION_SYSTEST_PROJECT=${process.env.POLARION_SYSTEST_PROJECT || 'elibrary'}`,
+  'POLARION_SYSTEST_PROJECT',
   '-v',
   `${uiDir}:/work`,
   '-v',
@@ -60,11 +67,17 @@ const args = [
   image,
   'bash',
   '-c',
-  // The bridge runs in the background for as long as the suite does.
-  `npm ci && (node systest/host-bridge.mjs &) && sleep 2 && npx playwright test -c playwright.systest.config.js ${extraArgs.join(' ')}`,
+  // The bridge runs in the background for as long as the suite does. The extra arguments are passed
+  // as positional parameters: joined into the command they would lose their boundaries, so
+  // --grep "two words" would arrive as two arguments.
+  'npm ci && (node systest/host-bridge.mjs &) && sleep 2 && npx playwright test -c playwright.systest.config.js "$@"',
+  'bash',
+  ...extraArgs,
 ];
 
-console.log('> docker run ... (omitting env argument values)');
+// Nothing secret is in the command any more: the values travel through the environment, so the
+// call can be printed as it is.
+console.log(`> docker ${args.join(' ')}`);
 const result = spawnSync('docker', args, { stdio: 'inherit' });
 if (result.error) {
   console.error(`Failed to launch docker: ${result.error.message}. Is Docker installed and running?`);
