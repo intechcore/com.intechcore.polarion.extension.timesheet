@@ -123,8 +123,40 @@ class TimesheetInternalControllerTest {
     @Test
     void getTimesheetForUsers_toleratesAMessyUserList() {
         assertThat(controller.getTimesheetForUsers(" aSeller , ,mTest, ", "2026-08-01", "2026-08-31", "/")).isNotNull();
-        assertThat(controller.getTimesheetForUsers(null, "2026-08-01", "2026-08-31", "/")).isNotNull();
-        assertThat(controller.getTimesheetForUsers("   ", "2026-08-01", "2026-08-31", "/")).isNotNull();
+    }
+
+    // --- What the request is checked for (RequestValidatorTest covers the rules themselves) ---
+
+    /** Every user of the repository over an open period is one request against the whole server. */
+    @Test
+    void getTimesheetForUsers_needsAUserToReportOn() {
+        assertThatThrownBy(() -> controller.getTimesheetForUsers(null, "2026-08-01", "2026-08-31", "/"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("At least one user id is required");
+        assertThatThrownBy(() -> controller.getTimesheetForUsers("   ", "2026-08-01", "2026-08-31", "/"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("At least one user id is required");
+    }
+
+    @Test
+    void getTimesheetForUsers_boundsThePeriod() {
+        assertThatThrownBy(() -> controller.getTimesheetForUsers("aSeller", "2026-01-01", "2027-06-01", "/"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Period must not exceed 366 days");
+    }
+
+    /** The parameters reach a Lucene query, so query syntax in them is refused, not escaped. */
+    @Test
+    void bothEndpoints_refuseQuerySyntax() {
+        assertThatThrownBy(() -> controller.getTimesheetForUsers("aSeller OR mTest", "2026-08-01", "2026-08-31", "/"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User id holds characters which are not allowed");
+        assertThatThrownBy(() -> controller.getTimesheet("aSeller", "2026-08-01] OR project.id:[* TO *", "2026-08-31", "/"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Start date must be an ISO date (yyyy-MM-dd)");
+        assertThatThrownBy(() -> controller.getTimesheet("aSeller", "2026-08-01", "2026-08-31", "elibrary OR project.id:secret"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Scope path holds characters which are not allowed");
     }
 
     // --- The current user ---
