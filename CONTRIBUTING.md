@@ -40,6 +40,18 @@ npx tsc --noEmit        # vite build does not type-check
 The visual tests compare against reference images that are pixel-locked to a pinned Playwright
 Docker image. Regenerate them with `npm run test:update:docker`, never by hand.
 
+### System tests
+
+They talk to a running Polarion and are never part of CI, so they are not needed to send a pull
+request. They prepare their own work records in March 2030 and delete them afterwards.
+
+```bash
+POLARION_TOKEN=<personal access token> mvn -Psystem-tests test   # what the REST API answers
+cd ui && POLARION_TOKEN=... npm run systest                      # the report the server renders
+```
+
+`CLAUDE.md` describes what they need and what they change.
+
 ## Pull request process
 
 1. Fork the repository.

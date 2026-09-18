@@ -147,9 +147,16 @@
                 </configuration>
             </plugin>
 
+            <!-- The system tests talk to a running Polarion, so CI never runs them. See
+                 the system-tests profile below and the section in CLAUDE.md. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*SystemTest.java</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -219,4 +226,32 @@
         </plugins>
     </build>
 
+    <profiles>
+        <!-- The system tests, against a running Polarion:
+                 POLARION_TOKEN=... mvn -Psystem-tests test
+             They prepare their own data, assert what the REST API answers for it, and remove the
+             records afterwards. Without POLARION_TOKEN, or without a Polarion answering, every one
+             of them is skipped rather than failed. -->
+        <profile>
+            <id>system-tests</id>
+            <properties>
+                <skipJsTests>true</skipJsTests>
+                <skipE2eTests>true</skipE2eTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                            <includes>
+                                <include>**/*SystemTest.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

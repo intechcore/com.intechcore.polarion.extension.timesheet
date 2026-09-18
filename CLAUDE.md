@@ -36,6 +36,37 @@ npm run dev                          # http://localhost:5173/?feature=report  (o
 npx tsc --noEmit                     # type-check (vite build does NOT type-check)
 ```
 
+## System tests
+
+They run against a **running Polarion** and are **never part of CI**. Two suites, both manual:
+
+```bash
+# The REST side: the report answers for data the test prepares itself.
+POLARION_TOKEN=<personal access token> mvn -Psystem-tests test
+
+# The report the server renders, in the browser.
+cd ui && POLARION_TOKEN=... npm run systest         # the rendered report, on this machine
+POLARION_TOKEN=... npm run systest:docker           # the same, plus the screenshot, in the pinned image
+POLARION_TOKEN=... npm run systest:update:docker    # rewrites ui/systest/expected/
+```
+
+- `src/test/java/.../system/*SystemTest.java` is excluded by surefire by default; the `system-tests`
+  profile includes only those. Without a Polarion answering, every one of them **skips**.
+- **The data is prepared by the tests**, in `elibrary` (override with `POLARION_SYSTEST_PROJECT`) and
+  in **March 2030**, far from any real record. Work records are created per run and deleted
+  afterwards. Work items are not: Polarion's REST API refuses to delete one (405), so they carry a
+  marker in their title and are found again.
+- **Each suite owns its fixtures**: the Java one books on `systest timesheet java`, the Playwright
+  one on `systest timesheet ui`. Running both at the same time is therefore safe. Running the *same*
+  suite twice at once is not: the second run reseeds the fixture the first one is reading.
+- **Polarion writes a duration as `3d 1/2h`**: a half hour is a fraction, not `30m`. `3h 30m`,
+  `3.5h` and `210m` are all rejected with 400.
+- **REST v1 takes a token and nothing else**: a session is answered with 401. The files of the webapp
+  are the other way round, a session and not a token, or Polarion answers with the login page.
+- **Polarion answers only requests whose Host header matches `base.url`** (`http://localhost`), and a
+  browser writes that header from the URL it opens. Inside the container the suite therefore reaches
+  Polarion through `systest/host-bridge.mjs`, a TCP forward from `localhost:80`.
+
 ## CI
 
 GitHub Actions runs five workflows:
