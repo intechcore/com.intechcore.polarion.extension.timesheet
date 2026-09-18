@@ -19,7 +19,8 @@ import static org.mockito.Mockito.withSettings;
 
 /**
  * The /api controller is the token-authenticated twin of the internal one. It adds nothing but the
- * privileged call, which is what lets a token request read data the calling user may not see.
+ * privileged call, which runs the work as the subject of the token: a request carrying no Polarion
+ * session has none otherwise. It grants no permission the owner of the token does not hold.
  */
 class TimesheetApiControllerTest {
 

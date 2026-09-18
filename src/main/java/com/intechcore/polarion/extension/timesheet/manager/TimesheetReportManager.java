@@ -179,7 +179,9 @@ public class TimesheetReportManager {
                 }
             }
         }
-        throw new IllegalArgumentException("Can not create query for provided scope: " + scope);
+        // The scope of the request is not quoted back: the caller gets what it sent, and the
+        // message is the one the REST response carries.
+        throw new IllegalArgumentException("Can not create query for the provided scope");
     }
 
 }
