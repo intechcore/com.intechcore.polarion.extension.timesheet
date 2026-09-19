@@ -85,9 +85,10 @@ GitHub Actions runs five workflows:
   `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
   `com.intechcore.polarion.extensions`, and the jars are attached to a GitHub release. A second job
   returns `main` to the next `-SNAPSHOT`. The Central credentials are the organization secrets
-  `SONATYPE_USERNAME`, `SONATYPE_TOKEN`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`. The `central`
-  server lives in `.mvn/settings.xml`, because the release build passes that file with `-s` and
-  never reads the one `setup-java` writes.
+  `SONATYPE_USERNAME`, `SONATYPE_TOKEN`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`. The
+  `sonatype-central` server lives in `.mvn/settings.xml`, because the release build passes that
+  file with `-s` and never reads the one `setup-java` writes. That id is the one the parent sets
+  in `publishingServerId`; any other name makes the publish step fail.
 
 The Polarion artifacts come from the Intechcore Nexus through the repository secrets `NEXUS_URL`,
 `NEXUS_USERNAME` and `NEXUS_PASSWORD`. `.mvn/settings.xml` declares Central first, so Nexus only
