@@ -42,10 +42,12 @@
         </server>
 
         <!-- Maven Central, used by release.yml only. The release build passes this file with -s,
-             so the settings that setup-java writes into ~/.m2 are never read. The GPG passphrase
+             so the settings that setup-java writes into ~/.m2 are never read. The id must be
+             `sonatype-central`: the generic parent pins that name in `publishingServerId`, and
+             central-publishing-maven-plugin fails when no server carries it. The GPG passphrase
              needs no entry here: maven-gpg-plugin reads MAVEN_GPG_PASSPHRASE from the environment. -->
         <server>
-            <id>central</id>
+            <id>sonatype-central</id>
             <username>${env.MAVEN_USERNAME}</username>
             <password>${env.MAVEN_PASSWORD}</password>
         </server>
