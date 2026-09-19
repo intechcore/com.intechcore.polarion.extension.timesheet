@@ -124,9 +124,15 @@ class TimesheetReportSystemTest {
         }
     }
 
+    /**
+     * Removes one work record. The answer is checked: a delete the run believed and the server
+     * refused would leave the fixture on the instance and double the report of the next run.
+     */
     private void deleteRecord(String recordId) {
         String[] parts = recordId.split("/");
-        polarion.delete(v1("/projects/%s/workitems/%s/workrecords/%s".formatted(parts[0], parts[1], parts[2])));
+        HttpResponse<String> response = polarion.delete(
+                v1("/projects/%s/workitems/%s/workrecords/%s".formatted(parts[0], parts[1], parts[2])));
+        assertThat(response.statusCode()).as("deleting the work record %s: %s", recordId, response.body()).isIn(200, 204);
     }
 
     @AfterAll

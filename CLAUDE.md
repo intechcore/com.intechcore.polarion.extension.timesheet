@@ -51,7 +51,11 @@ POLARION_TOKEN=... npm run systest:update:docker    # rewrites ui/systest/expect
 ```
 
 - `src/test/java/.../system/*SystemTest.java` is excluded by surefire by default; the `system-tests`
-  profile includes only those. Without a Polarion answering, every one of them **skips**.
+  profile includes only those. Without a Polarion answering, every one of them **skips**. Anything
+  else fails the run rather than skipping it: a missing `POLARION_TOKEN`, a server that answers with
+  500, and an https certificate the JVM does not trust. A skip there would report a green run that
+  prepared nothing and called nothing. Both suites also check their own cleanup: a delete the run
+  believed and the server refused leaves the fixture behind and doubles the next report.
 - **The data is prepared by the tests**, in `elibrary` (override with `POLARION_SYSTEST_PROJECT`) and
   in **March 2030**, far from any real record. Work records are created per run and deleted
   afterwards. Work items are not: Polarion's REST API refuses to delete one (405), so they carry a
@@ -65,7 +69,8 @@ POLARION_TOKEN=... npm run systest:update:docker    # rewrites ui/systest/expect
   are the other way round, a session and not a token, or Polarion answers with the login page.
 - **Polarion answers only requests whose Host header matches `base.url`** (`http://localhost`), and a
   browser writes that header from the URL it opens. Inside the container the suite therefore reaches
-  Polarion through `systest/host-bridge.mjs`, a TCP forward from `localhost:80`.
+  Polarion through `systest/host-bridge.mjs`, a TCP forward from `localhost` on the port
+  `POLARION_URL` names: 80 by default, 443 under https.
 
 ## CI
 
