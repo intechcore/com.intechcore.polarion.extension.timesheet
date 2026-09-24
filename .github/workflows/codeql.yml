@@ -24,7 +24,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [java-kotlin, javascript-typescript]
+        include:
+          - language: java-kotlin
+          - language: javascript-typescript
+          # The workflows themselves. Nothing to build.
+          - language: actions
+            build-mode: none
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -40,6 +45,7 @@ jobs:
         uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd  # v4.38.1
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
           # The TypeScript sources of the user interface, not the bundle the build writes.
           config: |
             paths-ignore:

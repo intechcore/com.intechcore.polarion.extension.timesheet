@@ -69,13 +69,17 @@ POLARION_TOKEN=... npm run systest:update:docker    # rewrites ui/systest/expect
 
 ## CI
 
-GitHub Actions runs five workflows:
+GitHub Actions runs seven workflows:
 
 - `ci.yml`: the `build` job runs `mvn -s .mvn/settings.xml clean verify` with the Java, UI and e2e
   tests and the Polarion compatibility check. It fails when the build changes `docs/openapi.json`.
   The `pre-commit` job runs all hooks, except `no-commit-to-branch`, the git identity check and the
   Docker UI tests.
-- `actionlint.yml`: lints the workflows when they change.
+- `actionlint.yml`: lints the workflows with actionlint and audits them with zizmor when they
+  change.
+- `codeql.yml`: CodeQL for Java, TypeScript and the workflows themselves (`actions`).
+- `scorecard.yml`: OpenSSF Scorecard, weekly and on every push to `main`. Findings go to the
+  Security tab.
 - `pr.yml`: checks the pull request title and its commits with commitizen.
 - `bump-version.yml`: dispatched by hand with `patch`, `minor` or `major`. It sets the release
   version in the pom, commits it, tags it `v<version>` and pushes. It checks out with `PAT_TOKEN`
@@ -83,7 +87,8 @@ GitHub Actions runs five workflows:
   `release.yml` would never see it.
 - `release.yml`: runs on a `v*` tag. It runs `deploy` with the parent's `gpg-sign` and
   `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
-  `com.intechcore.polarion.extensions`, and the jars are attached to a GitHub release. A second job
+  `com.intechcore.polarion.extensions`, and `gh release create` attaches the jars to a GitHub
+  release. A second job
   returns `main` to the next `-SNAPSHOT`. The Central credentials are the organization secrets
   `SONATYPE_USERNAME`, `SONATYPE_TOKEN`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`. The
   `sonatype-central` server lives in `.mvn/settings.xml`, because the release build passes that
