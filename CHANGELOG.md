@@ -12,7 +12,7 @@ All notable changes to this project are documented here. The format follows
 - zizmor audits the workflows next to actionlint.
 - The release creates the GitHub release with the `gh` CLI instead of a third-party action.
 - Renovate pins every GitHub Action by its commit digest.
-- Each GitHub release carries the pom and a signed build provenance bundle (`*.intoto.jsonl`).
+- GitHub releases from now on carry the pom and a signed build provenance bundle (`*.intoto.jsonl`).
 
 Earlier releases are listed on the
 [GitHub releases page](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases).
