@@ -10,7 +10,7 @@
 
     <groupId>com.intechcore.polarion.extensions</groupId>
     <artifactId>com.intechcore.polarion.extension.timesheet</artifactId>
-    <version>0.1.4-SNAPSHOT</version>
+    <version>0.1.4</version>
     <packaging>jar</packaging>
 
     <name>Timesheet Reports for Polarion ALM</name>
