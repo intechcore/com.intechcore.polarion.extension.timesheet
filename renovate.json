@@ -1,13 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    "github>intechcore/renovate-config"
   ],
-  "dependencyDashboard": true,
-  "automerge": true,
-  "automergeType": "pr",
   "platformAutomerge": true,
+  "pinDigests": false,
   "minimumReleaseAge": "3 days",
   "internalChecksFilter": "strict",
   "pre-commit": {
@@ -15,16 +12,12 @@
   },
   "packageRules": [
     {
-      "description": "Major updates go straight to a pull request instead of waiting on the dependency dashboard.",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "dependencyDashboardApproval": false
-    },
-    {
-      "description": "Digest pinning belongs to GitHub Actions, where every workflow here already pins by digest with the version in a trailing comment. Applied globally it also reaches the pre-commit manager, which pins hook revisions to commit SHAs; that update fails and shows up as 'Error updating branch: update failure'.",
+      "description": "Digest pinning belongs to GitHub Actions, where every workflow here already pins by digest with the version in a trailing comment. Applied globally it also reaches the pre-commit manager, which pins hook revisions to commit SHAs; that update fails and shows up as 'Error updating branch: update failure'. The zizmor version of zizmor-action is left out: the action accepts only a plain X.Y.Z, see the shared preset.",
       "matchManagers": [
         "github-actions"
+      ],
+      "matchDepNames": [
+        "!ghcr.io/zizmorcore/zizmor"
       ],
       "pinDigests": true
     },
