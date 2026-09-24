@@ -13,6 +13,7 @@ All notable changes to this project are documented here. The format follows
 - The release creates the GitHub release with the `gh` CLI instead of a third-party action.
 - Renovate pins every GitHub Action by its commit digest.
 - GitHub releases from now on carry the pom and a signed build provenance bundle (`*.intoto.jsonl`).
+- Renovate takes its common rules from the shared preset `github>intechcore/renovate-config`, which also turns on OSV vulnerability alerts.
 
 Earlier releases are listed on the
 [GitHub releases page](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases).
