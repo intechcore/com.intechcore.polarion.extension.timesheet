@@ -43,7 +43,13 @@ jobs:
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" target/*.jar --repo "$GITHUB_REPOSITORY" --generate-notes
+        # A rerun of the job replaces the jars of the existing release.
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" target/*.jar --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" target/*.jar --repo "$GITHUB_REPOSITORY" --generate-notes
+          fi
   bump-to-snapshot:
     runs-on: ubuntu-latest
     needs: publish
