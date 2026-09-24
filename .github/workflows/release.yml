@@ -13,6 +13,8 @@ jobs:
     environment: release
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -39,16 +41,30 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: mvn --batch-mode -s .mvn/settings.xml -P gpg-sign,central-publishing clean deploy
+      # Signs the provenance of the files deployed above, not of a rebuild. The gpg plugin
+      # copies pom.xml to target/ before it signs it, so target/*.pom is the deployed pom.
+      - name: Attest the build provenance
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
+        with:
+          subject-path: |
+            target/*.jar
+            target/*.pom
       # The gh CLI of the runner, not a third-party action.
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        # A rerun of the job replaces the jars of the existing release.
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        # A rerun of the job replaces the files of the existing release. The signed provenance
+        # bundle travels with them, for the OpenSSF Scorecard Signed-Releases check.
         run: |
+          cp "$BUNDLE" "target/com.intechcore.polarion.extension.timesheet-${GITHUB_REF_NAME#v}.intoto.jsonl"
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" target/*.jar --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$GITHUB_REF_NAME" target/*.jar target/*.pom target/*.intoto.jsonl \
+              --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" target/*.jar --repo "$GITHUB_REPOSITORY" --generate-notes
+            gh release create "$GITHUB_REF_NAME" target/*.jar target/*.pom target/*.intoto.jsonl \
+              --repo "$GITHUB_REPOSITORY" --generate-notes
           fi
   bump-to-snapshot:
     runs-on: ubuntu-latest
