@@ -81,6 +81,11 @@ jobs:
         run: |
           mvn --batch-mode -s .mvn/settings.xml versions:set \
             -DnewVersion="$NEW_VERSION" -DgenerateBackupPoms=false
+      # The release workflow takes its notes from the section cut here.
+      - name: Move the Unreleased entries of CHANGELOG.md into the release
+        env:
+          NEW_VERSION: ${{ steps.new.outputs.version }}
+        run: .github/scripts/changelog-cut.sh "$NEW_VERSION"
       # PAT_TOKEN, not GITHUB_TOKEN: a tag pushed with the default token starts no further
       # workflow, so release.yml would never see this tag.
       - name: Commit and tag
@@ -90,7 +95,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pom.xml
+          git add pom.xml CHANGELOG.md
           git commit -m "chore: bump version to $NEW_VERSION"
           git tag "v$NEW_VERSION"
           # The token reaches git through GIT_ASKPASS, so the remote URL carries no credential:
