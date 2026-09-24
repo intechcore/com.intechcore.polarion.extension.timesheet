@@ -87,7 +87,8 @@ GitHub Actions runs seven workflows:
   `release.yml` would never see it.
 - `release.yml`: runs on a `v*` tag. It runs `deploy` with the parent's `gpg-sign` and
   `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
-  `com.intechcore.polarion.extensions`, and `gh release create` attaches the jars to a GitHub
+  `com.intechcore.polarion.extensions`. `actions/attest-build-provenance` attests the deployed
+  jars and pom, and `gh release create` attaches them with the `.intoto.jsonl` bundle to a GitHub
   release. A second job
   returns `main` to the next `-SNAPSHOT`. The Central credentials are the organization secrets
   `SONATYPE_USERNAME`, `SONATYPE_TOKEN`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`. The

@@ -48,6 +48,11 @@ The `POLARION_HOME` environment variable must point to the Polarion installation
 
 Changes take effect only after a restart of Polarion.
 
+### Verify
+
+Each GitHub release carries a signed provenance bundle. Verify a downloaded jar with
+`gh attestation verify <file> --repo intechcore/com.intechcore.polarion.extension.timesheet`.
+
 ## Polarion configuration
 
 The report is provided as a **Timesheet Report** Live Report widget:
