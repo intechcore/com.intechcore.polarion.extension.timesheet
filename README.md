@@ -3,6 +3,11 @@
 [![CI](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/intechcore/com.intechcore.polarion.extension.timesheet/badge)](https://scorecard.dev/viewer/?uri=github.com/intechcore/com.intechcore.polarion.extension.timesheet)
+[![GitHub Release](https://img.shields.io/github/v/release/intechcore/com.intechcore.polarion.extension.timesheet)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases)
+[![Maven Central](https://img.shields.io/maven-central/v/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)](https://central.sonatype.com/artifact/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)
+[![Java 21](https://img.shields.io/badge/java-21-blue.svg)](https://openjdk.org/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=coverage)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
@@ -14,10 +19,6 @@
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
-[![GitHub Release](https://img.shields.io/github/v/release/intechcore/com.intechcore.polarion.extension.timesheet)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases)
-[![Maven Central](https://img.shields.io/maven-central/v/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)](https://central.sonatype.com/artifact/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)
-[![Java 21](https://img.shields.io/badge/java-21-blue.svg)](https://openjdk.org/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 This Polarion extension provides the ability to generate timesheet reports.
 
