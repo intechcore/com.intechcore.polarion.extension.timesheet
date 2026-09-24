@@ -82,14 +82,16 @@ GitHub Actions runs seven workflows:
   Security tab.
 - `pr.yml`: checks the pull request title and its commits with commitizen.
 - `bump-version.yml`: dispatched by hand with `patch`, `minor` or `major`. It sets the release
-  version in the pom, commits it, tags it `v<version>` and pushes. It checks out with `PAT_TOKEN`
+  version in the pom, moves the Unreleased entries of `CHANGELOG.md` into a section for that
+  version, commits it, tags it `v<version>` and pushes. It checks out with `PAT_TOKEN`
   on purpose: a tag pushed with the default `GITHUB_TOKEN` starts no further workflow, so
   `release.yml` would never see it.
 - `release.yml`: runs on a `v*` tag. It runs `deploy` with the parent's `gpg-sign` and
   `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
   `com.intechcore.polarion.extensions`. `actions/attest-build-provenance` attests the deployed
   jars and pom, and `gh release create` attaches them with the `.intoto.jsonl` bundle to a GitHub
-  release. A second job
+  release. The release notes are the `CHANGELOG.md` section of the version. The job needs no
+  approval: no environment gates it. A second job
   returns `main` to the next `-SNAPSHOT`. The Central credentials are the organization secrets
   `SONATYPE_USERNAME`, `SONATYPE_TOKEN`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`. The
   `sonatype-central` server lives in `.mvn/settings.xml`, because the release build passes that
