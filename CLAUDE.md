@@ -69,18 +69,20 @@ POLARION_TOKEN=... npm run systest:update:docker    # rewrites ui/systest/expect
 
 ## CI
 
-GitHub Actions runs seven workflows:
+GitHub Actions runs four workflows. CodeQL runs as the GitHub default setup (actions,
+java-kotlin, javascript-typescript), not as a workflow.
 
-- `ci.yml`: the `build` job runs `mvn -s .mvn/settings.xml clean verify` with the Java, UI and e2e
-  tests and the Polarion compatibility check. It fails when the build changes `docs/openapi.json`.
-  The `pre-commit` job runs all hooks, except `no-commit-to-branch`, the git identity check and the
-  Docker UI tests.
-- `actionlint.yml`: lints the workflows with actionlint and audits them with zizmor when they
-  change.
-- `codeql.yml`: CodeQL for Java, TypeScript and the workflows themselves (`actions`).
+- `ci.yml`: the `lint` job runs actionlint and zizmor on every pull request. The `build` job runs
+  `mvn -s .mvn/settings.xml clean verify` with the Java, UI and e2e tests and the Polarion
+  compatibility check. It fails when the build changes `docs/openapi.json`. The `pre-commit` job
+  runs all hooks, except `no-commit-to-branch`, the git identity check and the Docker UI tests.
+  The `conventional-commits` job checks the pull request title and its commits with commitizen.
+  pre-commit and commitizen come from hashed requirements in `.github/requirements/`; recompile
+  a `.txt` with the `uv pip compile` command in its header after changing the `.in`.
+  The build stays on Linux: the UI tests run in a Linux Docker image, which Windows runners
+  cannot start, and the e2e browser install needs apt.
 - `scorecard.yml`: OpenSSF Scorecard, weekly and on every push to `main`. Findings go to the
   Security tab.
-- `pr.yml`: checks the pull request title and its commits with commitizen.
 - `bump-version.yml`: dispatched by hand with `patch`, `minor` or `major`. It sets the release
   version in the pom, moves the Unreleased entries of `CHANGELOG.md` into a section for that
   version, commits it, tags it `v<version>` and pushes. It checks out with `PAT_TOKEN`
@@ -90,7 +92,8 @@ GitHub Actions runs seven workflows:
   `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
   `com.intechcore.polarion.extensions`. `actions/attest-build-provenance` attests the deployed
   jars and pom, and `gh release create` attaches them with the `.intoto.jsonl` bundle to a GitHub
-  release. The release notes are the `CHANGELOG.md` section of the version. The job needs no
+  release in one call; releases are immutable, and the job stops before Maven Central when the
+  release exists already. The release notes are the `CHANGELOG.md` section of the version. The job needs no
   approval: no environment gates it. A second job
   returns `main` to the next `-SNAPSHOT`. The Central credentials are the organization secrets
   `SONATYPE_USERNAME`, `SONATYPE_TOKEN`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`. The

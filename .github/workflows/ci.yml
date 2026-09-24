@@ -12,6 +12,27 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  # Checks the workflows themselves on every pull request, without a path filter: a required
+  # check that does not run blocks the merge.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # Expressions, inputs and the shell in run. The image is pinned by digest and brings
+      # shellcheck and pyflakes.
+      - name: Lint the workflows with actionlint
+        uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+      # Security audit of the workflows, for example template injection or credentials left in
+      # the checkout. Informational findings do not fail.
+      - name: Audit the workflows with zizmor
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482  # v0.6.4
+        with:
+          advanced-security: false
+          min-severity: low
+          version: 1.30.1
   build:
     # A pull request from a fork gets no secrets, so Nexus refuses the Polarion artifacts.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -32,10 +53,16 @@ jobs:
         with:
           java-version: '21'
           distribution: temurin
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.14'
       # Generic formats the generated docs/openapi.json through pre-commit during the build.
-      # Without pre-commit the file keeps its raw layout, and the check below fails.
+      # Without pre-commit the file keeps its raw layout, and the check below fails. The
+      # requirements file pins every package by hash.
       - name: Install pre-commit
-        run: pipx install pre-commit==4.6.1
+        run: |
+          pip install --only-binary=:all: --require-hashes -r .github/requirements/pre-commit.txt
 
       # The Polarion artifacts stay out of the cache. Pull requests from forks can
       # restore caches of main, and those artifacts must not leave Nexus.
@@ -77,7 +104,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             mvn --batch-mode -s .mvn/settings.xml sonar:sonar \
               -Dsonar.pullrequest.key="$PR_NUMBER" \
               -Dsonar.pullrequest.branch="$HEAD_REF" \
@@ -104,11 +131,43 @@ jobs:
       # dependency gets to run a lifecycle script here (SonarCloud rule githubactions:S6505).
       - name: Install the UI dependencies
         run: npm ci --ignore-scripts --prefix ui
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.14'
       - name: Install pre-commit
-        run: pipx install pre-commit==4.6.1
+        run: |
+          pip install --only-binary=:all: --require-hashes -r .github/requirements/pre-commit.txt
       - name: Run the hooks
         env:
           # no-commit-to-branch fails on main. check-git-config-user-email needs a local identity.
           # The build job already runs the Docker UI tests.
           SKIP: no-commit-to-branch,check-git-config-user-email,ui-test-coverage-docker
         run: pre-commit run --all-files --show-diff-on-failure
+  # The pull request title becomes the squash commit, so it is checked together with the commits.
+  conventional-commits:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.14'
+      # The same commitizen version as the commit-msg hook in .pre-commit-config.yaml.
+      - name: Install commitizen
+        run: |
+          pip install --only-binary=:all: --require-hashes -r .github/requirements/commitizen.txt
+      - name: Check the pull request title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: cz check --message "${PR_TITLE}"
+      - name: Check the commit messages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: cz check --rev-range "${BASE_SHA}..${HEAD_SHA}"

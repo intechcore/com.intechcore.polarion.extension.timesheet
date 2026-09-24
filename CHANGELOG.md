@@ -13,6 +13,12 @@ Releases before 0.1.4 are listed on the
 - The version bump moves the Unreleased entries of this changelog into a section for
   the new version. The GitHub release takes its notes from that section.
 - The release no longer waits for an approval of the `release` environment.
+- CI runs actionlint and zizmor in a `lint` job on every pull request, and the commit
+  message check as a CI job. CodeQL runs as the GitHub default setup.
+- CI installs pre-commit and commitizen from requirements files pinned by hash.
+- A release fails early when its GitHub release exists already. Releases are immutable and
+  get all their files in one step.
+- Renovate refreshes `ui/package-lock.json` through lock file maintenance, reviewed by a person.
 
 ## [0.1.4] - 2026-09-24
 
