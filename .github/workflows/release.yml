@@ -39,11 +39,11 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: mvn --batch-mode -s .mvn/settings.xml -P gpg-sign,central-publishing clean deploy
+      # The gh CLI of the runner, not a third-party action.
       - name: Create the GitHub release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
-        with:
-          files: target/*.jar
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" target/*.jar --repo "$GITHUB_REPOSITORY" --generate-notes
   bump-to-snapshot:
     runs-on: ubuntu-latest
     needs: publish

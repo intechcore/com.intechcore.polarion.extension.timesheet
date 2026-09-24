@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/intechcore/com.intechcore.polarion.extension.timesheet/badge)](https://scorecard.dev/viewer/?uri=github.com/intechcore/com.intechcore.polarion.extension.timesheet)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=coverage)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
@@ -58,3 +59,10 @@ The widget presets the default scope (project or group) and users shown when the
 ## REST API
 
 This extension provides a REST API. Its OpenAPI specification can be obtained [here](docs/openapi.json).
+
+## Disclaimer
+
+This software is provided "as is", without warranty of any kind, as the [LICENSE](LICENSE) states.
+Use it at your own risk. Intechcore GmbH is not liable for damage from its use, as far as the law
+allows. It is published free of charge, outside of any commercial offering, with no obligation to
+support it. Security reports are welcome, see [SECURITY.md](SECURITY.md).
