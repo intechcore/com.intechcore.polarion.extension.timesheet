@@ -3,6 +3,7 @@
 [![CI](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/intechcore/com.intechcore.polarion.extension.timesheet/badge)](https://scorecard.dev/viewer/?uri=github.com/intechcore/com.intechcore.polarion.extension.timesheet)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14796/badge)](https://www.bestpractices.dev/projects/14796)
 [![GitHub Release](https://img.shields.io/github/v/release/intechcore/com.intechcore.polarion.extension.timesheet)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)](https://central.sonatype.com/artifact/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)
 [![Java 21](https://img.shields.io/badge/java-21-blue.svg)](https://openjdk.org/)
