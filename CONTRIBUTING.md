@@ -1,6 +1,8 @@
 # Contributing
 
-## Development setup
+Issues and pull requests are welcome.
+
+## Build and test
 
 ### Prerequisites
 
@@ -52,37 +54,9 @@ cd ui && POLARION_TOKEN=... npm run systest                      # the report th
 
 `CLAUDE.md` describes what they need and what they change.
 
-## Pull request process
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feat/amazing-feature`).
-3. Make your changes.
-4. Make sure the build passes (`mvn clean verify`).
-5. Commit your changes (`git commit -m 'feat: add amazing feature'`).
-6. Push to the branch (`git push origin feat/amazing-feature`).
-7. Open a pull request.
-
-`main` takes squash merges only, and every commit on it is signed.
-
-## Commit messages
-
-This project uses [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - new feature
-- `fix:` - bug fix
-- `docs:` - documentation changes
-- `test:` - adding or updating tests
-- `refactor:` - code refactoring
-- `chore:` - maintenance tasks
-
-A pre-commit hook checks the message, and so does the pull request workflow. Install the hooks:
-
-```bash
-pre-commit install
-```
-
-`.pre-commit-config.yaml` declares both hook types, so this one command installs the commit-msg
-hook as well.
+CI runs actionlint and zizmor, the Maven build with all tests and SonarCloud, the pre-commit
+hooks and the commit message check for every pull request. A pull request from a fork gets no
+secrets, so its `build` job cannot fetch the Polarion artifacts and is skipped.
 
 ## Code style
 
@@ -95,6 +69,26 @@ Additional guidelines:
 
 - Follow the existing code patterns.
 - Do not write tests that assert log output. Assert the effect instead.
+
+## Pull requests
+
+1. Branch from the default branch as `type/description`, for example `fix/empty-title`.
+2. Keep one change per pull request. New behavior comes with tests; a bug fix adds a test that
+   fails without it.
+3. Write commit messages as [Conventional Commits](https://www.conventionalcommits.org/) without a
+   scope: `feat: ...`, `fix: ...`, `docs: ...`, `refactor: ...`, `test: ...`, `build: ...`,
+   `ci: ...`, `chore: ...`. A pre-commit hook checks the message, and so does CI. Install the
+   hooks with `pre-commit install`; `.pre-commit-config.yaml` declares both hook types.
+4. Sign your commits. The default branch accepts verified signatures only.
+5. Add an entry under `## [Unreleased]` in `CHANGELOG.md`, written for users: the release notes
+   quote it. Update the README when behavior or configuration changes.
+
+Pull requests are squash-merged once all required checks are green.
+
+## Releases
+
+A maintainer runs the Bump Version workflow. It moves the Unreleased entries into a versioned
+section, tags the release, and the Release workflow publishes it with signed build provenance.
 
 ## Reporting issues
 

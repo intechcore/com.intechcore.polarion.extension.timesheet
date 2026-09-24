@@ -23,13 +23,28 @@ jobs:
           java-version: '21'
           distribution: temurin
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+      # An immutable release cannot take files later, so a rerun cannot repair it. Stop before
+      # Maven Central instead of publishing twice.
+      - name: Refuse an existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::Release $GITHUB_REF_NAME exists already. Releases are immutable; bump to a new version."
+            exit 1
+          fi
       # The notes come from the CHANGELOG.md section that bump-version.yml cut. A tag without that
       # section fails here, before anything is published.
       - name: Read the release notes from CHANGELOG.md
         run: .github/scripts/changelog-section.sh "${GITHUB_REF_NAME#v}" "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/release-notes.md"
       # The build runs pre-commit through the Maven lifecycle, the same as in ci.yml.
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.14'
       - name: Install pre-commit
-        run: pipx install pre-commit==4.6.1
+        run: |
+          pip install --only-binary=:all: --require-hashes -r .github/requirements/pre-commit.txt
       # deploy walks the whole lifecycle, so the tests run here and the artifacts published are
       # the ones that were tested. The two profiles come from the generic parent: gpg-sign adds
       # the signatures Central requires, central-publishing uploads and releases the bundle.
@@ -51,22 +66,17 @@ jobs:
           subject-path: |
             target/*.jar
             target/*.pom
-      # The gh CLI of the runner, not a third-party action.
+      # The gh CLI of the runner, not a third-party action. Releases are immutable: one call
+      # creates the release with all its files. The signed provenance bundle travels with them,
+      # for the OpenSSF Scorecard Signed-Releases check.
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
-        # A rerun of the job replaces the files of the existing release. The signed provenance
-        # bundle travels with them, for the OpenSSF Scorecard Signed-Releases check.
         run: |
           cp "$BUNDLE" "target/com.intechcore.polarion.extension.timesheet-${GITHUB_REF_NAME#v}.intoto.jsonl"
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" target/*.jar target/*.pom target/*.intoto.jsonl \
-              --repo "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$GITHUB_REF_NAME" target/*.jar target/*.pom target/*.intoto.jsonl \
-              --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/release-notes.md"
-          fi
+          gh release create "$GITHUB_REF_NAME" target/*.jar target/*.pom target/*.intoto.jsonl \
+            --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/release-notes.md"
   bump-to-snapshot:
     runs-on: ubuntu-latest
     needs: publish

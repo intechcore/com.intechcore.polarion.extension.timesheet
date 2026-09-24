@@ -1,13 +1,12 @@
 # Timesheet Reports for Polarion ALM
 
 [![CI](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml/badge.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/intechcore/com.intechcore.polarion.extension.timesheet/badge)](https://scorecard.dev/viewer/?uri=github.com/intechcore/com.intechcore.polarion.extension.timesheet)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14796/badge)](https://www.bestpractices.dev/projects/14796)
-[![GitHub Release](https://img.shields.io/github/v/release/intechcore/com.intechcore.polarion.extension.timesheet)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases)
+[![Release](https://img.shields.io/github/v/release/intechcore/com.intechcore.polarion.extension.timesheet)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)](https://central.sonatype.com/artifact/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)
 [![Java 21](https://img.shields.io/badge/java-21-blue.svg)](https://openjdk.org/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=coverage)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
@@ -67,9 +66,17 @@ The widget presets the default scope (project or group) and users shown when the
 
 This extension provides a REST API. Its OpenAPI specification can be obtained [here](docs/openapi.json).
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the build, the tests and the pull request rules.
+
 ## Disclaimer
 
 This software is provided "as is", without warranty of any kind, as the [LICENSE](LICENSE) states.
 Use it at your own risk. Intechcore GmbH is not liable for damage from its use, as far as the law
 allows. It is published free of charge, outside of any commercial offering, with no obligation to
 support it. Security reports are welcome, see [SECURITY.md](SECURITY.md).
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

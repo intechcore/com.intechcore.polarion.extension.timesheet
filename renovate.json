@@ -3,12 +3,16 @@
   "extends": [
     "github>intechcore/renovate-config"
   ],
-  "platformAutomerge": true,
   "pinDigests": false,
   "minimumReleaseAge": "3 days",
   "internalChecksFilter": "strict",
   "pre-commit": {
     "enabled": true
+  },
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/^\\.github/requirements/[^/]+\\.txt$/"
+    ]
   },
   "packageRules": [
     {
@@ -20,13 +24,6 @@
         "!ghcr.io/zizmorcore/zizmor"
       ],
       "pinDigests": true
-    },
-    {
-      "description": "The JDK in the workflows follows Polarion, not the newest release: Polarion 2606 runs on Java 21 and the generic parent compiles for 21. Moving to another JDK is a deliberate decision, not a dependency update, and with automerge on it would otherwise land on its own.",
-      "matchDepNames": [
-        "java-jdk"
-      ],
-      "enabled": false
     },
     {
       "description": "The committed reference screenshots are pixel-locked to the Playwright Docker image, and ui/scripts/docker-test.mjs derives that image tag from the installed playwright package. Vitest, its browser provider and playwright therefore belong in one pull request, which needs regenerated references (npm run test:update:docker) before it can be green. The end-to-end suite runs on the same Playwright.",
@@ -64,7 +61,8 @@
     }
   ],
   "lockFileMaintenance": {
-    "description": "Renovate keeps this off by default and nothing here turns it on. The flag stands so that enabling it later does not quietly refresh every transitive package into main without a person reading the update.",
+    "description": "Refreshes the transitive packages of ui/package-lock.json, or they stay pinned to vulnerable versions. A person reviews the pull request, as for the runtime dependencies.",
+    "enabled": true,
     "automerge": false
   },
   "vulnerabilityAlerts": {
