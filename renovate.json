@@ -9,11 +9,6 @@
   "pre-commit": {
     "enabled": true
   },
-  "pip-compile": {
-    "managerFilePatterns": [
-      "/^\\.github/requirements/[^/]+\\.txt$/"
-    ]
-  },
   "packageRules": [
     {
       "description": "Digest pinning belongs to GitHub Actions, where every workflow here already pins by digest with the version in a trailing comment. Applied globally it also reaches the pre-commit manager, which pins hook revisions to commit SHAs; that update fails and shows up as 'Error updating branch: update failure'. The zizmor version of zizmor-action is left out: the action accepts only a plain X.Y.Z, see the shared preset.",
