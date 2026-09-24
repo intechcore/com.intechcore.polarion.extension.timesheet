@@ -50,7 +50,7 @@ Changes take effect only after a restart of Polarion.
 
 ### Verify
 
-Each GitHub release carries a signed provenance bundle. Verify a downloaded jar with
+GitHub releases after 0.1.3 carry a signed provenance bundle. Verify a downloaded jar with
 `gh attestation verify <file> --repo intechcore/com.intechcore.polarion.extension.timesheet`.
 
 ## Polarion configuration
