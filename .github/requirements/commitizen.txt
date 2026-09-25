@@ -182,9 +182,9 @@ colorama==0.4.6 \
     --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
     # via commitizen
-commitizen==4.18.1 \
-    --hash=sha256:16ed052ff775bf42cad85bc09075db110ca7ba84f49233fc642629a0da65862b \
-    --hash=sha256:27379caedd00553344e44cc8cef039598b6d3e65f9b598e31d355489c481563d
+commitizen==4.19.0 \
+    --hash=sha256:9ed44eea06b5886462c30292a30c389330215e8fa79bcf932dbc4126b11009ef \
+    --hash=sha256:ab17bc6578b6f12bb8ea827197bf899fdf0dd3c5874180023656c40e22f838c1
     # via -r .github/requirements/commitizen.in
 decli==0.6.3 \
     --hash=sha256:5152347c7bb8e3114ad65db719e5709b28d7f7f45bdb709f70167925e55640f3 \
