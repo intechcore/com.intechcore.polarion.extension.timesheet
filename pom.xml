@@ -74,7 +74,7 @@
     <build>
         <plugins>
             <!-- README.md is converted to the About page shown inside Polarion. The parent already
-                 drops the SonarCloud badges from it; the other two badge kinds are dropped here. A
+                 drops the SonarCloud badges from it; the other badge kinds are dropped here. A
                  badge on that page would be a broken external image behind Polarion's CSP. Maven
                  replaces the whole list, so the parent's entry is restated. -->
             <plugin>
@@ -85,6 +85,8 @@
                         <removeLinesWithString>https://sonarcloud.io/api/project_badges/</removeLinesWithString>
                         <removeLinesWithString>https://img.shields.io/</removeLinesWithString>
                         <removeLinesWithString>/badge.svg</removeLinesWithString>
+                        <removeLinesWithString>https://api.scorecard.dev/</removeLinesWithString>
+                        <removeLinesWithString>https://www.bestpractices.dev/</removeLinesWithString>
                     </removeLinesWithStrings>
                 </configuration>
             </plugin>
