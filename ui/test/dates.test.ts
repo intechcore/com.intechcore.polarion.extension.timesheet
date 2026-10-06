@@ -8,6 +8,7 @@ import {
   groupDatesByMonth,
   isWeekend,
   parseDate,
+  widgetPeriod,
 } from '../src/utils/dates';
 
 describe('dates utils', () => {
@@ -41,6 +42,25 @@ describe('dates utils', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 17)); // 2026-06-17
     expect(currentMonthRange()).toEqual({ start: '2026-06-01', end: '2026-06-30' });
+  });
+
+  it('widgetPeriod counts the previous month across a year boundary', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 15)); // 2026-01-15
+    expect(widgetPeriod('previous-month', null, null)).toEqual({ start: '2025-12-01', end: '2025-12-31' });
+    expect(widgetPeriod('current-month', null, null)).toEqual({ start: '2026-01-01', end: '2026-01-31' });
+  });
+
+  it('widgetPeriod takes a custom period only when both dates are valid and in order', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 17));
+    const june = { start: '2026-06-01', end: '2026-06-30' };
+    expect(widgetPeriod('custom', '2026-03-02', '2026-04-15')).toEqual({ start: '2026-03-02', end: '2026-04-15' });
+    expect(widgetPeriod('custom', '2026-04-15', '2026-03-02')).toEqual(june);
+    expect(widgetPeriod('custom', '2026-03-02', null)).toEqual(june);
+    expect(widgetPeriod('custom', '2026-3-2', '2026-04-15')).toEqual(june);
+    // A widget saved before the period existed passes none.
+    expect(widgetPeriod(null, null, null)).toEqual(june);
   });
 
   it('groupDatesByMonth splits across month boundaries', () => {

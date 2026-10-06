@@ -65,6 +65,10 @@ class TimesheetReportWidgetTest {
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_CURRENT_USER)).isNotNull();
         // Off by default: a new widget shows the users of its settings, as it always did.
         verify(parameterFactory.bool(TimesheetReportWidget.CURRENT_USER)).value(false);
+        assertThat(parameters.get(TimesheetReportWidget.PARAMETER_PERIOD)).isNotNull();
+        assertThat(parameters.get(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).isNotNull();
+        assertThat(parameters.get(TimesheetReportWidget.PARAMETER_PERIOD_TO)).isNotNull();
+        assertThat(parameters.get(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).isNotNull();
         assertThat(parameters.get(TimesheetReportWidget.COMPOSITE_PARAMETER_ADVANCED)).isNotNull();
     }
 

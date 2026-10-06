@@ -5,6 +5,8 @@ import com.polarion.alm.shared.api.Scope;
 import com.polarion.alm.shared.api.model.eo.EnumOption;
 import com.polarion.alm.shared.api.model.rp.parameter.BooleanParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.CustomEnumParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.DateParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
@@ -19,6 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,6 +45,10 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     private final List<String> userIds;
     private final boolean userLocked;
     private final int workingDayHours;
+    private final String period;
+    private final @Nullable LocalDate periodFrom;
+    private final @Nullable LocalDate periodTo;
+    private final boolean hideControls;
 
     public TimesheetReportWidgetRenderer(@NotNull RichPageWidgetCommonContext context) {
         super(context);
@@ -66,6 +75,23 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         workingDayHours = (workingDayHoursValue != null && workingDayHoursValue > 0)
                 ? workingDayHoursValue
                 : TimesheetReportWidget.FULL_TIME_HOURS;
+
+        // A widget saved before these parameters existed has none of them: the current month, with
+        // the controls shown, is what it always did.
+        CustomEnumParameter periodParameter = context.parameter(TimesheetReportWidget.PARAMETER_PERIOD);
+        String periodValue = periodParameter != null ? periodParameter.singleValue() : null;
+        period = periodValue != null ? periodValue : TimesheetReportWidget.PERIOD_CURRENT_MONTH;
+        periodFrom = localDate(context.parameter(TimesheetReportWidget.PARAMETER_PERIOD_FROM));
+        periodTo = localDate(context.parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO));
+
+        BooleanParameter hideControlsParameter = context.parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS);
+        hideControls = hideControlsParameter != null && hideControlsParameter.value();
+    }
+
+    /** The day of a date parameter, in the zone of the server: the one Polarion picked it in. */
+    private static @Nullable LocalDate localDate(@Nullable DateParameter parameter) {
+        Date value = parameter != null ? parameter.value() : null;
+        return value != null ? value.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
     }
 
     @Override
@@ -122,7 +148,18 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
                 + (scopeLocked ? "&scopeLocked=true" : "")
                 + "&userIds=" + enc(String.join(",", userIds))
                 + (userLocked ? "&userLocked=true" : "")
-                + "&workingDayInHours=" + workingDayHours;
+                + "&workingDayInHours=" + workingDayHours
+                + "&period=" + enc(period)
+                + customPeriod()
+                + (hideControls ? "&hideControls=true" : "");
+    }
+
+    /** The dates travel for a custom period only, and only both: the report falls back otherwise. */
+    private @NotNull String customPeriod() {
+        if (!TimesheetReportWidget.PERIOD_CUSTOM.equals(period) || periodFrom == null || periodTo == null) {
+            return "";
+        }
+        return "&from=" + periodFrom + "&to=" + periodTo;
     }
 
     private static @NotNull String enc(String value) {

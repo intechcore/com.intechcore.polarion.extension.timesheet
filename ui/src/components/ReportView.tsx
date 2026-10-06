@@ -5,7 +5,7 @@ import useIframeAutoHeight from '../services/useIframeAutoHeight';
 import useReportOptions from '../services/useReportOptions';
 import useTimesheet from '../services/useTimesheet';
 import type { ScopeInfo } from '../types';
-import { currentMonthRange, datesInPeriod, parseDate } from '../utils/dates';
+import { datesInPeriod, parseDate, widgetPeriod } from '../utils/dates';
 import { groupByUser } from '../utils/workRecords';
 import DateRangePicker from './DateRangePicker';
 import ExportPdfButton from './ExportPdfButton';
@@ -44,15 +44,17 @@ export default function ReportView() {
         .map((u) => u.trim())
         .filter(Boolean),
       workingDayHours: !isNaN(wdh) && wdh > 0 ? wdh : DEFAULT_WORKING_DAY_HOURS,
+      period: widgetPeriod(q.get('period'), q.get('from'), q.get('to')),
+      // The page shows the tables only: what the widget set up is all there is to see.
+      hideControls: q.get('hideControls') === 'true',
     };
   }, []);
-  const month = useMemo(currentMonthRange, []);
 
   const { users, scopes, currentUserId } = useReportOptions();
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>(seed.userLocked ? [] : seed.userIds);
   const [scopePath, setScopePath] = useState(seed.scopePath);
-  const [startDate, setStartDate] = useState(month.start);
-  const [endDate, setEndDate] = useState(month.end);
+  const [startDate, setStartDate] = useState(seed.period.start);
+  const [endDate, setEndDate] = useState(seed.period.end);
 
   // Default the selection to the current user once it is known.
   useEffect(() => {
@@ -91,47 +93,51 @@ export default function ReportView() {
 
   return (
     <div className="timesheet-report">
-      <h3>Timesheet report</h3>
+      {!seed.hideControls && (
+        <>
+          <h3>Timesheet report</h3>
 
-      <div className="timesheet-controls">
-        <div className="control control-scope">
-          <span>Scope</span>
-          <SearchableSelect
-            options={scopeOptions}
-            value={scopePath}
-            onChange={setScopePath}
-            disabled={seed.scopeLocked}
-          />
-        </div>
-        <div className="control control-users">
-          <span>Users</span>
-          <SearchableSelect
-            multiple
-            options={userOptions}
-            value={selectedUserIds}
-            onChange={setSelectedUserIds}
-            placeholder="Add / search users…"
-            disabled={seed.userLocked}
-          />
-        </div>
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onStartChange={setStartDate}
-          onEndChange={setEndDate}
-        />
-        <div className="control">
-          <span>&nbsp;</span>
-          <ExportPdfButton
-            scopeName={scopeName}
-            period={{ start: startDate, end: endDate }}
-            dates={dates}
-            workingDayHours={seed.workingDayHours}
-            users={pdfUsers}
-            disabled={selectedUserIds.length === 0 || dates.length === 0 || fetching}
-          />
-        </div>
-      </div>
+          <div className="timesheet-controls">
+            <div className="control control-scope">
+              <span>Scope</span>
+              <SearchableSelect
+                options={scopeOptions}
+                value={scopePath}
+                onChange={setScopePath}
+                disabled={seed.scopeLocked}
+              />
+            </div>
+            <div className="control control-users">
+              <span>Users</span>
+              <SearchableSelect
+                multiple
+                options={userOptions}
+                value={selectedUserIds}
+                onChange={setSelectedUserIds}
+                placeholder="Add / search users…"
+                disabled={seed.userLocked}
+              />
+            </div>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onStartChange={setStartDate}
+              onEndChange={setEndDate}
+            />
+            <div className="control">
+              <span>&nbsp;</span>
+              <ExportPdfButton
+                scopeName={scopeName}
+                period={{ start: startDate, end: endDate }}
+                dates={dates}
+                workingDayHours={seed.workingDayHours}
+                users={pdfUsers}
+                disabled={selectedUserIds.length === 0 || dates.length === 0 || fetching}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {error && <p className="timesheet-error">{error}</p>}
       {selectedUserIds.length === 0 && <p>No users selected</p>}

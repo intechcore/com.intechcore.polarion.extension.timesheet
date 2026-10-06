@@ -4,6 +4,8 @@ import com.polarion.alm.shared.api.Scope;
 import com.polarion.alm.shared.api.model.eo.EnumOption;
 import com.polarion.alm.shared.api.model.rp.parameter.BooleanParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.CustomEnumParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.DateParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
@@ -23,6 +25,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -146,6 +151,59 @@ class TimesheetReportWidgetRendererTest {
         assertThat(renderedUrl()).contains("&userIds=aSeller%2CmTest&").doesNotContain("userLocked");
     }
 
+    private void period(String value, LocalDate from, LocalDate to) {
+        CustomEnumParameter periodParameter = mock(CustomEnumParameter.class);
+        when(periodParameter.singleValue()).thenReturn(value);
+        // Built before the stubbing: a mock created inside thenReturn(...) opens a second stubbing.
+        DateParameter fromParameter = dateParameter(from);
+        DateParameter toParameter = dateParameter(to);
+        when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD)).thenReturn(periodParameter);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).thenReturn(fromParameter);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO)).thenReturn(toParameter);
+    }
+
+    private static DateParameter dateParameter(LocalDate day) {
+        DateParameter parameter = mock(DateParameter.class);
+        when(parameter.value()).thenReturn(day == null ? null : Date.from(day.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        return parameter;
+    }
+
+    /** The months are counted by the browser of the viewer: the widget passes only which one. */
+    @Test
+    void passesAMonthPeriodWithoutDates() {
+        when(scope.projectId()).thenReturn("elibrary");
+        period(TimesheetReportWidget.PERIOD_PREVIOUS_MONTH, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
+
+        assertThat(renderedUrl()).endsWith("&period=previous-month");
+    }
+
+    @Test
+    void passesTheDatesOfACustomPeriod() {
+        when(scope.projectId()).thenReturn("elibrary");
+        period(TimesheetReportWidget.PERIOD_CUSTOM, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
+
+        assertThat(renderedUrl()).endsWith("&period=custom&from=2026-09-01&to=2026-09-30");
+    }
+
+    /** A custom period with a date missing passes none: the report falls back to the current month. */
+    @Test
+    void dropsACustomPeriodWithADateMissing() {
+        when(scope.projectId()).thenReturn("elibrary");
+        period(TimesheetReportWidget.PERIOD_CUSTOM, LocalDate.of(2026, 9, 1), null);
+
+        assertThat(renderedUrl()).endsWith("&period=custom");
+    }
+
+    @Test
+    void hidesTheControlsWhenTheWidgetAsks() {
+        BooleanParameter hideControls = mock(BooleanParameter.class);
+        when(hideControls.value()).thenReturn(true);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(hideControls);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).endsWith("&period=current-month&hideControls=true");
+    }
+
     @Test
     void passesTheProjectScopeAsItsId() {
         when(scope.projectId()).thenReturn("elibrary");
@@ -155,7 +213,7 @@ class TimesheetReportWidgetRendererTest {
                 .startsWith("/polarion/timesheet-app/ui/app/index.html?feature=report")
                 .contains("&scope=elibrary")
                 .contains("&userIds=aSeller%2CmTest")
-                .endsWith("&workingDayInHours=8");
+                .contains("&workingDayInHours=8&period=current-month");
     }
 
     /** The global scope travels as "/", which is what the scopes endpoint offers for the root. */
@@ -198,7 +256,7 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
         when(workingDayHours.value()).thenReturn(null);
 
-        assertThat(renderedUrl()).endsWith("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS);
+        assertThat(renderedUrl()).contains("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS + "&");
     }
 
     @Test
@@ -206,7 +264,7 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
         when(workingDayHours.value()).thenReturn(0);
 
-        assertThat(renderedUrl()).endsWith("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS);
+        assertThat(renderedUrl()).contains("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS + "&");
     }
 
     @Test
@@ -214,7 +272,7 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
         when(workingDayHours.value()).thenReturn(6);
 
-        assertThat(renderedUrl()).endsWith("&workingDayInHours=6");
+        assertThat(renderedUrl()).contains("&workingDayInHours=6&");
     }
 
     /**

@@ -138,6 +138,32 @@ describe('ReportView', () => {
     await parkPointer();
   });
 
+  it('opens on the period the widget asks for', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper&period=custom&from=2026-03-02&to=2026-04-15');
+    const fetchMock = installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => {
+      const asked = fetchMock.mock.calls.map(([u]) => String(u)).filter((u) => u.includes('/timesheet?'));
+      expect(asked.length).toBeGreaterThan(0);
+      expect(asked[0]).toContain('start_date=2026-03-02');
+      expect(asked[0]).toContain('end_date=2026-04-15');
+    });
+    expect(document.querySelector<HTMLInputElement>('input[type="date"]')?.value).toBe('2026-03-02');
+  });
+
+  it('shows the tables only when the widget hides the controls', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper&hideControls=true');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total: 8 h'));
+    expect(document.querySelector('table.timesheet')).not.toBeNull();
+    expect(document.querySelector('.timesheet-controls')).toBeNull();
+    expect(document.querySelector('.timesheet-report h3')).toBeNull();
+    expect(text()).not.toContain('Export PDF');
+  });
+
   it('asks the backend for the selected scope and period', async () => {
     setUrl('?scope=elibrary&userIds=sDeveloper');
     const fetchMock = installFetchMock(optionRoutes());
