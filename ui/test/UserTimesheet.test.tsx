@@ -142,12 +142,37 @@ describe('UserTimesheet', () => {
     await vi.waitFor(() => expect(shaded()).toEqual(['scrolled-left']));
   });
 
+  it('scrolls the days with a bar that starts after the WorkItem column', async () => {
+    await page.viewport(690, 720);
+    await show(<UserTimesheet title="Steve Developer" records={records} dates={dates} workingDayHours={8} />);
+
+    const wrap = document.querySelector<HTMLElement>('.timesheet-table-wrap')!;
+    const bar = document.querySelector<HTMLElement>('.timesheet-scrollbar')!;
+    const label = wrap.querySelector('th')!.getBoundingClientRect();
+
+    await vi.waitFor(() => expect(bar.hidden).toBe(false));
+    expect(bar.getBoundingClientRect().left).toBeCloseTo(label.right, 0);
+    expect(bar.getBoundingClientRect().right).toBeCloseTo(wrap.getBoundingClientRect().right, 0);
+    // The table hides its own scrollbar, and has no vertical one: the page scrolls it.
+    expect(wrap.offsetHeight).toBe(wrap.clientHeight);
+    expect(getComputedStyle(wrap).overflowY).toBe('hidden');
+
+    bar.scrollLeft = 200;
+    await vi.waitFor(() => expect(wrap.scrollLeft).toBe(200));
+    wrap.scrollLeft = 350;
+    await vi.waitFor(() => expect(bar.scrollLeft).toBe(350));
+    // The two scroll the same distance: the end of the bar is the end of the month.
+    bar.scrollLeft = bar.scrollWidth;
+    await vi.waitFor(() => expect(wrap.scrollLeft + wrap.clientWidth).toBeCloseTo(wrap.scrollWidth, 0));
+  });
+
   it('shades nothing when the month fits', async () => {
     await page.viewport(1280, 720);
     const week = datesInPeriod(parseDate('2026-06-01'), parseDate('2026-06-07'));
     await show(<UserTimesheet title="Steve Developer" records={records} dates={week} workingDayHours={8} />);
 
     expect(document.querySelector('.timesheet-table-frame')!.className).toBe('timesheet-table-frame');
+    expect(document.querySelector<HTMLElement>('.timesheet-scrollbar')!.hidden).toBe(true);
   });
 
   it('says so instead of drawing empty grids when the user booked nothing', async () => {
