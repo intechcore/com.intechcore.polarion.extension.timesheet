@@ -84,6 +84,17 @@ class TimesheetReportWidgetRendererTest {
         when(advanced.<IntegerParameter>get(TimesheetReportWidget.PARAMETER_WORKING_DAY_IN_HOURS)).thenReturn(workingDayHours);
         when(context.<CompositeParameter>parameter(TimesheetReportWidget.COMPOSITE_PARAMETER_ADVANCED)).thenReturn(advanced);
 
+        // Polarion builds every parameter from the definition: unset, each one has its default. Off
+        // and no period chosen are a mock's false and null; an untouched date is today.
+        BooleanParameter off = mock(BooleanParameter.class);
+        CustomEnumParameter noPeriod = mock(CustomEnumParameter.class);
+        DateParameter noDate = dateParameter(LocalDate.now());
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER)).thenReturn(off);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(off);
+        when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD)).thenReturn(noPeriod);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).thenReturn(noDate);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO)).thenReturn(noDate);
+
         attributes = mock(HtmlAttributesBuilder.class, RETURNS_SELF);
         HtmlTagBuilder iframe = mock(HtmlTagBuilder.class);
         when(iframe.attributes()).thenReturn(attributes);
@@ -143,9 +154,9 @@ class TimesheetReportWidgetRendererTest {
         assertThat(renderedUrl()).contains("&userIds=&userLocked=true&");
     }
 
-    /** A widget saved before "Current user" existed carries no such parameter, and keeps its users. */
+    /** "Current user" off, its default: the users of the settings travel. */
     @Test
-    void keepsTheUsersOfAWidgetWithoutTheCurrentUserParameter() {
+    void keepsTheUsersOfTheSettingsWhenCurrentUserIsOff() {
         when(scope.projectId()).thenReturn("elibrary");
 
         assertThat(renderedUrl()).contains("&userIds=aSeller%2CmTest&").doesNotContain("userLocked");
@@ -164,8 +175,16 @@ class TimesheetReportWidgetRendererTest {
 
     private static DateParameter dateParameter(LocalDate day) {
         DateParameter parameter = mock(DateParameter.class);
-        when(parameter.value()).thenReturn(day == null ? null : Date.from(day.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        when(parameter.value()).thenReturn(Date.from(day.atStartOfDay(ZoneId.systemDefault()).toInstant()));
         return parameter;
+    }
+
+    /** A period cleared in the settings has no value: the report opens on the current month. */
+    @Test
+    void passesTheCurrentMonthWhenNoPeriodIsChosen() {
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).endsWith("&period=current-month");
     }
 
     /** The months are counted by the browser of the viewer: the widget passes only which one. */
@@ -183,15 +202,6 @@ class TimesheetReportWidgetRendererTest {
         period(TimesheetReportWidget.PERIOD_CUSTOM, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
 
         assertThat(renderedUrl()).endsWith("&period=custom&from=2026-09-01&to=2026-09-30");
-    }
-
-    /** A custom period with a date missing passes none: the report falls back to the current month. */
-    @Test
-    void dropsACustomPeriodWithADateMissing() {
-        when(scope.projectId()).thenReturn("elibrary");
-        period(TimesheetReportWidget.PERIOD_CUSTOM, LocalDate.of(2026, 9, 1), null);
-
-        assertThat(renderedUrl()).endsWith("&period=custom");
     }
 
     @Test
