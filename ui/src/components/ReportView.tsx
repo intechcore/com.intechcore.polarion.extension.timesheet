@@ -19,6 +19,15 @@ const SCOPE_ICON: Record<ScopeInfo['type'], string> = {
   project: '/polarion/ria/images/projectlist/project.gif',
 };
 
+/**
+ * The one option a locked picker offers, without the indent of the tree. Its id stands in for the name
+ * while the list loads, or when the list leaves it out: the scope list skips what the user may not read.
+ */
+function lockedTo(options: SelectOption[], id: string | null): SelectOption[] {
+  if (!id) return [];
+  return [{ ...(options.find((o) => o.id === id) ?? { id, name: id }), indent: false }];
+}
+
 export default function ReportView() {
   // The Live Report widget presets the defaults (scope, users, full-time threshold) via query params.
   const seed = useMemo(() => {
@@ -28,6 +37,8 @@ export default function ReportView() {
       scopePath: q.get('scope') || '/',
       // The widget follows the scope of its page: that scope is the only one the report may show.
       scopeLocked: q.get('scopeLocked') === 'true',
+      // The widget shows every viewer their own hours: the viewer is the only user it may show.
+      userLocked: q.get('userLocked') === 'true',
       userIds: (q.get('userIds') ?? '')
         .split(',')
         .map((u) => u.trim())
@@ -38,7 +49,7 @@ export default function ReportView() {
   const month = useMemo(currentMonthRange, []);
 
   const { users, scopes, currentUserId } = useReportOptions();
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(seed.userIds);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(seed.userLocked ? [] : seed.userIds);
   const [scopePath, setScopePath] = useState(seed.scopePath);
   const [startDate, setStartDate] = useState(month.start);
   const [endDate, setEndDate] = useState(month.end);
@@ -71,13 +82,9 @@ export default function ReportView() {
     iconURL: SCOPE_ICON[scope.type],
     indent: scope.depth > 0,
   }));
-  // A locked scope keeps its own entry, without the indent of the tree. Its id stands in for the name
-  // while the list loads, or when the list leaves the scope out because the user may not read it.
-  const lockedScope = allScopeOptions.find((o) => o.id === scopePath);
-  const scopeOptions: SelectOption[] = seed.scopeLocked
-    ? [lockedScope ? { ...lockedScope, indent: false } : { id: scopePath, name: scopePath }]
-    : allScopeOptions;
-  const userOptions: SelectOption[] = users.map((user) => ({ id: user.id, name: `${user.name} (${user.id})` }));
+  const scopeOptions = seed.scopeLocked ? lockedTo(allScopeOptions, scopePath) : allScopeOptions;
+  const allUserOptions: SelectOption[] = users.map((user) => ({ id: user.id, name: `${user.name} (${user.id})` }));
+  const userOptions = seed.userLocked ? lockedTo(allUserOptions, currentUserId) : allUserOptions;
 
   const scopeName = scopes.find((s) => s.path === scopePath)?.name ?? scopePath;
   const pdfUsers = selectedUserIds.map((id) => ({ name: userName(id), records: recordsByUser.get(id) ?? [] }));
@@ -104,6 +111,7 @@ export default function ReportView() {
             value={selectedUserIds}
             onChange={setSelectedUserIds}
             placeholder="Add / search users…"
+            disabled={seed.userLocked}
           />
         </div>
         <DateRangePicker

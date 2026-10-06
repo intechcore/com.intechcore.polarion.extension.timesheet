@@ -2,6 +2,7 @@ package com.intechcore.polarion.extension.timesheet.widget;
 
 import com.polarion.alm.shared.api.Scope;
 import com.polarion.alm.shared.api.model.eo.EnumOption;
+import com.polarion.alm.shared.api.model.rp.parameter.BooleanParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
@@ -124,6 +125,25 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
 
         assertThat(renderedUrl()).contains("&scope=elibrary&userIds=").doesNotContain("scopeLocked");
+    }
+
+    /** "Current user" shows every viewer their own hours: the users of the settings do not travel. */
+    @Test
+    void locksTheUserWhenTheWidgetShowsTheViewer() {
+        BooleanParameter currentUser = mock(BooleanParameter.class);
+        when(currentUser.value()).thenReturn(true);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER)).thenReturn(currentUser);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).contains("&userIds=&userLocked=true&");
+    }
+
+    /** A widget saved before "Current user" existed carries no such parameter, and keeps its users. */
+    @Test
+    void keepsTheUsersOfAWidgetWithoutTheCurrentUserParameter() {
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).contains("&userIds=aSeller%2CmTest&").doesNotContain("userLocked");
     }
 
     @Test

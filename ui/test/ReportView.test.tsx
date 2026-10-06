@@ -116,6 +116,28 @@ describe('ReportView', () => {
     expect(offered.map((o) => o.value)).toEqual(['/', 'elibrary']);
   });
 
+  it('shows the viewer alone when the widget shows every viewer their own hours', async () => {
+    // A crafted URL with users of its own still shows the viewer only.
+    setUrl('?feature=report&scope=elibrary&userLocked=true&userIds=mTest');
+    const fetchMock = installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
+    const chips = [...document.querySelectorAll('.control-users .sd-chip-label')].map((c) => c.textContent);
+    expect(chips).toEqual(['Steve Developer (sDeveloper)']);
+    const offered = [...document.querySelectorAll<HTMLOptionElement>('.control-users select option')];
+    expect(offered.map((o) => o.value)).toEqual(['sDeveloper']);
+    const asked = fetchMock.mock.calls.map(([u]) => String(u)).filter((u) => u.includes('/timesheet?'));
+    expect(asked.every((u) => u.includes('user_ids=sDeveloper') && !u.includes('mTest'))).toBe(true);
+
+    const trigger = document.querySelector<HTMLElement>('.control-users .sd-trigger-multi')!;
+    expect(trigger.getAttribute('aria-disabled')).toBe('true');
+    await userEvent.click(trigger, { force: true });
+    const popups = [...document.querySelectorAll<HTMLElement>('.sd-portal .options')];
+    expect(popups.filter((p) => p.getClientRects().length > 0)).toHaveLength(0);
+    await parkPointer();
+  });
+
   it('asks the backend for the selected scope and period', async () => {
     setUrl('?scope=elibrary&userIds=sDeveloper');
     const fetchMock = installFetchMock(optionRoutes());

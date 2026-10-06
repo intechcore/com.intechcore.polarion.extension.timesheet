@@ -17,11 +17,13 @@ public class TimesheetReportWidget extends RichPageWidget {
     public static final String REPORTS = "Reports";
     public static final String SCOPE = "Scope";
     public static final String USERS = "Users";
+    public static final String CURRENT_USER = "Current user";
     public static final String WORKING_DAY_IN_HOURS = "Working day in hours";
     public static final int FULL_TIME_HOURS = 8;
 
     public static final String PARAMETER_SCOPE = "scope";
     public static final String PARAMETER_USER_IDS = "userIds";
+    public static final String PARAMETER_CURRENT_USER = "currentUser";
     public static final String COMPOSITE_PARAMETER_ADVANCED = "Advanced";
     public static final String PARAMETER_WORKING_DAY_IN_HOURS = "workingDayInHours";
 
@@ -54,7 +56,11 @@ public class TimesheetReportWidget extends RichPageWidget {
                 .build();
 
         StrictMap<String, RichPageParameter> parameters = new StrictMapImpl<>();
+        // Shows every viewer their own hours, whoever set the widget up. It overrides the users above.
+        BooleanParameter currentUserParameter = parameterFactory.bool(CURRENT_USER).value(false).build();
+
         parameters.put(PARAMETER_SCOPE, scopeParameter);
+        parameters.put(PARAMETER_CURRENT_USER, currentUserParameter);
         parameters.put(PARAMETER_USER_IDS, usersParameter);
 
         IntegerParameter workingDayInHoursParameter = parameterFactory.integer(WORKING_DAY_IN_HOURS).value(FULL_TIME_HOURS).build();

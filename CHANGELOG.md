@@ -11,6 +11,7 @@ Releases before 0.1.4 are listed on the
 
 ### Added
 - A widget left at the default scope locks the report to the scope of its page.
+- The widget option **Current user** shows every viewer their own hours.
 
 ### Changed
 - The version bump moves the Unreleased entries of this changelog into a section for
