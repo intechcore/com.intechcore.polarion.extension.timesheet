@@ -135,7 +135,7 @@ body {
 
 /* Days scrolled under the WorkItem column: its edge casts a shadow over them. */
 .timesheet-table-frame.scrolled-left table.timesheet tr > :first-child {
-  box-shadow: 4px 0 6px -2px rgba(0, 0, 0, 0.3);
+  box-shadow: 8px 0 12px -4px rgba(0, 0, 0, 0.45);
 }
 
 /* More days to the right: the right edge fades out. It stops above the scrollbar, which is 10px. */
@@ -145,9 +145,9 @@ body {
   top: 0;
   right: 0;
   bottom: 10px;
-  width: 16px;
+  width: 32px;
   pointer-events: none;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.35), transparent);
 }
 
 .timesheet-table-wrap {
