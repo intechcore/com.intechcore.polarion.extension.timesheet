@@ -9,6 +9,9 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Added
+- A widget left at the default scope locks the report to the scope of its page.
+
 ### Changed
 - The version bump moves the Unreleased entries of this changelog into a section for
   the new version. The GitHub release takes its notes from that section.
