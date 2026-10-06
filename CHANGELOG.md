@@ -32,6 +32,8 @@ Releases before 0.1.4 are listed on the
 - The WorkItem column stays in view while the days scroll.
 - The horizontal scrollbar of a report table is visible in Chrome on macOS. It starts after
   the WorkItem column, and the table has no vertical scrollbar.
+- A failed request shows its error alone. The users no longer read "total: 0 h" under it,
+  nor the answer of the previous request, and Export PDF is disabled.
 - The scope list leaves out the projects the user may not read. One such project made the
   list fail, and the Scope field stayed empty.
 

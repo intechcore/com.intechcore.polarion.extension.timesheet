@@ -90,6 +90,9 @@ export default function ReportView() {
 
   const scopeName = scopes.find((s) => s.path === scopePath)?.name ?? scopePath;
   const pdfUsers = selectedUserIds.map((id) => ({ name: userName(id), records: recordsByUser.get(id) ?? [] }));
+  // The tables need an answer to show. Before the first one every user read "total: 0 h", and after a
+  // failed request the previous answer stayed under the error: both looked like real hours.
+  const shown = timesheet !== null && !error && selectedUserIds.length > 0;
 
   return (
     <div className="timesheet-report">
@@ -132,7 +135,7 @@ export default function ReportView() {
                 dates={dates}
                 workingDayHours={seed.workingDayHours}
                 users={pdfUsers}
-                disabled={selectedUserIds.length === 0 || dates.length === 0 || fetching}
+                disabled={!shown || dates.length === 0 || fetching}
               />
             </div>
           </div>
@@ -143,15 +146,16 @@ export default function ReportView() {
       {selectedUserIds.length === 0 && <p>No users selected</p>}
       {fetching && <p className="timesheet-status">Updating…</p>}
 
-      {selectedUserIds.map((id) => (
-        <UserTimesheet
-          key={id}
-          title={userName(id)}
-          records={recordsByUser.get(id) ?? []}
-          dates={dates}
-          workingDayHours={seed.workingDayHours}
-        />
-      ))}
+      {shown &&
+        selectedUserIds.map((id) => (
+          <UserTimesheet
+            key={id}
+            title={userName(id)}
+            records={recordsByUser.get(id) ?? []}
+            dates={dates}
+            workingDayHours={seed.workingDayHours}
+          />
+        ))}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import App from '../src/App';
 import ReportView from '../src/components/ReportView';
 import { findFeature } from '../src/features';
 import type { ScopeInfo, Timesheet, User, WorkItem } from '../src/types';
-import { installFetchMock } from './mockFetch';
+import { installFetchMock, jsonResponse } from './mockFetch';
 import { parkPointer } from './visualHelpers';
 
 // The report page as the widget embeds it, and the feature router that picks it. REST is mocked at
@@ -198,6 +198,31 @@ describe('ReportView', () => {
     render(<ReportView />);
 
     await vi.waitFor(() => expect(document.querySelector('.timesheet-error')?.textContent).toBe('scope is unknown'));
+    // No user is drawn with "total: 0 h": there are no hours to show, not zero hours.
+    expect(text()).not.toContain('total:');
+    expect(document.querySelector<HTMLButtonElement>('.timesheet-controls button')?.disabled).toBe(true);
+  });
+
+  it('drops the previous answer when the next request fails', async () => {
+    installFetchMock([
+      ...optionRoutes().slice(0, 3),
+      {
+        method: 'GET',
+        match: /\/timesheet\?/,
+        respond: (url) =>
+          url.includes('start_date=2026-05-01')
+            ? jsonResponse({ message: 'scope is unknown' }, 400)
+            : jsonResponse(TIMESHEET),
+      },
+    ]);
+    render(<ReportView />);
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total: 8 h'));
+
+    await userEvent.fill(document.querySelector<HTMLInputElement>('input[type="date"]')!, '2026-05-01');
+
+    await vi.waitFor(() => expect(document.querySelector('.timesheet-error')?.textContent).toBe('scope is unknown'));
+    expect(text()).not.toContain('total:');
+    expect(document.querySelector('table')).toBeNull();
   });
 
   it('adds and removes a user from the report', async () => {
