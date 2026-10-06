@@ -133,9 +133,18 @@ body {
   margin-bottom: 10px;
 }
 
-/* Days scrolled under the WorkItem column: its edge casts a shadow over them. */
-.timesheet-table-frame.scrolled-left table.timesheet tr > :first-child {
-  box-shadow: 8px 0 12px -4px rgba(0, 0, 0, 0.45);
+/* Days scrolled under the WorkItem column: its edge casts a shadow over them. A gradient per cell,
+   not a box-shadow: a blurred box-shadow fades at the top and bottom of each cell, so the shadow
+   broke at every row. The sticky cell is the containing block of its ::after. */
+.timesheet-table-frame.scrolled-left table.timesheet tr > :first-child::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  left: 100%;
+  width: 24px;
+  pointer-events: none;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent);
 }
 
 /* More days to the right: the right edge fades out. It stops above the scrollbar, which is 10px. */
@@ -145,9 +154,9 @@ body {
   top: 0;
   right: 0;
   bottom: 10px;
-  width: 32px;
+  width: 48px;
   pointer-events: none;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.35), transparent);
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.5), transparent);
 }
 
 .timesheet-table-wrap {
