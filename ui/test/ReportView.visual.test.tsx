@@ -1,7 +1,7 @@
 import type React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import App from '../src/App';
 import ReportView from '../src/components/ReportView';
 import TimesheetBlock from '../src/components/TimesheetBlock';
@@ -9,6 +9,7 @@ import UserTimesheet from '../src/components/UserTimesheet';
 import type { ScopeInfo, Timesheet, User, WorkItem, WorkRecord } from '../src/types';
 import { datesInPeriod, parseDate } from '../src/utils/dates';
 import { installFetchMock } from './mockFetch';
+import type { Route } from './mockFetch';
 import { settleBeforeCapture, settleLayout } from './visualHelpers';
 
 // Visual-regression states for the report. Kept separate from the behavior tests (Docker-only, since
@@ -33,6 +34,84 @@ const TIMESHEET: Timesheet = {
   finishDate: '2026-06-30',
   workRecords: [record('2026-06-01', 8), record('2026-06-02', 4)],
 };
+
+// The tree the scope popup draws: the root, a group, and projects at two depths.
+const SCOPE_TREE: ScopeInfo[] = [
+  { path: '/', name: 'Repository (all projects)', type: 'root', depth: 0 },
+  { path: '/Demo Projects', name: 'Demo Projects', type: 'group', depth: 1 },
+  { path: 'drivepilot', name: 'Drive Pilot', type: 'project', depth: 2 },
+  { path: 'elibrary', name: 'E-Library', type: 'project', depth: 2 },
+  { path: 'library', name: 'Document Library', type: 'project', depth: 1 },
+];
+const workItem = (id: string, title: string): WorkItem => ({ ...ITEM, id, title });
+const SECOND_ITEM = workItem('EL-2', 'Review the REST API documentation');
+// Two users, so the page shows one heading and one block per user.
+const TWO_USERS: Timesheet = {
+  ...TIMESHEET,
+  workRecords: [
+    ...TIMESHEET.workRecords,
+    { date: '2026-06-03', workItem: SECOND_ITEM, user: USERS[1], hours: 6 },
+    { date: '2026-06-15', workItem: ITEM, user: USERS[1], hours: 2 },
+  ],
+};
+
+/** The REST answers of a report, with any route replaced by the caller's. */
+function reportRoutes(overrides: Route[] = [], timesheet: Timesheet = TIMESHEET): Route[] {
+  return [
+    ...overrides,
+    { method: 'GET', match: /\/users$/, json: USERS },
+    { method: 'GET', match: /\/scopes$/, json: SCOPES },
+    { method: 'GET', match: /\/current-user$/, json: USERS[0] },
+    { method: 'GET', match: /\/timesheet\?/, json: timesheet },
+  ];
+}
+
+/** The report at the query the widget passes, in June 2026, the month of the fixtures. */
+function openReport(search: string, routes: Route[] = reportRoutes()) {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 5, 17));
+  window.history.replaceState({}, '', search);
+  installFetchMock(routes);
+  render(<App />);
+}
+
+/** Sizes the viewport to the page, so the capture holds all of it and nothing more. */
+async function pageShot(name: string, width = 1280) {
+  const app = document.querySelector('.app') as HTMLElement;
+  await settleLayout();
+  await page.viewport(width, Math.ceil(app.scrollHeight) + 40);
+  await settleBeforeCapture();
+  await expect(page.elementLocator(app)).toMatchScreenshot(name);
+}
+
+/**
+ * Opens a picker and captures it with its popup. The popup is a fixed portal on <body>, outside the
+ * page, so the page is stretched under it: an element capture takes the pixels of its box, popup
+ * included.
+ */
+async function popupShot(trigger: string, name: string) {
+  const app = document.querySelector('.app') as HTMLElement;
+  await page.viewport(1280, 480);
+  app.style.minHeight = '460px';
+  await userEvent.click(document.querySelector<HTMLElement>(trigger)!);
+  await vi.waitFor(() =>
+    expect(
+      [...document.querySelectorAll<HTMLElement>('.sd-portal .options')].some((o) => o.getClientRects().length > 0),
+    ).toBe(true),
+  );
+  // The pointer stays on the trigger: parking it would move it over the popup.
+  await settleBeforeCapture(false);
+  await expect(page.elementLocator(app)).toMatchScreenshot(name);
+}
+
+/** The report in the app shell at the default viewport, for a capture of its control row. */
+function openControls(search: string) {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 5, 17));
+  window.history.replaceState({}, '', search);
+  installFetchMock(reportRoutes());
+  render(inAppShell(<ReportView />));
+}
 
 const origUrl = window.location.pathname + window.location.search;
 
@@ -138,6 +217,82 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
     await shot('.user-timesheet', 'sticky-workitem');
   });
 
+  it('control row: a scope locked to the page', async () => {
+    openControls('?scope=elibrary&scopeLocked=true&userIds=sDeveloper');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await settleBeforeCapture();
+    await shot('.timesheet-controls', 'controls-scope-locked');
+  });
+
+  it('control row: the user locked to the viewer', async () => {
+    openControls('?scope=elibrary&userLocked=true');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await settleBeforeCapture();
+    await shot('.timesheet-controls', 'controls-user-locked');
+  });
+
+  it('control row: a custom period', async () => {
+    openControls('?scope=elibrary&userIds=sDeveloper&period=custom&from=2026-03-02&to=2026-04-15');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await settleBeforeCapture();
+    await shot('.timesheet-controls', 'controls-custom-period');
+  });
+
+  it('a user with no records in the period', async () => {
+    render(
+      inAppShell(
+        <UserTimesheet
+          title="Melanie Test"
+          records={[]}
+          dates={datesInPeriod(parseDate('2026-06-01'), parseDate('2026-06-30'))}
+          workingDayHours={8}
+        />,
+      ),
+    );
+
+    await vi.waitFor(() => expect(document.querySelector('.timesheet-empty')).not.toBeNull());
+    await settleBeforeCapture();
+    await shot('.user-timesheet', 'user-empty');
+  });
+
+  it('the work item as Polarion renders it: icon, id and title', async () => {
+    const icon =
+      'data:image/svg+xml,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" rx="3" fill="#8e44ad"/></svg>',
+      );
+    const native: WorkItem = {
+      ...ITEM,
+      html:
+        '<span class="polarion-JSWikiRenderer"><a class="polarion-Hyperlink" href="#">' +
+        `<img class="polarion-Icons" src="${icon}" alt="Task"><span>EL-1</span><span> - Write the report</span></a></span>`,
+    };
+    const resolved: WorkItem = {
+      ...SECOND_ITEM,
+      html:
+        '<span class="polarion-JSWikiRenderer"><a class="polarion-Hyperlink" href="#">' +
+        `<img class="polarion-Icons" src="${icon}" alt="Task">` +
+        '<span style="text-decoration: line-through">EL-2</span><span> - Review the REST API documentation</span></a></span>',
+    };
+    render(
+      inAppShell(
+        <TimesheetBlock
+          workItems={[native, resolved]}
+          records={[
+            { ...record('2026-06-01', 8), workItem: native },
+            { ...record('2026-06-02', 3), workItem: resolved },
+          ]}
+          dates={[new Date(2026, 5, 1), new Date(2026, 5, 2)]}
+          workingDayHours={8}
+        />,
+      ),
+    );
+
+    await vi.waitFor(() => expect(document.querySelectorAll('img.polarion-Icons')).toHaveLength(2));
+    await settleBeforeCapture();
+    await shot('table', 'native-workitem');
+  });
+
   /**
    * The page as the widget embeds it: App puts the `.app standard-admin-page feature-report` shell
    * around ReportView, and that shell is what the component captures above cannot show.
@@ -165,5 +320,63 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
     await page.viewport(1280, Math.ceil(app.scrollHeight) + 40);
     await settleBeforeCapture();
     await expect(page.elementLocator(app)).toMatchScreenshot('report-page');
+  });
+
+  // Every case below sizes the viewport itself, so their order among each other does not matter.
+
+  it('the page with the controls hidden: tables only', async () => {
+    openReport(
+      '?feature=report&scope=elibrary&userIds=sDeveloper,mTest&hideControls=true',
+      reportRoutes([], TWO_USERS),
+    );
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Melanie Test - total'));
+    await pageShot('report-page-bare');
+  });
+
+  it('the page in a column of a multi-column Live Report', async () => {
+    openReport('?feature=report&scope=elibrary&userIds=sDeveloper,mTest', reportRoutes([], TWO_USERS));
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Melanie Test - total'));
+    await pageShot('report-page-narrow', 690);
+  });
+
+  it('the page with no user selected', async () => {
+    // No current user is known, and the widget names none.
+    openReport(
+      '?feature=report&scope=elibrary',
+      reportRoutes([{ method: 'GET', match: /\/current-user$/, respond: () => new Response(null, { status: 204 }) }]),
+    );
+    await vi.waitFor(() => expect(document.body.textContent).toContain('No users selected'));
+    await pageShot('report-no-users');
+  });
+
+  it('the page when the backend refuses the request', async () => {
+    openReport(
+      '?feature=report&scope=elibrary&userIds=sDeveloper',
+      reportRoutes([
+        {
+          method: 'GET',
+          match: /\/timesheet\?/,
+          json: { message: 'Scope path holds characters which are not allowed' },
+          status: 400,
+        },
+      ]),
+    );
+    await vi.waitFor(() => expect(document.querySelector('.timesheet-error')).not.toBeNull());
+    await pageShot('report-error');
+  });
+
+  it('the scope popup: the tree with its icons', async () => {
+    openReport(
+      '?feature=report&scope=elibrary&userIds=sDeveloper',
+      reportRoutes([{ method: 'GET', match: /\/scopes$/, json: SCOPE_TREE }]),
+    );
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await popupShot('.control-scope .sd-trigger', 'scope-popup');
+  });
+
+  it('the user popup: checkboxes for the selection', async () => {
+    openReport('?feature=report&scope=elibrary&userIds=sDeveloper');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await popupShot('.control-users .sd-trigger-multi', 'users-popup');
   });
 });
