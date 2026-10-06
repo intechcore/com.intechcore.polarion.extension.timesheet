@@ -196,6 +196,9 @@ type").
 - **The WorkItem column is `position: sticky`**, so the days scroll under it. That needs
   `border-collapse: separate`: under `collapse` the borders of a sticky cell scroll away.
   `useScrollEdges` shades the side that hides days: a shadow under the column, a fade on the right.
+- **The days scroll with their own bar**, `.timesheet-scrollbar`, under the table. A native
+  scrollbar spans the WorkItem column too, so the table hides its own, and `useScrollEdges` syncs
+  the two both ways. The table has no vertical scroll: the page scrolls it.
 - **The visual tests show scrollbars** (`ignoreDefaultArgs: ['--hide-scrollbars']`), so a reference
   proves a wide month can scroll.
 - **Chrome ignores `::-webkit-scrollbar` on an element that sets `scrollbar-width` or

@@ -23,7 +23,8 @@ Releases before 0.1.4 are listed on the
 ### Fixed
 - The WorkItem column has the same width in every table. A long title wraps onto more lines.
 - The WorkItem column stays in view while the days scroll.
-- The horizontal scrollbar of a report table is visible in Chrome on macOS.
+- The horizontal scrollbar of a report table is visible in Chrome on macOS. It starts after
+  the WorkItem column, and the table has no vertical scrollbar.
 - The scope list leaves out the projects the user may not read. One such project made the
   list fail, and the Scope field stayed empty.
 

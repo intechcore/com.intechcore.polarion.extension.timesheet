@@ -128,9 +128,12 @@ body {
   font-size: 14px;
 }
 
+.timesheet-block {
+  margin-bottom: 10px;
+}
+
 .timesheet-table-frame {
   position: relative;
-  margin-bottom: 10px;
 }
 
 /* Days scrolled under the WorkItem column: its edge casts a shadow over them. A gradient per cell,
@@ -140,58 +143,74 @@ body {
   content: '';
   position: absolute;
   top: 0;
-  bottom: -1px;
+  bottom: 0;
   left: 100%;
   width: 24px;
   pointer-events: none;
   background: linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent);
 }
 
-/* More days to the right: the right edge fades out. It stops above the scrollbar, which is 10px. */
+/* More days to the right: the right edge fades out. */
 .timesheet-table-frame.more-right::after {
   content: '';
   position: absolute;
   top: 0;
   right: 0;
-  bottom: 10px;
+  bottom: 0;
   width: 48px;
   pointer-events: none;
   background: linear-gradient(to left, rgba(0, 0, 0, 0.5), transparent);
 }
 
 .timesheet-table-wrap {
-  overflow-x: auto;
   max-width: 100%;
+  /* The table scrolls sideways only: the page scrolls it vertically. Its own scrollbar is hidden,
+     .timesheet-scrollbar below takes its place. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
 
-  /* A month is wider than the widget in any realistic placement, so these tables scroll. macOS draws
-     overlay scrollbars that stay hidden until you scroll, which made the table read as cut off
-     rather than scrollable - hence a scrollbar that is always painted, by the ::-webkit-scrollbar
-     rules below. */
+.timesheet-table-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+/* The scrollbar of the days. It starts at the right edge of the WorkItem column, which the
+   native scrollbar of the table cannot do. A month is wider than the widget in any realistic
+   placement, and macOS draws overlay scrollbars that stay hidden until you scroll, which made the
+   table read as cut off rather than scrollable - hence a scrollbar that is always painted. */
+.timesheet-scrollbar {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.timesheet-scrollbar > div {
+  height: 1px;
 }
 
 /* Firefox only. Chrome ignores ::-webkit-scrollbar on an element that sets these standard
    properties, and falls back to the hidden overlay scrollbar of macOS. */
 @supports not selector(::-webkit-scrollbar) {
-  .timesheet-table-wrap {
+  .timesheet-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: #c1c1c1 #f1f1f1;
   }
 }
 
-.timesheet-table-wrap::-webkit-scrollbar {
+.timesheet-scrollbar::-webkit-scrollbar {
   height: 10px;
 }
 
-.timesheet-table-wrap::-webkit-scrollbar-track {
+.timesheet-scrollbar::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
-.timesheet-table-wrap::-webkit-scrollbar-thumb {
+.timesheet-scrollbar::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 5px;
 }
 
-.timesheet-table-wrap::-webkit-scrollbar-thumb:hover {
+.timesheet-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 
