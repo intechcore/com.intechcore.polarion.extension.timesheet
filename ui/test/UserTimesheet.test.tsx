@@ -93,6 +93,63 @@ describe('UserTimesheet', () => {
     expect(label(june)).toBe(label(august));
   });
 
+  it('wraps a long title instead of widening the label column', async () => {
+    // `width: max-content` measured the unwrapped titles, so the block with the longest title drew
+    // the widest WorkItem column and no two users' tables lined up.
+    const long = { ...item('EL-3'), title: 'A work item title long enough to need more than one line '.repeat(3) };
+    await show(
+      <UserTimesheet
+        title="Steve Developer"
+        records={[...records, rec('2026-08-04', 2, long)]}
+        dates={dates}
+        workingDayHours={8}
+      />,
+    );
+
+    const [june, august] = blocks();
+    const label = (table: HTMLTableElement) => table.querySelector('thead th')!.getBoundingClientRect().width;
+    const [shortRow, longRow] = [...august.querySelectorAll('tbody tr')].map((tr) => tr.getBoundingClientRect().height);
+
+    expect(label(august)).toBe(label(june));
+    expect(longRow).toBeGreaterThan(shortRow);
+  });
+
+  it('keeps the WorkItem column in view while the days scroll', async () => {
+    await page.viewport(690, 720);
+    await show(<UserTimesheet title="Steve Developer" records={records} dates={dates} workingDayHours={8} />);
+
+    const wrap = document.querySelector<HTMLElement>('.timesheet-table-wrap')!;
+    const left = () => wrap.querySelector('tbody td')!.getBoundingClientRect().left;
+    const before = left();
+    wrap.scrollLeft = 300;
+
+    expect(wrap.scrollLeft).toBe(300); // the month is wider than the widget, so it does scroll
+    await vi.waitFor(() => expect(left()).toBe(before));
+  });
+
+  it('shades the side where days are hidden', async () => {
+    await page.viewport(690, 720);
+    await show(<UserTimesheet title="Steve Developer" records={records} dates={dates} workingDayHours={8} />);
+
+    const frame = document.querySelector<HTMLElement>('.timesheet-table-frame')!;
+    const wrap = frame.querySelector<HTMLElement>('.timesheet-table-wrap')!;
+    const shaded = () => ['scrolled-left', 'more-right'].filter((c) => frame.classList.contains(c));
+
+    await vi.waitFor(() => expect(shaded()).toEqual(['more-right']));
+    wrap.scrollLeft = 300;
+    await vi.waitFor(() => expect(shaded()).toEqual(['scrolled-left', 'more-right']));
+    wrap.scrollLeft = wrap.scrollWidth;
+    await vi.waitFor(() => expect(shaded()).toEqual(['scrolled-left']));
+  });
+
+  it('shades nothing when the month fits', async () => {
+    await page.viewport(1280, 720);
+    const week = datesInPeriod(parseDate('2026-06-01'), parseDate('2026-06-07'));
+    await show(<UserTimesheet title="Steve Developer" records={records} dates={week} workingDayHours={8} />);
+
+    expect(document.querySelector('.timesheet-table-frame')!.className).toBe('timesheet-table-frame');
+  });
+
   it('says so instead of drawing empty grids when the user booked nothing', async () => {
     await show(<UserTimesheet title="Ayato Seller" records={[]} dates={dates} workingDayHours={8} />);
 

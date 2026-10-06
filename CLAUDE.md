@@ -189,10 +189,18 @@ type").
   puts it in a column of a multi-column layout (`.polarion-rp-column`), against a ~1280px page. The
   iframe already asks for `width: 100%`, so a wider report is a page-layout change, not a code one.
   No month fits that width, hence the label column sized off `vw` and the always-painted scrollbar.
-- **The report tables are `table-layout: fixed` with `width: max-content`.** Under the automatic
-  layout a table is capped at its container and the spare width goes to the columns, so a 28-day
-  month drew a wider WorkItem column than a 31-day one. Both properties are needed: `fixed` alone
-  still lets the browser squeeze the table. Long months scroll in `.timesheet-table-wrap`.
+- **The report tables are `table-layout: fixed` with `width: 0`.** A fixed table is never narrower
+  than its columns, so it comes out at exactly their sum. `auto` squeezes it into the container,
+  and `max-content` measures the unwrapped titles and gives the surplus to the columns: both drew a
+  different WorkItem column per block. Titles wrap; long months scroll in `.timesheet-table-wrap`.
+- **The WorkItem column is `position: sticky`**, so the days scroll under it. That needs
+  `border-collapse: separate`: under `collapse` the borders of a sticky cell scroll away.
+  `useScrollEdges` shades the side that hides days: a shadow under the column, a fade on the right.
+- **The visual tests show scrollbars** (`ignoreDefaultArgs: ['--hide-scrollbars']`), so a reference
+  proves a wide month can scroll.
+- **Chrome ignores `::-webkit-scrollbar` on an element that sets `scrollbar-width` or
+  `scrollbar-color`**, and macOS then hides the scrollbar until you scroll. The standard
+  properties are therefore set for Firefox only, under `@supports not selector(::-webkit-scrollbar)`.
 - **The iframe height must account for the picker popups.** They are `position: fixed` portals on
   `<body>`, so they add nothing to `body.scrollHeight` and do not resize `body` - the widget's
   iframe kept its height and cut the option list off. `useIframeAutoHeight` measures

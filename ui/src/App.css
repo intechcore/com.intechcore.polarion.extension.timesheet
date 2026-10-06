@@ -128,16 +128,54 @@ body {
   font-size: 14px;
 }
 
+.timesheet-table-frame {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+/* Days scrolled under the WorkItem column: its edge casts a shadow over them. A gradient per cell,
+   not a box-shadow: a blurred box-shadow fades at the top and bottom of each cell, so the shadow
+   broke at every row. The sticky cell is the containing block of its ::after. */
+.timesheet-table-frame.scrolled-left table.timesheet tr > :first-child::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  left: 100%;
+  width: 24px;
+  pointer-events: none;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent);
+}
+
+/* More days to the right: the right edge fades out. It stops above the scrollbar, which is 10px. */
+.timesheet-table-frame.more-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 10px;
+  width: 48px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.5), transparent);
+}
+
 .timesheet-table-wrap {
   overflow-x: auto;
   max-width: 100%;
-  margin-bottom: 10px;
 
   /* A month is wider than the widget in any realistic placement, so these tables scroll. macOS draws
      overlay scrollbars that stay hidden until you scroll, which made the table read as cut off
-     rather than scrollable - hence a scrollbar that is always painted. */
-  scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 #f1f1f1;
+     rather than scrollable - hence a scrollbar that is always painted, by the ::-webkit-scrollbar
+     rules below. */
+}
+
+/* Firefox only. Chrome ignores ::-webkit-scrollbar on an element that sets these standard
+   properties, and falls back to the hidden overlay scrollbar of macOS. */
+@supports not selector(::-webkit-scrollbar) {
+  .timesheet-table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
+  }
 }
 
 .timesheet-table-wrap::-webkit-scrollbar {
@@ -187,14 +225,17 @@ body {
    and, being narrower overall, was the only block whose right edge fit on screen. With the widths
    fixed the blocks line up and a short month is simply a shorter table. */
 table.timesheet {
-  border: 1px solid #000000;
-  /* `max-content` keeps the declared column widths even when the block is wider than the report:
-     with `auto` the browser still squeezes the table into the container, which is the behavior this
-     rule set exists to stop. The wrapper scrolls instead. */
-  width: max-content;
+  /* Under the fixed layout a table is never narrower than its columns, so `0` makes it exactly their
+     sum. `max-content` measured the unwrapped titles instead and gave the surplus to the columns: a
+     block with a long title drew a wider WorkItem column. `auto` squeezes the table into the
+     container. The wrapper scrolls instead. */
+  width: 0;
   table-layout: fixed;
   text-align: center;
-  border-collapse: collapse;
+  /* `collapse` paints the borders of a sticky cell with the table, so they scroll away from the
+     WorkItem column. Each cell draws its own right and bottom border instead. */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 /* Day columns hold "dd.MM" at 13px bold, which needs ~36px plus the cell padding. */
@@ -217,16 +258,31 @@ table.timesheet tfoot tr td:first-child {
      spent nearly two thirds of that on one column. `vw` is the iframe's own width, and it is the
      same for every block, so the blocks still line up. */
   width: min(400px, 40vw);
-  /* The work item title is the one cell that may be longer than its column. */
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* A long work item title wraps onto the next lines instead of widening the column. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  /* The WorkItem column stays in view while the days scroll under it. */
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #ffffff;
+  border-left: 1px solid #000000;
+}
+
+table.timesheet thead tr th:first-child {
+  background: #cfcfcf;
 }
 
 table.timesheet td,
 table.timesheet th {
-  border: 1px solid #000000;
+  border-right: 1px solid #000000;
+  border-bottom: 1px solid #000000;
   padding: 5px;
   font-size: 13px;
+}
+
+table.timesheet thead th {
+  border-top: 1px solid #000000;
 }
 
 table.timesheet tbody td {
