@@ -111,6 +111,30 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
     await shot('table', 'timesheet-block');
   });
 
+  it('a long title wraps and the WorkItem column stays put while the days scroll', async () => {
+    const long: WorkItem = {
+      ...ITEM,
+      id: 'EL-2',
+      title: 'Information about variables in the Administration page is incomplete compared to the release before',
+    };
+    render(
+      inAppShell(
+        <UserTimesheet
+          title="Steve Developer"
+          records={[record('2026-06-01', 8), { ...record('2026-06-30', 4), workItem: long }]}
+          dates={datesInPeriod(parseDate('2026-06-01'), parseDate('2026-06-30'))}
+          workingDayHours={8}
+        />,
+      ),
+    );
+
+    await vi.waitFor(() => expect(document.querySelector('table')).not.toBeNull());
+    const wrap = document.querySelector<HTMLElement>('.timesheet-table-wrap')!;
+    wrap.scrollLeft = wrap.scrollWidth; // the end of the month, with the WorkItem column still in view
+    await settleLayout();
+    await shot('.user-timesheet', 'sticky-workitem');
+  });
+
   /**
    * The page as the widget embeds it: App puts the `.app standard-admin-page feature-report` shell
    * around ReportView, and that shell is what the component captures above cannot show.
