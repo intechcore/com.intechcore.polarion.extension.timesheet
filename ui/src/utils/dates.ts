@@ -35,11 +35,35 @@ export function parseDate(value: string): Date {
   return new Date(Number(compact.slice(0, 4)), Number(compact.slice(4, 6)) - 1, Number(compact.slice(6, 8)));
 }
 
-export function currentMonthRange(): { start: string; end: string } {
+export interface Period {
+  start: string;
+  end: string;
+}
+
+/** A calendar month counted from the current one: 0 is this month, -1 the one before. */
+export function monthRange(offset = 0): Period {
   const now = new Date();
   const y = now.getFullYear();
-  const m = now.getMonth();
+  const m = now.getMonth() + offset;
   return { start: formatISO(new Date(y, m, 1)), end: formatISO(new Date(y, m + 1, 0)) };
+}
+
+export function currentMonthRange(): Period {
+  return monthRange(0);
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The period the widget asks for. A custom period needs both dates, in order; anything else, a widget
+ * saved before the period existed included, is the current month.
+ */
+export function widgetPeriod(period: string | null, from: string | null, to: string | null): Period {
+  if (period === 'previous-month') return monthRange(-1);
+  if (period === 'custom' && from && to && ISO_DATE.test(from) && ISO_DATE.test(to) && from <= to) {
+    return { start: from, end: to };
+  }
+  return monthRange(0);
 }
 
 export function datesInPeriod(start: Date, end: Date): Date[] {

@@ -12,6 +12,9 @@ Releases before 0.1.4 are listed on the
 ### Added
 - A widget left at the default scope locks the report to the scope of its page.
 - The widget option **Current user** shows every viewer their own hours.
+- The widget option **Period** opens the report on the current month, the previous month or
+  a custom range.
+- The widget option **Hide controls** shows the tables only.
 
 ### Changed
 - The version bump moves the Unreleased entries of this changelog into a section for
@@ -29,6 +32,8 @@ Releases before 0.1.4 are listed on the
 - The WorkItem column stays in view while the days scroll.
 - The horizontal scrollbar of a report table is visible in Chrome on macOS. It starts after
   the WorkItem column, and the table has no vertical scrollbar.
+- A failed request shows its error alone. The users no longer read "total: 0 h" under it,
+  nor the answer of the previous request, and Export PDF is disabled.
 - The scope list leaves out the projects the user may not read. One such project made the
   list fail, and the Scope field stayed empty.
 

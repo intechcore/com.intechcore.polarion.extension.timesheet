@@ -4,6 +4,8 @@ import com.polarion.alm.shared.api.Scope;
 import com.polarion.alm.shared.api.model.eo.EnumOption;
 import com.polarion.alm.shared.api.model.rp.parameter.BooleanParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.CustomEnumParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.DateParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
@@ -23,6 +25,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -78,6 +83,17 @@ class TimesheetReportWidgetRendererTest {
         CompositeParameter advanced = mock(CompositeParameter.class);
         when(advanced.<IntegerParameter>get(TimesheetReportWidget.PARAMETER_WORKING_DAY_IN_HOURS)).thenReturn(workingDayHours);
         when(context.<CompositeParameter>parameter(TimesheetReportWidget.COMPOSITE_PARAMETER_ADVANCED)).thenReturn(advanced);
+
+        // Polarion builds every parameter from the definition: unset, each one has its default. Off
+        // and no period chosen are a mock's false and null; an untouched date is today.
+        BooleanParameter off = mock(BooleanParameter.class);
+        CustomEnumParameter noPeriod = mock(CustomEnumParameter.class);
+        DateParameter noDate = dateParameter(LocalDate.now());
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER)).thenReturn(off);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(off);
+        when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD)).thenReturn(noPeriod);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).thenReturn(noDate);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO)).thenReturn(noDate);
 
         attributes = mock(HtmlAttributesBuilder.class, RETURNS_SELF);
         HtmlTagBuilder iframe = mock(HtmlTagBuilder.class);
@@ -138,12 +154,64 @@ class TimesheetReportWidgetRendererTest {
         assertThat(renderedUrl()).contains("&userIds=&userLocked=true&");
     }
 
-    /** A widget saved before "Current user" existed carries no such parameter, and keeps its users. */
+    /** "Current user" off, its default: the users of the settings travel. */
     @Test
-    void keepsTheUsersOfAWidgetWithoutTheCurrentUserParameter() {
+    void keepsTheUsersOfTheSettingsWhenCurrentUserIsOff() {
         when(scope.projectId()).thenReturn("elibrary");
 
         assertThat(renderedUrl()).contains("&userIds=aSeller%2CmTest&").doesNotContain("userLocked");
+    }
+
+    private void period(String value, LocalDate from, LocalDate to) {
+        CustomEnumParameter periodParameter = mock(CustomEnumParameter.class);
+        when(periodParameter.singleValue()).thenReturn(value);
+        // Built before the stubbing: a mock created inside thenReturn(...) opens a second stubbing.
+        DateParameter fromParameter = dateParameter(from);
+        DateParameter toParameter = dateParameter(to);
+        when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD)).thenReturn(periodParameter);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).thenReturn(fromParameter);
+        when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO)).thenReturn(toParameter);
+    }
+
+    private static DateParameter dateParameter(LocalDate day) {
+        DateParameter parameter = mock(DateParameter.class);
+        when(parameter.value()).thenReturn(Date.from(day.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        return parameter;
+    }
+
+    /** A period cleared in the settings has no value: the report opens on the current month. */
+    @Test
+    void passesTheCurrentMonthWhenNoPeriodIsChosen() {
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).endsWith("&period=current-month");
+    }
+
+    /** The months are counted by the browser of the viewer: the widget passes only which one. */
+    @Test
+    void passesAMonthPeriodWithoutDates() {
+        when(scope.projectId()).thenReturn("elibrary");
+        period(TimesheetReportWidget.PERIOD_PREVIOUS_MONTH, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
+
+        assertThat(renderedUrl()).endsWith("&period=previous-month");
+    }
+
+    @Test
+    void passesTheDatesOfACustomPeriod() {
+        when(scope.projectId()).thenReturn("elibrary");
+        period(TimesheetReportWidget.PERIOD_CUSTOM, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
+
+        assertThat(renderedUrl()).endsWith("&period=custom&from=2026-09-01&to=2026-09-30");
+    }
+
+    @Test
+    void hidesTheControlsWhenTheWidgetAsks() {
+        BooleanParameter hideControls = mock(BooleanParameter.class);
+        when(hideControls.value()).thenReturn(true);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(hideControls);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).endsWith("&period=current-month&hideControls=true");
     }
 
     @Test
@@ -155,7 +223,7 @@ class TimesheetReportWidgetRendererTest {
                 .startsWith("/polarion/timesheet-app/ui/app/index.html?feature=report")
                 .contains("&scope=elibrary")
                 .contains("&userIds=aSeller%2CmTest")
-                .endsWith("&workingDayInHours=8");
+                .contains("&workingDayInHours=8&period=current-month");
     }
 
     /** The global scope travels as "/", which is what the scopes endpoint offers for the root. */
@@ -198,7 +266,7 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
         when(workingDayHours.value()).thenReturn(null);
 
-        assertThat(renderedUrl()).endsWith("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS);
+        assertThat(renderedUrl()).contains("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS + "&");
     }
 
     @Test
@@ -206,7 +274,7 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
         when(workingDayHours.value()).thenReturn(0);
 
-        assertThat(renderedUrl()).endsWith("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS);
+        assertThat(renderedUrl()).contains("&workingDayInHours=" + TimesheetReportWidget.FULL_TIME_HOURS + "&");
     }
 
     @Test
@@ -214,7 +282,7 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
         when(workingDayHours.value()).thenReturn(6);
 
-        assertThat(renderedUrl()).endsWith("&workingDayInHours=6");
+        assertThat(renderedUrl()).contains("&workingDayInHours=6&");
     }
 
     /**
