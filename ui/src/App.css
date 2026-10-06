@@ -128,10 +128,31 @@ body {
   font-size: 14px;
 }
 
+.timesheet-table-frame {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+/* Days scrolled under the WorkItem column: its edge casts a shadow over them. */
+.timesheet-table-frame.scrolled-left table.timesheet tr > :first-child {
+  box-shadow: 4px 0 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* More days to the right: the right edge fades out. It stops above the scrollbar, which is 10px. */
+.timesheet-table-frame.more-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 10px;
+  width: 16px;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
+}
+
 .timesheet-table-wrap {
   overflow-x: auto;
   max-width: 100%;
-  margin-bottom: 10px;
 
   /* A month is wider than the widget in any realistic placement, so these tables scroll. macOS draws
      overlay scrollbars that stay hidden until you scroll, which made the table read as cut off

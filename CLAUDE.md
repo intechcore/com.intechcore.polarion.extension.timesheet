@@ -195,6 +195,9 @@ type").
   different WorkItem column per block. Titles wrap; long months scroll in `.timesheet-table-wrap`.
 - **The WorkItem column is `position: sticky`**, so the days scroll under it. That needs
   `border-collapse: separate`: under `collapse` the borders of a sticky cell scroll away.
+  `useScrollEdges` shades the side that hides days: a shadow under the column, a fade on the right.
+- **The visual tests show scrollbars** (`ignoreDefaultArgs: ['--hide-scrollbars']`), so a reference
+  proves a wide month can scroll.
 - **Chrome ignores `::-webkit-scrollbar` on an element that sets `scrollbar-width` or
   `scrollbar-color`**, and macOS then hides the scrollbar until you scroll. The standard
   properties are therefore set for Firefox only, under `@supports not selector(::-webkit-scrollbar)`.

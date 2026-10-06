@@ -66,10 +66,14 @@ export default defineConfig({
       // references reproducible. Without it Chromium places a glyph on the subpixel its layout lands on and
       // picks the phase to rasterize it at from what it has already drawn in the same browser, so a
       // reference agrees with the runs that had the same files ahead of it and with no others.
+      //
+      // Headless Chromium hides scrollbars by default. Showing them is what lets a reference prove that
+      // a month too wide for the widget can be scrolled.
       provider: playwright({
         contextOptions: { deviceScaleFactor: 2, viewport: { width: 1920, height: 2200 } },
         launchOptions: {
           args: ['--disable-font-subpixel-positioning', '--disable-lcd-text'],
+          ignoreDefaultArgs: ['--hide-scrollbars'],
         },
       }),
       headless: true,

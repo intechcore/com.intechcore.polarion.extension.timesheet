@@ -127,6 +127,29 @@ describe('UserTimesheet', () => {
     await vi.waitFor(() => expect(left()).toBe(before));
   });
 
+  it('shades the side where days are hidden', async () => {
+    await page.viewport(690, 720);
+    await show(<UserTimesheet title="Steve Developer" records={records} dates={dates} workingDayHours={8} />);
+
+    const frame = document.querySelector<HTMLElement>('.timesheet-table-frame')!;
+    const wrap = frame.querySelector<HTMLElement>('.timesheet-table-wrap')!;
+    const shaded = () => ['scrolled-left', 'more-right'].filter((c) => frame.classList.contains(c));
+
+    await vi.waitFor(() => expect(shaded()).toEqual(['more-right']));
+    wrap.scrollLeft = 300;
+    await vi.waitFor(() => expect(shaded()).toEqual(['scrolled-left', 'more-right']));
+    wrap.scrollLeft = wrap.scrollWidth;
+    await vi.waitFor(() => expect(shaded()).toEqual(['scrolled-left']));
+  });
+
+  it('shades nothing when the month fits', async () => {
+    await page.viewport(1280, 720);
+    const week = datesInPeriod(parseDate('2026-06-01'), parseDate('2026-06-07'));
+    await show(<UserTimesheet title="Steve Developer" records={records} dates={week} workingDayHours={8} />);
+
+    expect(document.querySelector('.timesheet-table-frame')!.className).toBe('timesheet-table-frame');
+  });
+
   it('says so instead of drawing empty grids when the user booked nothing', async () => {
     await show(<UserTimesheet title="Ayato Seller" records={[]} dates={dates} workingDayHours={8} />);
 
