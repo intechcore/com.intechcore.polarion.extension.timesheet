@@ -20,6 +20,11 @@ Releases before 0.1.4 are listed on the
   get all their files in one step.
 - Renovate refreshes `ui/package-lock.json` through lock file maintenance, reviewed by a person.
 
+### Fixed
+- The WorkItem column has the same width in every table. A long title wraps onto more lines.
+- The WorkItem column stays in view while the days scroll.
+- The horizontal scrollbar of a report table is visible in Chrome on macOS.
+
 ## [0.1.4] - 2026-09-24
 
 ### Security
