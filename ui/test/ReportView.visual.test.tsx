@@ -69,6 +69,9 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
 
     await vi.waitFor(() => expect(document.querySelector('.timesheet-controls')).not.toBeNull());
     await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    // Without it the capture took whatever state the test files before it left: a pointer over a
+    // picker, or a frame not yet painted.
+    await settleBeforeCapture();
     await shot('.timesheet-controls', 'report-controls');
   });
 

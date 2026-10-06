@@ -7,6 +7,7 @@ import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.impl.dataset.ScopeParameterImpl;
 import com.polarion.alm.shared.api.model.rp.widget.RichPageWidgetCommonContext;
 import com.polarion.alm.shared.api.utils.html.HtmlFragmentBuilder;
 import com.polarion.alm.shared.api.utils.html.HtmlTagBuilder;
@@ -34,6 +35,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     private static final String HEIGHT_SYNC_SCRIPT = readHeightSyncScript();
 
     private final Scope scope;
+    private final boolean scopeLocked;
     private final List<String> userIds;
     private final int workingDayHours;
 
@@ -42,6 +44,9 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
         ScopeParameter scopeParameter = context.parameter(TimesheetReportWidget.PARAMETER_SCOPE);
         scope = scopeParameter.scope();
+        // "Default (current scope)" in the widget settings selects no scope, and the report stays on
+        // the scope of the page. The interface cannot tell that apart from a scope chosen by hand.
+        scopeLocked = scopeParameter instanceof ScopeParameterImpl impl && impl.getSelectedScope() == null;
 
         EnumParameter userIdsParameter = context.parameter(TimesheetReportWidget.PARAMETER_USER_IDS);
         userIds = userIdsParameter.values().asList().stream()
@@ -107,6 +112,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
         return APP_URL + "?feature=report"
                 + "&scope=" + enc(scopeValue)
+                + (scopeLocked ? "&scopeLocked=true" : "")
                 + "&userIds=" + enc(String.join(",", userIds))
                 + "&workingDayInHours=" + workingDayHours;
     }

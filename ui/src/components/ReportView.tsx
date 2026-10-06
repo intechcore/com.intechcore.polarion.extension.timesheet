@@ -26,6 +26,8 @@ export default function ReportView() {
     const wdh = parseInt(q.get('workingDayInHours') ?? '', 10);
     return {
       scopePath: q.get('scope') || '/',
+      // The widget follows the scope of its page: that scope is the only one the report may show.
+      scopeLocked: q.get('scopeLocked') === 'true',
       userIds: (q.get('userIds') ?? '')
         .split(',')
         .map((u) => u.trim())
@@ -63,12 +65,18 @@ export default function ReportView() {
 
   // Polarion's classic colored scope icons, matching the standard project navigation (the topicIcons
   // set is white-on-transparent and invisible on a light background).
-  const scopeOptions: SelectOption[] = scopes.map((scope) => ({
+  const allScopeOptions: SelectOption[] = scopes.map((scope) => ({
     id: scope.path,
     name: scope.name,
     iconURL: SCOPE_ICON[scope.type],
     indent: scope.depth > 0,
   }));
+  // A locked scope keeps its own entry, without the indent of the tree. Its id stands in for the name
+  // while the list loads, or when the list leaves the scope out because the user may not read it.
+  const lockedScope = allScopeOptions.find((o) => o.id === scopePath);
+  const scopeOptions: SelectOption[] = seed.scopeLocked
+    ? [lockedScope ? { ...lockedScope, indent: false } : { id: scopePath, name: scopePath }]
+    : allScopeOptions;
   const userOptions: SelectOption[] = users.map((user) => ({ id: user.id, name: `${user.name} (${user.id})` }));
 
   const scopeName = scopes.find((s) => s.path === scopePath)?.name ?? scopePath;
@@ -81,7 +89,12 @@ export default function ReportView() {
       <div className="timesheet-controls">
         <div className="control control-scope">
           <span>Scope</span>
-          <SearchableSelect options={scopeOptions} value={scopePath} onChange={setScopePath} />
+          <SearchableSelect
+            options={scopeOptions}
+            value={scopePath}
+            onChange={setScopePath}
+            disabled={seed.scopeLocked}
+          />
         </div>
         <div className="control control-users">
           <span>Users</span>

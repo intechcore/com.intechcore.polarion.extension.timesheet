@@ -6,6 +6,7 @@ import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
+import com.polarion.alm.shared.api.model.rp.parameter.impl.dataset.ScopeParameterImpl;
 import com.polarion.alm.shared.api.model.rp.widget.RichPageWidgetCommonContext;
 import com.polarion.alm.shared.api.utils.collections.StrictList;
 import com.polarion.alm.shared.api.utils.html.HtmlAttributesBuilder;
@@ -99,6 +100,30 @@ class TimesheetReportWidgetRendererTest {
         ArgumentCaptor<String> src = ArgumentCaptor.forClass(String.class);
         verify(attributes).byName(eq("src"), src.capture());
         return src.getValue();
+    }
+
+    /** "Default (current scope)" selects no scope: the report must stay on the scope of the page. */
+    @Test
+    void locksTheScopeWhenTheWidgetFollowsThePage() {
+        ScopeParameterImpl current = mock(ScopeParameterImpl.class);
+        when(current.scope()).thenReturn(scope);
+        when(current.getSelectedScope()).thenReturn(null);
+        when(context.<ScopeParameter>parameter(TimesheetReportWidget.PARAMETER_SCOPE)).thenReturn(current);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).contains("&scope=elibrary&scopeLocked=true&");
+    }
+
+    /** A scope chosen in the widget settings is only the default: the report offers the others. */
+    @Test
+    void leavesAChosenScopeOpen() {
+        ScopeParameterImpl chosen = mock(ScopeParameterImpl.class);
+        when(chosen.scope()).thenReturn(scope);
+        when(chosen.getSelectedScope()).thenReturn(scope);
+        when(context.<ScopeParameter>parameter(TimesheetReportWidget.PARAMETER_SCOPE)).thenReturn(chosen);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).contains("&scope=elibrary&userIds=").doesNotContain("scopeLocked");
     }
 
     @Test

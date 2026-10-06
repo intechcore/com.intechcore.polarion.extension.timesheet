@@ -6,6 +6,7 @@ import ReportView from '../src/components/ReportView';
 import { findFeature } from '../src/features';
 import type { ScopeInfo, Timesheet, User, WorkItem } from '../src/types';
 import { installFetchMock } from './mockFetch';
+import { parkPointer } from './visualHelpers';
 
 // The report page as the widget embeds it, and the feature router that picks it. REST is mocked at
 // the fetch boundary, so no Polarion is needed.
@@ -72,6 +73,47 @@ describe('ReportView', () => {
     expect(document.querySelector<HTMLInputElement>('.sd-trigger')?.value).toBe('E-Library');
     const chips = Array.from(document.querySelectorAll('.sd-chip-label')).map((c) => c.textContent);
     expect(chips.join(' ')).toContain('Steve Developer');
+  });
+
+  it('offers only the scope of the page when the widget follows it', async () => {
+    setUrl('?feature=report&scope=elibrary&scopeLocked=true&userIds=sDeveloper');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    const trigger = () => document.querySelector<HTMLInputElement>('.control-scope .sd-trigger');
+    await vi.waitFor(() => expect(trigger()?.value).toBe('E-Library'));
+    expect(trigger()?.getAttribute('aria-disabled')).toBe('true');
+    const offered = [...document.querySelectorAll<HTMLOptionElement>('.control-scope select option')];
+    expect(offered.map((o) => o.value)).toEqual(['elibrary']);
+
+    // Forced: Playwright waits for an aria-disabled element to turn enabled, and would time out.
+    await userEvent.click(trigger()!, { force: true });
+    const popups = [...document.querySelectorAll<HTMLElement>('.sd-portal .options')];
+    expect(popups.filter((p) => p.getClientRects().length > 0)).toHaveLength(0);
+    // The test files share one page: a pointer left over the picker paints its hover state into the
+    // pixel references of the next file.
+    await parkPointer();
+  });
+
+  it('shows the id of a locked scope the list leaves out', async () => {
+    // The scope list skips the projects the user may not read. The locked scope still says what it is.
+    setUrl('?feature=report&scope=support&scopeLocked=true&userIds=sDeveloper');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
+    expect(document.querySelector<HTMLInputElement>('.control-scope .sd-trigger')?.value).toBe('support');
+  });
+
+  it('offers the whole tree when the widget names a scope of its own', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
+    expect(document.querySelector('.control-scope .sd-trigger')?.getAttribute('aria-disabled')).toBe('false');
+    const offered = [...document.querySelectorAll<HTMLOptionElement>('.control-scope select option')];
+    expect(offered.map((o) => o.value)).toEqual(['/', 'elibrary']);
   });
 
   it('asks the backend for the selected scope and period', async () => {
