@@ -61,9 +61,19 @@ class TimesheetInternalControllerTest {
     }
 
     private static IProject project(String id, String name) {
-        IProject project = mock(IProject.class);
+        IProject project = mock(IProject.class, RETURNS_DEEP_STUBS);
         when(project.getId()).thenReturn(id);
         when(project.getName()).thenReturn(name);
+        when(project.can().read()).thenReturn(true);
+        return project;
+    }
+
+    /** A project the user may not read: Polarion throws on any field but the id. */
+    private static IProject unreadableProject(String id) {
+        IProject project = mock(IProject.class, RETURNS_DEEP_STUBS);
+        when(project.getId()).thenReturn(id);
+        when(project.getName()).thenThrow(new IllegalStateException("Permission denied"));
+        when(project.can().read()).thenReturn(false);
         return project;
     }
 
@@ -255,5 +265,16 @@ class TimesheetInternalControllerTest {
         List<ScopeInfo> scopes = controller.getScopes();
 
         assertThat(scopes).extracting(ScopeInfo::getPath).containsExactly("/", "/same", "shared");
+    }
+
+    /** One project the user may not read used to fail the whole list with a 500. */
+    @Test
+    void getScopes_leavesOutTheProjectsTheUserMayNotRead() {
+        IProjectGroup root = group("/", "Root", List.of(), List.of(unreadableProject("support"), project("dev", "Development")));
+        when(polarionService.getProjectService().getRootProjectGroup()).thenReturn(root);
+
+        List<ScopeInfo> scopes = controller.getScopes();
+
+        assertThat(scopes).extracting(ScopeInfo::getPath).containsExactly("/", "dev");
     }
 }

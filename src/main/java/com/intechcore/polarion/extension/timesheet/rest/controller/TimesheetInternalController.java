@@ -125,7 +125,8 @@ public class TimesheetInternalController {
         }
         for (Object project : group.getContainedProjects()) {
             IProject containedProject = (IProject) project;
-            if (seenPaths.add(containedProject.getId())) {
+            // A project the user may not read throws on getName(), which failed the whole list.
+            if (containedProject.can().read() && seenPaths.add(containedProject.getId())) {
                 scopes.add(new ScopeInfo(containedProject.getId(), containedProject.getName(), "project", depth));
             }
         }
