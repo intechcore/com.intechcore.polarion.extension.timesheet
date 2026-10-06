@@ -13,6 +13,7 @@ import org.mockito.MockedConstruction;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -61,6 +62,9 @@ class TimesheetReportWidgetTest {
 
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_SCOPE)).isNotNull();
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_USER_IDS)).isNotNull();
+        assertThat(parameters.get(TimesheetReportWidget.PARAMETER_CURRENT_USER)).isNotNull();
+        // Off by default: a new widget shows the users of its settings, as it always did.
+        verify(parameterFactory.bool(TimesheetReportWidget.CURRENT_USER)).value(false);
         assertThat(parameters.get(TimesheetReportWidget.COMPOSITE_PARAMETER_ADVANCED)).isNotNull();
     }
 

@@ -3,6 +3,7 @@ package com.intechcore.polarion.extension.timesheet.widget;
 import com.polarion.alm.server.api.model.rp.widget.AbstractWidgetRenderer;
 import com.polarion.alm.shared.api.Scope;
 import com.polarion.alm.shared.api.model.eo.EnumOption;
+import com.polarion.alm.shared.api.model.rp.parameter.BooleanParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
@@ -37,6 +38,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     private final Scope scope;
     private final boolean scopeLocked;
     private final List<String> userIds;
+    private final boolean userLocked;
     private final int workingDayHours;
 
     public TimesheetReportWidgetRenderer(@NotNull RichPageWidgetCommonContext context) {
@@ -48,8 +50,13 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         // the scope of the page. The interface cannot tell that apart from a scope chosen by hand.
         scopeLocked = scopeParameter instanceof ScopeParameterImpl impl && impl.getSelectedScope() == null;
 
+        // A widget saved before the parameter existed has none, and keeps its list of users.
+        BooleanParameter currentUserParameter = context.parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER);
+        userLocked = currentUserParameter != null && currentUserParameter.value();
+
         EnumParameter userIdsParameter = context.parameter(TimesheetReportWidget.PARAMETER_USER_IDS);
-        userIds = userIdsParameter.values().asList().stream()
+        // The report shows its viewer then, and the users of the settings would only mislead.
+        userIds = userLocked ? List.of() : userIdsParameter.values().asList().stream()
                 .map(EnumOption::id)
                 .toList();
 
@@ -114,6 +121,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
                 + "&scope=" + enc(scopeValue)
                 + (scopeLocked ? "&scopeLocked=true" : "")
                 + "&userIds=" + enc(String.join(",", userIds))
+                + (userLocked ? "&userLocked=true" : "")
                 + "&workingDayInHours=" + workingDayHours;
     }
 
