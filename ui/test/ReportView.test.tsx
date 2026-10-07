@@ -198,7 +198,7 @@ describe('ReportView', () => {
     expect(document.querySelector('table.timesheet')).not.toBeNull();
     expect(document.querySelector('.timesheet-controls')).toBeNull();
     expect(document.querySelector('.timesheet-report h3')).toBeNull();
-    expect(text()).not.toContain('Export PDF');
+    expect(text()).not.toContain('Export to PDF');
   });
 
   it('tells the server what it shows, for a PDF export of the page', async () => {

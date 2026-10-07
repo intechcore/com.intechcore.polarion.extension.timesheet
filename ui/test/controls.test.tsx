@@ -167,7 +167,7 @@ describe('the control row', () => {
     await userEvent.click(button);
 
     await vi.waitFor(() => expect(error).toHaveBeenCalled());
-    await vi.waitFor(() => expect(button.textContent).toBe('Export PDF'));
+    await vi.waitFor(() => expect(button.textContent).toBe('Export to PDF'));
     expect(button.disabled).toBe(false);
     vi.restoreAllMocks();
   });
@@ -186,7 +186,7 @@ describe('the control row', () => {
     expect(icon.getAttribute('src')).toBe(PDF_EXPORT_ICON);
     // Decorative: the label names the button for a screen reader.
     expect(icon.alt).toBe('');
-    expect(button.textContent).toBe('Export PDF');
+    expect(button.textContent).toBe('Export to PDF');
     // The tests serve a stand-in at Polarion's path (vitest.config.ts), so the icon does load.
     await vi.waitFor(() => expect(icon.naturalWidth).toBe(16));
     expect(icon.getBoundingClientRect().width).toBe(15); // RSP's .sbb-btn__icon

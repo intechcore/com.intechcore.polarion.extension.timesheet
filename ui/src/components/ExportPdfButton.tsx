@@ -40,7 +40,7 @@ export default function ExportPdfButton({ disabled, ...options }: Props) {
       {/* Decorative: the text names the action. RSP's icon class sizes it and spaces it off the text. */}
       <img className="sbb-btn__icon" src={PDF_EXPORT_ICON} alt="" />
       {/* An element, not bare text: RSP spaces the icon only when it is not the only child. */}
-      <span>{busy ? 'Generating…' : 'Export PDF'}</span>
+      <span>{busy ? 'Generating…' : 'Export to PDF'}</span>
     </button>
   );
 }

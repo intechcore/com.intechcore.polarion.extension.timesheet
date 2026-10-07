@@ -42,7 +42,7 @@ test('defaults to the current user and renders their timesheet', async ({ page }
 
   await expect(page.getByText('Steve Developer - total: 12 h')).toBeVisible();
   await expect(page.getByRole('link', { name: 'EL-1 - Title 1' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Export PDF' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Export to PDF' })).toBeEnabled();
   // mTest is not selected, so their table is not shown
   await expect(page.getByText('Melanie Test - total: 5 h')).toHaveCount(0);
 });
