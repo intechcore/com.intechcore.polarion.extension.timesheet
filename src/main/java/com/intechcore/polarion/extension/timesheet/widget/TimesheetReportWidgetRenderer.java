@@ -92,7 +92,8 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         userLocked = !isOn(context, TimesheetReportWidget.PARAMETER_ALLOW_USERS);
         periodLocked = !isOn(context, TimesheetReportWidget.PARAMETER_ALLOW_PERIOD);
 
-        currentUser = isOn(context, TimesheetReportWidget.PARAMETER_CURRENT_USER);
+        CustomEnumParameter usersMode = context.parameter(TimesheetReportWidget.PARAMETER_USERS_MODE);
+        currentUser = TimesheetReportWidget.USERS_VIEWER.equals(usersMode.singleValue());
         EnumParameter userIdsParameter = context.parameter(TimesheetReportWidget.PARAMETER_USER_IDS);
         // The report opens on its viewer then, and the users of the settings would only mislead.
         userIds = currentUser ? List.of() : userIdsParameter.values().asList().stream()

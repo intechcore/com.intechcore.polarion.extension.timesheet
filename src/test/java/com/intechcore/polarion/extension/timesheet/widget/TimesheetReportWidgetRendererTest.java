@@ -85,15 +85,16 @@ class TimesheetReportWidgetRendererTest {
         when(advanced.<IntegerParameter>get(TimesheetReportWidget.PARAMETER_WORKING_DAY_IN_HOURS)).thenReturn(workingDayHours);
         when(context.<CompositeParameter>parameter(TimesheetReportWidget.COMPOSITE_PARAMETER_ADVANCED)).thenReturn(advanced);
 
-        // Polarion builds every parameter from the definition: unset, each one has its default. Off
-        // and no period chosen are a mock's false and null; an untouched date is today; every
-        // "Allow changing" is on.
+        // Polarion builds every parameter from the definition: unset, each one has its default. Off,
+        // no period and no user mode chosen are a mock's false and null; an untouched date is today;
+        // every "Allow changing" is on.
         BooleanParameter off = mock(BooleanParameter.class);
         BooleanParameter on = mock(BooleanParameter.class);
         when(on.value()).thenReturn(true);
         CustomEnumParameter noPeriod = mock(CustomEnumParameter.class);
+        CustomEnumParameter noUsersMode = mock(CustomEnumParameter.class);
         DateParameter noDate = dateParameter(LocalDate.now());
-        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER)).thenReturn(off);
+        when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_USERS_MODE)).thenReturn(noUsersMode);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(off);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_SCOPE)).thenReturn(on);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_USERS)).thenReturn(on);
@@ -164,10 +165,16 @@ class TimesheetReportWidgetRendererTest {
         assertThat(renderedUrl()).endsWith("&period=current-month&periodLocked=true");
     }
 
-    /** "Current user" opens the report on its viewer: the users of the settings do not travel. */
+    private void showTheViewer() {
+        CustomEnumParameter usersMode = mock(CustomEnumParameter.class);
+        when(usersMode.singleValue()).thenReturn(TimesheetReportWidget.USERS_VIEWER);
+        when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_USERS_MODE)).thenReturn(usersMode);
+    }
+
+    /** "Viewer of the page" opens the report on its viewer: the users of the settings do not travel. */
     @Test
     void opensOnTheViewerWithoutLockingThem() {
-        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        showTheViewer();
         when(scope.projectId()).thenReturn("elibrary");
 
         assertThat(renderedUrl()).contains("&userIds=&currentUser=true&").doesNotContain("userLocked");
@@ -176,7 +183,7 @@ class TimesheetReportWidgetRendererTest {
     /** The two combine: every viewer sees their own hours, and only those. */
     @Test
     void locksTheViewerWhenCurrentUserMayNotBeChanged() {
-        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        showTheViewer();
         flag(TimesheetReportWidget.PARAMETER_ALLOW_USERS, false);
         when(scope.projectId()).thenReturn("elibrary");
 
@@ -442,7 +449,7 @@ class TimesheetReportWidgetRendererTest {
 
     @Test
     void printsTheViewerForTheCurrentUserAndThePreviousMonth() {
-        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        showTheViewer();
         period(TimesheetReportWidget.PERIOD_PREVIOUS_MONTH, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1));
         Sources sources = new Sources("viewer");
 
@@ -465,7 +472,7 @@ class TimesheetReportWidgetRendererTest {
     /** A widget with the current user, read by nobody signed in, has nobody to show and asks for nothing. */
     @Test
     void printsNoUserWithoutAViewer() {
-        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        showTheViewer();
         Sources sources = new Sources(null);
 
         assertThat(printed(sources)).contains("No users selected");

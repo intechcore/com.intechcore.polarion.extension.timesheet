@@ -63,15 +63,16 @@ The report is provided as a **Timesheet Report** Live Report widget:
 The widget settings preset what the report opens on:
 
 - **Scope**: a project, a group, the repository, or **Default (current scope)**, the scope of the page.
-- **Current user**: opens the report on its viewer, so every viewer sees their own hours. The **Users** of the settings are ignored then.
-- **Users**: the users the report opens on.
-- **Period**: the current month (the default), the previous month, or a **Custom** range set by **From** and **To**. The months are counted when the page opens. A date left untouched is today.
+- **Show hours of**: **Selected users** (the default), listed in **Users**, or **Viewer of the page**, so every viewer sees their own hours.
+- **Period**: the current month (the default), the previous month, or **Custom** with **From** and **To**. The months are counted when the page opens. A date left untouched is today.
 - **Allow changing scope**, **Allow changing users**, **Allow changing period**: on by default. Turned off, the control keeps what the settings preset and is locked. They combine freely, for example every viewer sees their own hours and only those.
 - **Hide controls**: the page shows the tables only, without the title, the selectors, the period and the export.
 
+The settings show only what applies: **Users** for selected users, **From** and **To** for a custom period, and the **Allow changing** options while the controls are shown.
+
 The report itself provides controls - a scope selector, a multi-user selector, and a from/to date range - defaulting to the current user and the current month. It renders one table per user (split into one block per calendar month) and can export the selection to PDF.
 
-A PDF export or a print of the whole page (for example with the PDF Exporter) shows the report as it opens with the widget settings: the users of the settings, or the viewer for **Current user**, and the period counted from the day of the server. The server reads it when the document is made.
+A PDF export or a print of the whole page (for example with the PDF Exporter) shows the report as it opens with the widget settings: the selected users, or the viewer for **Viewer of the page**, and the period counted from the day of the server. The server reads it when the document is made.
 
 ## REST API
 
