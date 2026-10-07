@@ -36,6 +36,8 @@ Releases before 0.1.4 are listed on the
 - Renovate refreshes `ui/package-lock.json` through lock file maintenance, reviewed by a person.
 
 ### Fixed
+- A custom period with a day that does not exist, such as 2026-02-30, opens the report on the
+  current month instead of a shifted date.
 - A project group with a space in its path, such as `/Demo Projects`, can be the scope of the
   report. The validation no longer filters characters: every id goes into the query quoted, and
   an id or a scope Polarion does not know is answered with 400.
