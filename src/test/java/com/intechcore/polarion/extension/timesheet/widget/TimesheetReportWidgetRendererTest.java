@@ -63,6 +63,8 @@ class TimesheetReportWidgetRendererTest {
     @SuppressWarnings("unchecked")
     void setUp() {
         context = mock(RichPageWidgetCommonContext.class);
+        // The page shown in Polarion; a PDF export or a print sets another target.
+        when(context.target()).thenReturn(com.polarion.alm.shared.api.utils.html.RichTextRenderTarget.RP_VIEW);
 
         scope = mock(Scope.class);
         ScopeParameter scopeParameter = mock(ScopeParameter.class);
@@ -379,5 +381,121 @@ class TimesheetReportWidgetRendererTest {
         verify(attributes).byName("scrolling", "no");
         verify(attributes).width("100%");
         verify(attributes).style(anyString());
+    }
+
+    /** A source that answers from memory: the records of a test, names by ID, a fixed viewer and day. */
+    private static final class Sources implements TimesheetReportWidgetRenderer.PrintedReportSources {
+        private final String viewer;
+        private final java.util.List<java.util.List<Object>> calls = new java.util.ArrayList<>();
+
+        Sources(String viewer) {
+            this.viewer = viewer;
+        }
+
+        @Override
+        public com.intechcore.polarion.extension.timesheet.model.Timesheet timesheet(Scope scope, List<String> userIds, LocalDate start, LocalDate end) {
+            calls.add(List.of(userIds, start, end));
+            com.intechcore.polarion.extension.timesheet.model.Timesheet timesheet =
+                    new com.intechcore.polarion.extension.timesheet.model.Timesheet(start.toString(), end.toString(), new java.util.ArrayList<>());
+            timesheet.addWorkRecord(new com.intechcore.polarion.extension.timesheet.model.WorkRecord(start.toString(),
+                    new com.intechcore.polarion.extension.timesheet.model.WorkItem(
+                            new com.intechcore.polarion.extension.timesheet.model.Project("elibrary", "E-Library"), "EL-1", "Spec", null, null),
+                    new com.intechcore.polarion.extension.timesheet.model.User(userIds.get(0), "ignored"), 8));
+            return timesheet;
+        }
+
+        @Override
+        public String userName(String userId) {
+            return "Name of " + userId;
+        }
+
+        @Override
+        public String currentUser() {
+            return viewer;
+        }
+
+        @Override
+        public LocalDate today() {
+            return LocalDate.of(2026, 10, 7);
+        }
+    }
+
+    private String printed(Sources sources) {
+        when(context.target()).thenReturn(com.polarion.alm.shared.api.utils.html.RichTextRenderTarget.PDF_EXPORT);
+        new TimesheetReportWidgetRenderer(context, sources).render(builder);
+        ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
+        verify(builder).html(html.capture());
+        verify(builder, org.mockito.Mockito.never()).tag();
+        return html.getValue();
+    }
+
+    /** A PDF export or a print shows the report itself: an iframe has no content in a document. */
+    @Test
+    void writesTheReportOfTheUsersOfTheSettingsForAPdfExport() {
+        Sources sources = new Sources("viewer");
+
+        String html = printed(sources);
+
+        assertThat(sources.calls).containsExactly(List.of(List.of("aSeller", "mTest"), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31)));
+        assertThat(html).contains("Name of aSeller - total: 8 h").contains("Name of mTest - total: 0 h").contains("EL-1 - Spec");
+    }
+
+    @Test
+    void printsTheViewerForTheCurrentUserAndThePreviousMonth() {
+        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        period(TimesheetReportWidget.PERIOD_PREVIOUS_MONTH, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1));
+        Sources sources = new Sources("viewer");
+
+        assertThat(printed(sources)).contains("Name of viewer - total: 8 h");
+        assertThat(sources.calls).containsExactly(List.of(List.of("viewer"), LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)));
+    }
+
+    @Test
+    void printsACustomPeriodAndFallsBackToTheMonthForOneOutOfOrder() {
+        period(TimesheetReportWidget.PERIOD_CUSTOM, LocalDate.of(2026, 9, 28), LocalDate.of(2026, 10, 2));
+        Sources sources = new Sources("viewer");
+        printed(sources);
+        assertThat(sources.calls.get(0)).containsExactly(List.of("aSeller", "mTest"), LocalDate.of(2026, 9, 28), LocalDate.of(2026, 10, 2));
+
+        period(TimesheetReportWidget.PERIOD_CUSTOM, LocalDate.of(2026, 10, 2), LocalDate.of(2026, 9, 28));
+        assertThat(new TimesheetReportWidgetRenderer(context, sources).printedReport()).contains("total");
+        assertThat(sources.calls.get(1)).containsExactly(List.of("aSeller", "mTest"), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31));
+    }
+
+    /** A widget with the current user, read by nobody signed in, has nobody to show and asks for nothing. */
+    @Test
+    void printsNoUserWithoutAViewer() {
+        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        Sources sources = new Sources(null);
+
+        assertThat(printed(sources)).contains("No users selected");
+        assertThat(sources.calls).isEmpty();
+    }
+
+    /** In Polarion the report reads the records through the manager, and names each user, or shows the ID. */
+    @Test
+    void readsThePrintedReportFromPolarion() {
+        when(context.target()).thenReturn(com.polarion.alm.shared.api.utils.html.RichTextRenderTarget.PRINT);
+        com.polarion.alm.projects.model.IUser named = mock(com.polarion.alm.projects.model.IUser.class);
+        when(named.getName()).thenReturn("Anna Seller");
+        try (org.mockito.MockedConstruction<ch.sbb.polarion.extension.generic.service.PolarionService> services =
+                     org.mockito.Mockito.mockConstruction(ch.sbb.polarion.extension.generic.service.PolarionService.class,
+                             org.mockito.Mockito.withSettings().defaultAnswer(org.mockito.Mockito.RETURNS_DEEP_STUBS),
+                             (service, construction) -> {
+                                 when(service.getProjectService().getUser("aSeller")).thenReturn(named);
+                                 when(service.getProjectService().getUser("mTest")).thenThrow(new IllegalStateException("no transaction"));
+                             });
+             org.mockito.MockedConstruction<com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager> managers =
+                     org.mockito.Mockito.mockConstruction(com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager.class,
+                             (manager, construction) -> when(manager.getTimesheet(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
+                                     anyString(), anyString())).thenReturn(new com.intechcore.polarion.extension.timesheet.model.Timesheet("a", "b", List.of())))) {
+
+            String html = new TimesheetReportWidgetRenderer(context).printedReport();
+
+            assertThat(html).contains("Anna Seller - total: 0 h").contains("mTest - total: 0 h");
+            assertThat(managers.constructed()).hasSize(1);
+            // One service for the whole report.
+            assertThat(services.constructed()).hasSize(1);
+        }
     }
 }

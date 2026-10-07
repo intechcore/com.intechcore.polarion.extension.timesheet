@@ -1,5 +1,10 @@
 package com.intechcore.polarion.extension.timesheet.widget;
 
+import ch.sbb.polarion.extension.generic.service.PolarionService;
+import com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager;
+import com.intechcore.polarion.extension.timesheet.model.Timesheet;
+import com.intechcore.polarion.extension.timesheet.model.User;
+import com.polarion.alm.projects.model.IUser;
 import com.polarion.alm.server.api.model.rp.widget.AbstractWidgetRenderer;
 import com.polarion.alm.shared.api.Scope;
 import com.polarion.alm.shared.api.model.eo.EnumOption;
@@ -13,6 +18,7 @@ import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
 import com.polarion.alm.shared.api.model.rp.widget.RichPageWidgetCommonContext;
 import com.polarion.alm.shared.api.utils.html.HtmlFragmentBuilder;
 import com.polarion.alm.shared.api.utils.html.HtmlTagBuilder;
+import com.polarion.alm.shared.api.utils.html.RichTextRenderTarget;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
@@ -49,9 +56,32 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     private final LocalDate periodTo;
     private final boolean periodLocked;
     private final boolean hideControls;
+    private final boolean printed;
+    private final PrintedReportSources sources;
+
+    // The targets that turn the page into a document. A PDF export or a print shows no iframe.
+    private static final Set<RichTextRenderTarget> PRINTED = Set.of(RichTextRenderTarget.PDF_EXPORT,
+            RichTextRenderTarget.COMPARE_PDF_EXPORT, RichTextRenderTarget.PRINT, RichTextRenderTarget.COMPARE_PRINT);
+
+    /** What a printed report reads on the server: the work records, user names, the viewer and today. */
+    interface PrintedReportSources {
+        @NotNull Timesheet timesheet(@NotNull Scope scope, @NotNull List<String> userIds, @NotNull LocalDate start, @NotNull LocalDate end);
+
+        @NotNull String userName(@NotNull String userId);
+
+        @Nullable String currentUser();
+
+        @NotNull LocalDate today();
+    }
 
     public TimesheetReportWidgetRenderer(@NotNull RichPageWidgetCommonContext context) {
+        this(context, new PolarionSources());
+    }
+
+    TimesheetReportWidgetRenderer(@NotNull RichPageWidgetCommonContext context, @NotNull PrintedReportSources sources) {
         super(context);
+        this.sources = sources;
+        printed = PRINTED.contains(context.target());
 
         ScopeParameter scopeParameter = context.parameter(TimesheetReportWidget.PARAMETER_SCOPE);
         scope = scopeParameter.scope();
@@ -101,6 +131,10 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
     @Override
     protected void render(@NotNull final HtmlFragmentBuilder builder) {
+        if (printed) {
+            builder.html(printedReport());
+            return;
+        }
         String iframeId = "timesheet-report-" + UUID.randomUUID();
 
         HtmlTagBuilder iframe = builder.tag().byName("iframe");
@@ -140,6 +174,73 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
             return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException("Cannot read " + name, e);
+        }
+    }
+
+    /**
+     * The report as it opens with the widget settings, read on the server, for a document without
+     * iframes: the viewer when the widget shows the current user or names nobody, the months counted
+     * from the day of the server.
+     */
+    @NotNull String printedReport() {
+        String viewer = sources.currentUser();
+        List<String> ids = currentUser || userIds.isEmpty() ? (viewer == null ? List.of() : List.of(viewer)) : userIds;
+        LocalDate today = sources.today();
+        LocalDate start;
+        LocalDate end;
+        if (TimesheetReportWidget.PERIOD_PREVIOUS_MONTH.equals(period)) {
+            start = today.minusMonths(1).withDayOfMonth(1);
+            end = start.withDayOfMonth(start.lengthOfMonth());
+        } else if (TimesheetReportWidget.PERIOD_CUSTOM.equals(period) && !periodFrom.isAfter(periodTo)) {
+            start = periodFrom;
+            end = periodTo;
+        } else {
+            // The current month, as the report falls back to for a custom period out of order.
+            start = today.withDayOfMonth(1);
+            end = start.withDayOfMonth(start.lengthOfMonth());
+        }
+        Timesheet timesheet = ids.isEmpty() ? new Timesheet(start.toString(), end.toString(), List.of())
+                : sources.timesheet(scope, ids, start, end);
+        List<User> users = ids.stream().map(id -> new User(id, sources.userName(id))).toList();
+        return new TimesheetReportHtml(users, start, end, workingDayHours).render(timesheet);
+    }
+
+    /** The sources of a running Polarion. The service is made on first use: a page view needs none. */
+    private static final class PolarionSources implements PrintedReportSources {
+
+        private PolarionService service;
+
+        private PolarionService polarionService() {
+            if (service == null) {
+                service = new PolarionService();
+            }
+            return service;
+        }
+
+        @Override
+        public @NotNull Timesheet timesheet(@NotNull Scope scope, @NotNull List<String> userIds, @NotNull LocalDate start, @NotNull LocalDate end) {
+            return new TimesheetReportManager(polarionService()).getTimesheet(scope, userIds, start.toString(), end.toString());
+        }
+
+        @Override
+        public @NotNull String userName(@NotNull String userId) {
+            try {
+                IUser user = polarionService().getProjectService().getUser(userId);
+                return user == null || user.getName() == null ? userId : user.getName();
+            } catch (RuntimeException e) {
+                // A user Polarion cannot name is shown by the ID.
+                return userId;
+            }
+        }
+
+        @Override
+        public @Nullable String currentUser() {
+            return polarionService().getSecurityService().getCurrentUser();
+        }
+
+        @Override
+        public @NotNull LocalDate today() {
+            return LocalDate.now();
         }
     }
 

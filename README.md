@@ -71,6 +71,8 @@ The widget settings preset what the report opens on:
 
 The report itself provides controls - a scope selector, a multi-user selector, and a from/to date range - defaulting to the current user and the current month. It renders one table per user (split into one block per calendar month) and can export the selection to PDF.
 
+A PDF export or a print of the whole page (for example with the PDF Exporter) shows the report as it opens with the widget settings: the users of the settings, or the viewer for **Current user**, and the period counted from the day of the server. The server reads it when the document is made.
+
 ## REST API
 
 This extension provides a REST API. Its OpenAPI specification can be obtained [here](docs/openapi.json).

@@ -16,6 +16,8 @@ Releases before 0.1.4 are listed on the
 - The widget option **Period** opens the report on the current month, the previous month or
   a custom range.
 - The widget option **Hide controls** shows the tables only.
+- A PDF export or a print of a page shows the report of the widget, read on the server, instead of
+  an empty frame.
 
 ### Changed
 - The version bump moves the Unreleased entries of this changelog into a section for
