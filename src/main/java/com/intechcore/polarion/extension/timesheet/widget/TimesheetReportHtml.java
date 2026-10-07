@@ -32,15 +32,18 @@ public class TimesheetReportHtml {
     private static final String WEEKEND = "background:#eaeaea;";
     private static final Set<DayOfWeek> WEEKEND_DAYS = EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
 
+    private final String scopeName;
     private final List<User> users;
     private final LocalDate start;
     private final LocalDate end;
     private final int workingDayHours;
 
     /**
+     * @param scopeName the name of the scope, for the line that says what the report covers
      * @param users the users of the report, in their order, with the names to show
      */
-    public TimesheetReportHtml(@NotNull List<User> users, @NotNull LocalDate start, @NotNull LocalDate end, int workingDayHours) {
+    public TimesheetReportHtml(@NotNull String scopeName, @NotNull List<User> users, @NotNull LocalDate start, @NotNull LocalDate end, int workingDayHours) {
+        this.scopeName = scopeName;
         this.users = users;
         this.start = start;
         this.end = end;
@@ -50,6 +53,10 @@ public class TimesheetReportHtml {
     public @NotNull String render(@NotNull Timesheet timesheet) {
         List<WorkRecord> records = timesheet.getWorkRecords() == null ? List.of() : timesheet.getWorkRecords();
         StringBuilder html = new StringBuilder("<div class=\"timesheet-report\">");
+        // The line the PDF of the report itself starts with (ui/src/utils/exportPdf.ts). Without it an
+        // empty month read as missing hours rather than as the period the settings chose.
+        html.append("<p style=\"font-size:9pt;\">Scope: ").append(escape(scopeName))
+                .append("&nbsp;&nbsp;&nbsp; Period: ").append(start).append(" - ").append(end).append("</p>");
         if (users.isEmpty()) {
             return html.append("<p>No users selected</p></div>").toString();
         }

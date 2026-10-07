@@ -35,6 +35,9 @@ import java.util.Set;
 @Singleton
 public class TimesheetInternalController {
 
+    /** The name of the root scope, here and in the PDF a widget writes on the server. */
+    public static final String REPOSITORY_SCOPE_NAME = "Repository (all projects)";
+
     protected final PolarionService polarionService;
 
     public TimesheetInternalController() {
@@ -106,7 +109,7 @@ public class TimesheetInternalController {
     public List<ScopeInfo> getScopes() {
         List<ScopeInfo> scopes = new ArrayList<>();
         Set<String> seenPaths = new HashSet<>();
-        scopes.add(new ScopeInfo("/", "Repository (all projects)", "root", 0));
+        scopes.add(new ScopeInfo("/", REPOSITORY_SCOPE_NAME, "root", 0));
         seenPaths.add("/");
         IProjectGroup root = polarionService.getProjectService().getRootProjectGroup();
         if (root != null) {

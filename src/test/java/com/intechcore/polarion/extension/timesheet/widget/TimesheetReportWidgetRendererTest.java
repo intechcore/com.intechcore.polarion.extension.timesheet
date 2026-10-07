@@ -417,6 +417,11 @@ class TimesheetReportWidgetRendererTest {
         }
 
         @Override
+        public String scopeName(Scope scope) {
+            return "Scope of " + scope.projectId();
+        }
+
+        @Override
         public String currentUser() {
             return viewer;
         }
@@ -491,18 +496,52 @@ class TimesheetReportWidgetRendererTest {
                              (service, construction) -> {
                                  when(service.getProjectService().getUser("aSeller")).thenReturn(named);
                                  when(service.getProjectService().getUser("mTest")).thenThrow(new IllegalStateException("no transaction"));
+                                 when(service.getProjectService().getProject("elibrary").can().read()).thenReturn(true);
+                                 when(service.getProjectService().getProject("elibrary").getName()).thenReturn("E-Library");
                              });
              org.mockito.MockedConstruction<com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager> managers =
                      org.mockito.Mockito.mockConstruction(com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager.class,
                              (manager, construction) -> when(manager.getTimesheet(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
                                      anyString(), anyString())).thenReturn(new com.intechcore.polarion.extension.timesheet.model.Timesheet("a", "b", List.of())))) {
 
+            when(scope.projectId()).thenReturn("elibrary");
             String html = new TimesheetReportWidgetRenderer(context).printedReport();
 
-            assertThat(html).contains("Anna Seller - total: 0 h").contains("mTest - total: 0 h");
+            assertThat(html).contains("Scope: E-Library").contains("Anna Seller - total: 0 h").contains("mTest - total: 0 h");
             assertThat(managers.constructed()).hasSize(1);
             // One service for the whole report.
             assertThat(services.constructed()).hasSize(1);
+        }
+    }
+
+    /** The scope line names the scope as the scope list does, and a project the user may not read by its ID. */
+    @Test
+    void namesTheScopeOfThePrintedReport() {
+        when(context.target()).thenReturn(com.polarion.alm.shared.api.utils.html.RichTextRenderTarget.PRINT);
+        try (org.mockito.MockedConstruction<ch.sbb.polarion.extension.generic.service.PolarionService> ignored =
+                     org.mockito.Mockito.mockConstruction(ch.sbb.polarion.extension.generic.service.PolarionService.class,
+                             org.mockito.Mockito.withSettings().defaultAnswer(org.mockito.Mockito.RETURNS_DEEP_STUBS),
+                             (service, construction) -> {
+                                 when(service.getProjectService().getProject("secret").can().read()).thenReturn(false);
+                                 when(service.getProjectService().getProject("broken")).thenThrow(new IllegalStateException("no transaction"));
+                             });
+             org.mockito.MockedConstruction<com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager> ignoredManagers =
+                     org.mockito.Mockito.mockConstruction(com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager.class,
+                             (manager, construction) -> when(manager.getTimesheet(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
+                                     anyString(), anyString())).thenReturn(new com.intechcore.polarion.extension.timesheet.model.Timesheet("a", "b", List.of())))) {
+
+            when(scope.isGlobal()).thenReturn(true);
+            assertThat(new TimesheetReportWidgetRenderer(context).printedReport()).contains("Scope: Repository (all projects)");
+
+            when(scope.isGlobal()).thenReturn(false);
+            when(scope.path()).thenReturn("/Demo Projects");
+            assertThat(new TimesheetReportWidgetRenderer(context).printedReport()).contains("Scope: Demo Projects");
+
+            when(scope.projectId()).thenReturn("secret");
+            assertThat(new TimesheetReportWidgetRenderer(context).printedReport()).contains("Scope: secret");
+
+            when(scope.projectId()).thenReturn("broken");
+            assertThat(new TimesheetReportWidgetRenderer(context).printedReport()).contains("Scope: broken");
         }
     }
 }

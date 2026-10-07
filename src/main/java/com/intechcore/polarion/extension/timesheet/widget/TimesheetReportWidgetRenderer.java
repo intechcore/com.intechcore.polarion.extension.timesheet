@@ -4,6 +4,8 @@ import ch.sbb.polarion.extension.generic.service.PolarionService;
 import com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager;
 import com.intechcore.polarion.extension.timesheet.model.Timesheet;
 import com.intechcore.polarion.extension.timesheet.model.User;
+import com.intechcore.polarion.extension.timesheet.rest.controller.TimesheetInternalController;
+import com.polarion.alm.projects.model.IProject;
 import com.polarion.alm.projects.model.IUser;
 import com.polarion.alm.server.api.model.rp.widget.AbstractWidgetRenderer;
 import com.polarion.alm.shared.api.Scope;
@@ -68,6 +70,8 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         @NotNull Timesheet timesheet(@NotNull Scope scope, @NotNull List<String> userIds, @NotNull LocalDate start, @NotNull LocalDate end);
 
         @NotNull String userName(@NotNull String userId);
+
+        @NotNull String scopeName(@NotNull Scope scope);
 
         @Nullable String currentUser();
 
@@ -203,7 +207,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         Timesheet timesheet = ids.isEmpty() ? new Timesheet(start.toString(), end.toString(), List.of())
                 : sources.timesheet(scope, ids, start, end);
         List<User> users = ids.stream().map(id -> new User(id, sources.userName(id))).toList();
-        return new TimesheetReportHtml(users, start, end, workingDayHours).render(timesheet);
+        return new TimesheetReportHtml(sources.scopeName(scope), users, start, end, workingDayHours).render(timesheet);
     }
 
     /** The sources of a running Polarion. The service is made on first use: a page view needs none. */
@@ -231,6 +235,25 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
             } catch (RuntimeException e) {
                 // A user Polarion cannot name is shown by the ID.
                 return userId;
+            }
+        }
+
+        /** The name the scope list shows (/internal/scopes): a project the user may not read by its ID. */
+        @Override
+        public @NotNull String scopeName(@NotNull Scope scope) {
+            if (scope.isGlobal()) {
+                return TimesheetInternalController.REPOSITORY_SCOPE_NAME;
+            }
+            String projectId = scope.projectId();
+            if (projectId == null) {
+                String path = scope.path();
+                return path.substring(path.lastIndexOf('/') + 1);
+            }
+            try {
+                IProject project = polarionService().getProjectService().getProject(projectId);
+                return project.can().read() ? project.getName() : projectId;
+            } catch (RuntimeException e) {
+                return projectId;
             }
         }
 

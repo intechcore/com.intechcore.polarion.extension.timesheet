@@ -33,6 +33,8 @@ Releases before 0.1.4 are listed on the
 - Renovate refreshes `ui/package-lock.json` through lock file maintenance, reviewed by a person.
 
 ### Fixed
+- The report a PDF export writes on the server starts with its scope and period, as the PDF
+  of the report itself does. An empty month no longer reads as missing hours.
 - The WorkItem column has the same width in every table. A long title wraps onto more lines.
 - The WorkItem column stays in view while the days scroll.
 - The horizontal scrollbar of a report table is visible in Chrome on macOS. It starts after
