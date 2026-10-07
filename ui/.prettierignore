@@ -10,3 +10,6 @@ coverage
 test/expected
 test/__diff__
 test/__screenshots__
+
+# Written by TimesheetReportHtmlReferenceTest as the server renders it, one line, not formatted.
+test/fixtures/printed-report.html
