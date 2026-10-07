@@ -27,4 +27,15 @@
         <widget id="com.intechcore.polarion.extension.timesheet.widget.TimesheetReportWidget" instance="instance:com.intechcore.polarion.extension.timesheet.widget.TimesheetReportWidget"/>
     </contribution>
 
+    <!-- The topic Timesheet in the navigation of a project or of the repository: the report as a page. -->
+    <contribution configuration-id="com.polarion.xray.webui.customNavigationExtenders">
+        <extenders extender="timesheetNavigationExtender"/>
+    </contribution>
+
+    <service-point id="timesheetNavigationExtender" interface="com.polarion.alm.ui.server.navigation.NavigationExtender">
+        <invoke-factory>
+            <construct class="com.intechcore.polarion.extension.timesheet.TimesheetNavigationExtender"/>
+        </invoke-factory>
+    </service-point>
+
 </module>
