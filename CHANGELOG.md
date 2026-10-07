@@ -10,7 +10,9 @@ Releases before 0.1.4 are listed on the
 ## [Unreleased]
 
 ### Added
-- The widget option **Current user** opens the report on its viewer.
+- The widget option **Show hours of** opens the report on the selected users or on its viewer.
+- The widget settings show only what applies: the users, the custom dates and the **Allow
+  changing** options appear when they take effect.
 - The widget options **Allow changing scope**, **Allow changing users** and **Allow changing
   period** lock a control of the report at what the settings preset. They combine freely.
 - The widget option **Period** opens the report on the current month, the previous month or
