@@ -60,7 +60,16 @@ The report is provided as a **Timesheet Report** Live Report widget:
 1. Open (or create) a Live Report page and edit it.
 2. Add the **Timesheet Report** widget (category *Reports*).
 
-The widget presets the default scope (project or group) and users shown when the report opens. With the scope left at **Default (current scope)**, the report shows the scope of its page only, and the scope selector is locked. A scope chosen in the widget settings is only the default: the selector offers the whole tree. With **Current user** checked, every viewer sees their own hours: the users of the settings are ignored, and the user selector is locked. **Period** opens the report on the current month (the default), the previous month, or a **Custom** range set by **From** and **To**; the months are counted when the page opens. With **Hide controls** checked, the page shows the tables only: no title, selectors, period or export. The report itself provides controls - a scope selector, a multi-user selector, and a from/to date range - defaulting to the current user and the current month. It renders one table per user (split into one block per calendar month) and can export the selection to PDF.
+The widget settings preset what the report opens on:
+
+- **Scope**: a project, a group, the repository, or **Default (current scope)**, the scope of the page.
+- **Current user**: opens the report on its viewer, so every viewer sees their own hours. The **Users** of the settings are ignored then.
+- **Users**: the users the report opens on.
+- **Period**: the current month (the default), the previous month, or a **Custom** range set by **From** and **To**. The months are counted when the page opens. A date left untouched is today.
+- **Allow changing scope**, **Allow changing users**, **Allow changing period**: on by default. Turned off, the control keeps what the settings preset and is locked. They combine freely, for example every viewer sees their own hours and only those.
+- **Hide controls**: the page shows the tables only, without the title, the selectors, the period and the export.
+
+The report itself provides controls - a scope selector, a multi-user selector, and a from/to date range - defaulting to the current user and the current month. It renders one table per user (split into one block per calendar month) and can export the selection to PDF.
 
 ## REST API
 

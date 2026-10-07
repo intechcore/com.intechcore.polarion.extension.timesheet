@@ -71,6 +71,12 @@ body {
   box-shadow: var(--sbb-control-shadow-hover);
 }
 
+/* A period the widget locks: the same fade as RSP's own .sbb-date-input:disabled, so it reads as
+   locked next to the dimmed pickers. */
+.standard-admin-page input[type='date']:disabled {
+  opacity: 0.55;
+}
+
 .standard-admin-page input[type='date']:focus {
   border-color: var(--sbb-control-border-focus);
   outline: none;

@@ -10,8 +10,9 @@ Releases before 0.1.4 are listed on the
 ## [Unreleased]
 
 ### Added
-- A widget left at the default scope locks the report to the scope of its page.
-- The widget option **Current user** shows every viewer their own hours.
+- The widget option **Current user** opens the report on its viewer.
+- The widget options **Allow changing scope**, **Allow changing users** and **Allow changing
+  period** lock a control of the report at what the settings preset. They combine freely.
 - The widget option **Period** opens the report on the current month, the previous month or
   a custom range.
 - The widget option **Hide controls** shows the tables only.

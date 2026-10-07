@@ -22,6 +22,9 @@ public class TimesheetReportWidget extends RichPageWidget {
     public static final String PERIOD_FROM = "From (custom period)";
     public static final String PERIOD_TO = "To (custom period)";
     public static final String HIDE_CONTROLS = "Hide controls";
+    public static final String ALLOW_SCOPE = "Allow changing scope";
+    public static final String ALLOW_USERS = "Allow changing users";
+    public static final String ALLOW_PERIOD = "Allow changing period";
     public static final String WORKING_DAY_IN_HOURS = "Working day in hours";
     public static final int FULL_TIME_HOURS = 8;
 
@@ -32,6 +35,9 @@ public class TimesheetReportWidget extends RichPageWidget {
     public static final String PARAMETER_PERIOD_FROM = "periodFrom";
     public static final String PARAMETER_PERIOD_TO = "periodTo";
     public static final String PARAMETER_HIDE_CONTROLS = "hideControls";
+    public static final String PARAMETER_ALLOW_SCOPE = "allowScope";
+    public static final String PARAMETER_ALLOW_USERS = "allowUsers";
+    public static final String PARAMETER_ALLOW_PERIOD = "allowPeriod";
 
     public static final String PERIOD_CURRENT_MONTH = "current-month";
     public static final String PERIOD_PREVIOUS_MONTH = "previous-month";
@@ -67,12 +73,16 @@ public class TimesheetReportWidget extends RichPageWidget {
                 .build();
 
         StrictMap<String, RichPageParameter> parameters = new StrictMapImpl<>();
-        // Shows every viewer their own hours, whoever set the widget up. It overrides the users above.
+        // Opens the report on its viewer, whoever set the widget up. It overrides the users below.
         BooleanParameter currentUserParameter = parameterFactory.bool(CURRENT_USER).value(false).build();
 
+        // Each "Allow changing" keeps or locks one control of the report, so they combine freely: a
+        // report fixed to the page scope that still lets the viewer add colleagues, for example.
         parameters.put(PARAMETER_SCOPE, scopeParameter);
+        parameters.put(PARAMETER_ALLOW_SCOPE, parameterFactory.bool(ALLOW_SCOPE).value(true).build());
         parameters.put(PARAMETER_CURRENT_USER, currentUserParameter);
         parameters.put(PARAMETER_USER_IDS, usersParameter);
+        parameters.put(PARAMETER_ALLOW_USERS, parameterFactory.bool(ALLOW_USERS).value(true).build());
 
         // The months are counted by the browser of the viewer, when the report opens, so the widget
         // passes only which one. The dates are read for a custom period only.
@@ -85,6 +95,7 @@ public class TimesheetReportWidget extends RichPageWidget {
         parameters.put(PARAMETER_PERIOD, periodParameter);
         parameters.put(PARAMETER_PERIOD_FROM, parameterFactory.date(PERIOD_FROM).build());
         parameters.put(PARAMETER_PERIOD_TO, parameterFactory.date(PERIOD_TO).build());
+        parameters.put(PARAMETER_ALLOW_PERIOD, parameterFactory.bool(ALLOW_PERIOD).value(true).build());
 
         // The page shows the tables only: no title, no scope, users, period or export.
         parameters.put(PARAMETER_HIDE_CONTROLS, parameterFactory.bool(HIDE_CONTROLS).value(false).build());

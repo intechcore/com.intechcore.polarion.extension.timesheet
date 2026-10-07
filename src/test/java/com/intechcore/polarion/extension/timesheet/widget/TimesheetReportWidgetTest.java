@@ -10,6 +10,8 @@ import com.polarion.alm.shared.api.utils.collections.ReadOnlyStrictMap;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
@@ -69,6 +71,10 @@ class TimesheetReportWidgetTest {
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).isNotNull();
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_PERIOD_TO)).isNotNull();
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).isNotNull();
+        // Every "Allow changing" is on by default: a new widget locks nothing.
+        for (String allow : List.of(TimesheetReportWidget.ALLOW_SCOPE, TimesheetReportWidget.ALLOW_USERS, TimesheetReportWidget.ALLOW_PERIOD)) {
+            verify(parameterFactory.bool(allow)).value(true);
+        }
         assertThat(parameters.get(TimesheetReportWidget.COMPOSITE_PARAMETER_ADVANCED)).isNotNull();
     }
 

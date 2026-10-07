@@ -9,7 +9,6 @@ import com.polarion.alm.shared.api.model.rp.parameter.DateParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
-import com.polarion.alm.shared.api.model.rp.parameter.impl.dataset.ScopeParameterImpl;
 import com.polarion.alm.shared.api.model.rp.widget.RichPageWidgetCommonContext;
 import com.polarion.alm.shared.api.utils.collections.StrictList;
 import com.polarion.alm.shared.api.utils.html.HtmlAttributesBuilder;
@@ -85,12 +84,18 @@ class TimesheetReportWidgetRendererTest {
         when(context.<CompositeParameter>parameter(TimesheetReportWidget.COMPOSITE_PARAMETER_ADVANCED)).thenReturn(advanced);
 
         // Polarion builds every parameter from the definition: unset, each one has its default. Off
-        // and no period chosen are a mock's false and null; an untouched date is today.
+        // and no period chosen are a mock's false and null; an untouched date is today; every
+        // "Allow changing" is on.
         BooleanParameter off = mock(BooleanParameter.class);
+        BooleanParameter on = mock(BooleanParameter.class);
+        when(on.value()).thenReturn(true);
         CustomEnumParameter noPeriod = mock(CustomEnumParameter.class);
         DateParameter noDate = dateParameter(LocalDate.now());
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER)).thenReturn(off);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(off);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_SCOPE)).thenReturn(on);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_USERS)).thenReturn(on);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_PERIOD)).thenReturn(on);
         when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD)).thenReturn(noPeriod);
         when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).thenReturn(noDate);
         when(context.<DateParameter>parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO)).thenReturn(noDate);
@@ -119,39 +124,61 @@ class TimesheetReportWidgetRendererTest {
         return src.getValue();
     }
 
-    /** "Default (current scope)" selects no scope: the report must stay on the scope of the page. */
-    @Test
-    void locksTheScopeWhenTheWidgetFollowsThePage() {
-        ScopeParameterImpl current = mock(ScopeParameterImpl.class);
-        when(current.scope()).thenReturn(scope);
-        when(current.getSelectedScope()).thenReturn(null);
-        when(context.<ScopeParameter>parameter(TimesheetReportWidget.PARAMETER_SCOPE)).thenReturn(current);
-        when(scope.projectId()).thenReturn("elibrary");
-
-        assertThat(renderedUrl()).contains("&scope=elibrary&scopeLocked=true&");
+    private void flag(String name, boolean value) {
+        BooleanParameter parameter = mock(BooleanParameter.class);
+        when(parameter.value()).thenReturn(value);
+        when(context.<BooleanParameter>parameter(name)).thenReturn(parameter);
     }
 
-    /** A scope chosen in the widget settings is only the default: the report offers the others. */
+    /** Everything may be changed by default: no control of the report is locked. */
     @Test
-    void leavesAChosenScopeOpen() {
-        ScopeParameterImpl chosen = mock(ScopeParameterImpl.class);
-        when(chosen.scope()).thenReturn(scope);
-        when(chosen.getSelectedScope()).thenReturn(scope);
-        when(context.<ScopeParameter>parameter(TimesheetReportWidget.PARAMETER_SCOPE)).thenReturn(chosen);
+    void locksNothingByDefault() {
         when(scope.projectId()).thenReturn("elibrary");
 
-        assertThat(renderedUrl()).contains("&scope=elibrary&userIds=").doesNotContain("scopeLocked");
+        assertThat(renderedUrl()).doesNotContain("Locked");
     }
 
-    /** "Current user" shows every viewer their own hours: the users of the settings do not travel. */
     @Test
-    void locksTheUserWhenTheWidgetShowsTheViewer() {
-        BooleanParameter currentUser = mock(BooleanParameter.class);
-        when(currentUser.value()).thenReturn(true);
-        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER)).thenReturn(currentUser);
+    void locksTheScopeWhenChangingItIsNotAllowed() {
+        flag(TimesheetReportWidget.PARAMETER_ALLOW_SCOPE, false);
         when(scope.projectId()).thenReturn("elibrary");
 
-        assertThat(renderedUrl()).contains("&userIds=&userLocked=true&");
+        assertThat(renderedUrl()).contains("&scope=elibrary&scopeLocked=true&").doesNotContain("userLocked");
+    }
+
+    @Test
+    void locksTheUsersWhenChangingThemIsNotAllowed() {
+        flag(TimesheetReportWidget.PARAMETER_ALLOW_USERS, false);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).contains("&userIds=aSeller%2CmTest&userLocked=true&").doesNotContain("scopeLocked");
+    }
+
+    @Test
+    void locksThePeriodWhenChangingItIsNotAllowed() {
+        flag(TimesheetReportWidget.PARAMETER_ALLOW_PERIOD, false);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).endsWith("&period=current-month&periodLocked=true");
+    }
+
+    /** "Current user" opens the report on its viewer: the users of the settings do not travel. */
+    @Test
+    void opensOnTheViewerWithoutLockingThem() {
+        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).contains("&userIds=&currentUser=true&").doesNotContain("userLocked");
+    }
+
+    /** The two combine: every viewer sees their own hours, and only those. */
+    @Test
+    void locksTheViewerWhenCurrentUserMayNotBeChanged() {
+        flag(TimesheetReportWidget.PARAMETER_CURRENT_USER, true);
+        flag(TimesheetReportWidget.PARAMETER_ALLOW_USERS, false);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).contains("&userIds=&currentUser=true&userLocked=true&");
     }
 
     /** "Current user" off, its default: the users of the settings travel. */
@@ -159,7 +186,7 @@ class TimesheetReportWidgetRendererTest {
     void keepsTheUsersOfTheSettingsWhenCurrentUserIsOff() {
         when(scope.projectId()).thenReturn("elibrary");
 
-        assertThat(renderedUrl()).contains("&userIds=aSeller%2CmTest&").doesNotContain("userLocked");
+        assertThat(renderedUrl()).contains("&userIds=aSeller%2CmTest&").doesNotContain("currentUser");
     }
 
     private void period(String value, LocalDate from, LocalDate to) {
@@ -206,9 +233,7 @@ class TimesheetReportWidgetRendererTest {
 
     @Test
     void hidesTheControlsWhenTheWidgetAsks() {
-        BooleanParameter hideControls = mock(BooleanParameter.class);
-        when(hideControls.value()).thenReturn(true);
-        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(hideControls);
+        flag(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS, true);
         when(scope.projectId()).thenReturn("elibrary");
 
         assertThat(renderedUrl()).endsWith("&period=current-month&hideControls=true");

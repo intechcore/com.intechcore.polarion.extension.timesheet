@@ -225,10 +225,17 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
   });
 
   it('control row: the user locked to the viewer', async () => {
-    openControls('?scope=elibrary&userLocked=true');
+    openControls('?scope=elibrary&currentUser=true&userLocked=true');
     await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
     await settleBeforeCapture();
     await shot('.timesheet-controls', 'controls-user-locked');
+  });
+
+  it('control row: the period locked', async () => {
+    openControls('?scope=elibrary&userIds=sDeveloper&periodLocked=true');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await settleBeforeCapture();
+    await shot('.timesheet-controls', 'controls-period-locked');
   });
 
   it('control row: a custom period', async () => {

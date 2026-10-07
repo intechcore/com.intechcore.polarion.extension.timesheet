@@ -118,7 +118,7 @@ describe('ReportView', () => {
 
   it('shows the viewer alone when the widget shows every viewer their own hours', async () => {
     // A crafted URL with users of its own still shows the viewer only.
-    setUrl('?feature=report&scope=elibrary&userLocked=true&userIds=mTest');
+    setUrl('?feature=report&scope=elibrary&currentUser=true&userLocked=true&userIds=mTest');
     const fetchMock = installFetchMock(optionRoutes());
     render(<ReportView />);
 
@@ -136,6 +136,43 @@ describe('ReportView', () => {
     const popups = [...document.querySelectorAll<HTMLElement>('.sd-portal .options')];
     expect(popups.filter((p) => p.getClientRects().length > 0)).toHaveLength(0);
     await parkPointer();
+  });
+
+  it('opens on the viewer and still lets them add colleagues', async () => {
+    setUrl('?feature=report&scope=elibrary&currentUser=true&userIds=mTest');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
+    const chips = [...document.querySelectorAll('.control-users .sd-chip-label')].map((c) => c.textContent);
+    expect(chips).toEqual(['Steve Developer (sDeveloper)']);
+    const trigger = document.querySelector('.control-users .sd-trigger-multi');
+    expect(trigger?.getAttribute('aria-disabled')).toBe('false');
+    const offered = [...document.querySelectorAll<HTMLOptionElement>('.control-users select option')];
+    expect(offered.map((o) => o.value)).toEqual(['sDeveloper', 'mTest']);
+  });
+
+  it('keeps the users of the widget when changing them is not allowed', async () => {
+    setUrl('?feature=report&scope=elibrary&userLocked=true&userIds=sDeveloper,mTest');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Melanie Test - total'));
+    expect(document.querySelector('.control-users .sd-trigger-multi')?.getAttribute('aria-disabled')).toBe('true');
+    const offered = [...document.querySelectorAll<HTMLOptionElement>('.control-users select option')];
+    expect(offered.map((o) => o.value)).toEqual(['sDeveloper', 'mTest']);
+  });
+
+  it('locks the period when changing it is not allowed', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper&periodLocked=true');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
+    const fields = [...document.querySelectorAll<HTMLInputElement>('input[type="date"]')];
+    expect(fields.map((f) => f.disabled)).toEqual([true, true]);
+    // Nothing else is locked by it.
+    expect(document.querySelector('.control-scope .sd-trigger')?.getAttribute('aria-disabled')).toBe('false');
   });
 
   it('opens on the period the widget asks for', async () => {
