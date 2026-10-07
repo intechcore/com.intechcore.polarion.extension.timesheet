@@ -332,5 +332,9 @@ class TimesheetInternalControllerTest {
 
         assertThatThrownBy(() -> controller.saveReportState("d".repeat(64), new ReportState("/", "aSeller", "2026-06-01", "2026-06-30")))
                 .hasMessage("No user is signed in");
+
+        when(polarionService.getSecurityService().getCurrentUser()).thenReturn(null);
+        assertThatThrownBy(() -> controller.saveReportState("d".repeat(64), new ReportState("/", "aSeller", "2026-06-01", "2026-06-30")))
+                .hasMessage("No user is signed in");
     }
 }

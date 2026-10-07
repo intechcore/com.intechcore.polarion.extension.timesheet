@@ -291,7 +291,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         public @NotNull String userName(@NotNull String userId) {
             try {
                 IUser user = polarionService().getProjectService().getUser(userId);
-                return user == null || user.getName() == null ? userId : user.getName();
+                return user.getName() == null ? userId : user.getName();
             } catch (RuntimeException e) {
                 // A user Polarion cannot name is shown by the ID.
                 return userId;

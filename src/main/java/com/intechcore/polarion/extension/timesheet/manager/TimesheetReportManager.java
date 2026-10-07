@@ -85,7 +85,7 @@ public class TimesheetReportManager {
 
     private static @NotNull String digits(@NotNull String value) {
         StringBuilder digits = new StringBuilder(value.length());
-        value.chars().filter(c -> c >= '0' && c <= '9').forEach(c -> digits.append((char) c));
+        value.chars().filter(Character::isDigit).forEach(c -> digits.append((char) c));
         return digits.toString();
     }
 
