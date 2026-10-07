@@ -38,9 +38,10 @@ class TimesheetReportHtmlTest {
                 record("2026-10-05", "EL-2", null, ALICE, 8),
                 record("2026-10-05", "EL-9", null, new User("bob", "Bob"), 4));
 
-        String html = new TimesheetReportHtml(List.of(ALICE), LocalDate.of(2026, 9, 29), LocalDate.of(2026, 10, 5), 8).render(timesheet);
+        String html = new TimesheetReportHtml("E-Library", List.of(ALICE), LocalDate.of(2026, 9, 29), LocalDate.of(2026, 10, 5), 8).render(timesheet);
 
-        assertThat(html).contains("<h4>Alice - total: 17.5 h</h4>");
+        assertThat(html).contains("Scope: E-Library&nbsp;&nbsp;&nbsp; Period: 2026-09-29 - 2026-10-05")
+                .contains("<h4>Alice - total: 17.5 h</h4>");
         // September and October, each with only its own days and work items; Bob's hours stay out.
         assertThat(html.split("<table", -1)).hasSize(3);
         assertThat(html).contains(">29.09</th>").contains(">30.09</th>").contains(">01.10</th>").contains(">05.10</th>")
@@ -58,11 +59,31 @@ class TimesheetReportHtmlTest {
     void saysWhenAUserHasNoRecordsAndWhenNobodyIsSelected() {
         Timesheet empty = new Timesheet("2026-10-01", "2026-10-31", null);
 
-        assertThat(new TimesheetReportHtml(List.of(new User("x", "<X>")), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), 8).render(empty))
+        assertThat(new TimesheetReportHtml("E-Library", List.of(new User("x", "<X>")), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), 8).render(empty))
                 .contains("<h4>&lt;X&gt; - total: 0 h</h4>").contains("- no work records in this period -").doesNotContain("<table");
-        assertThat(new TimesheetReportHtml(List.of(), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), 8).render(empty))
+        assertThat(new TimesheetReportHtml("E-Library", List.of(), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), 8).render(empty))
                 .contains("No users selected");
         assertThat(TimesheetReportHtml.escape(null)).isEmpty();
         assertThat(TimesheetReportHtml.hours(8.0)).isEqualTo("8");
+    }
+
+    /**
+     * As in the PDF of the report itself: the longest month fills the page, every block has the same
+     * WorkItem column and the same days, so a 30-day month is a shorter table than a 31-day one.
+     */
+    @Test
+    void givesEveryMonthTheSameColumnsAndTheLongestOneThePage() {
+        Timesheet timesheet = timesheet(record("2026-06-02", "EL-1", null, ALICE, 8), record("2026-08-03", "EL-1", null, ALICE, 8));
+
+        String html = new TimesheetReportHtml("E-Library", List.of(ALICE), LocalDate.of(2026, 6, 1), LocalDate.of(2026, 8, 31), 8).render(timesheet);
+
+        // 22% for the WorkItem column, 78% shared by the 31 days of the longest month.
+        String august = "table-layout:fixed;width:100.0000%";
+        String june = "table-layout:fixed;width:" + String.format(java.util.Locale.ROOT, "%.4f%%", 22 + 78.0 / 31 * 30);
+        assertThat(html).contains(august).contains(june);
+        assertThat(html.indexOf(june)).isLessThan(html.indexOf(august));
+        // Within each table the columns are shares of that table: the same widths on the page.
+        assertThat(html).contains("<col style=\"width:22.0000%;\">")
+                .contains("<col style=\"width:" + String.format(java.util.Locale.ROOT, "%.4f%%", 100 * 22 / (22 + 78.0 / 31 * 30)) + ";\">");
     }
 }

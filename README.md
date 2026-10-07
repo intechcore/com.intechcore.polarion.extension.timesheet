@@ -72,7 +72,7 @@ The settings show only what applies: **Users** for selected users, **From** and 
 
 The report itself provides controls - a scope selector, a multi-user selector, and a from/to date range - defaulting to the current user and the current month. It renders one table per user (split into one block per calendar month) and can export the selection to PDF.
 
-A PDF export or a print of the whole page (for example with the PDF Exporter) shows the report as it opens with the widget settings: the selected users, or the viewer for **Viewer of the page**, and the period counted from the day of the server. The server reads it when the document is made.
+A PDF export or a print of the whole page (for example with the PDF Exporter) shows the report as the person exporting last showed it on screen: the scope, the users and the period they chose, in the controls the widget lets them change. The report sends its selection to the server as it changes, and the server keeps it for a day. Without one, the export opens as the widget settings say: the selected users, or the viewer for **Viewer of the page**, and the period counted from the day of the server. The document starts with the scope and the period it covers.
 
 ## REST API
 

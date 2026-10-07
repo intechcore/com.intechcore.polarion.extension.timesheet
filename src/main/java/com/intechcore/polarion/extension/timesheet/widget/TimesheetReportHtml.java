@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,18 +30,28 @@ public class TimesheetReportHtml {
 
     private static final DateTimeFormatter DAY_MONTH = DateTimeFormatter.ofPattern("dd.MM");
     private static final String CELL = "border:1px solid #000000;padding:2px 3px;white-space:nowrap;";
+    // A day is about a 40th of the page on A4: little padding, centered as in the PDF of the report,
+    // and a smaller head, since "dd.MM" is the widest text a day holds.
+    private static final String DAY = "border:1px solid #000000;padding:1px;white-space:nowrap;overflow:hidden;text-align:center;";
+    private static final String DAY_HEAD = DAY + "font-size:6pt;";
     private static final String WEEKEND = "background:#eaeaea;";
+    // The share of the page the WorkItem column takes, as LABEL_WIDTH does in the PDF of the report
+    // itself (ui/src/utils/exportPdf.ts). The page size is chosen at export, so the widths are shares.
+    private static final double LABEL_PERCENT = 22;
     private static final Set<DayOfWeek> WEEKEND_DAYS = EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
 
+    private final String scopeName;
     private final List<User> users;
     private final LocalDate start;
     private final LocalDate end;
     private final int workingDayHours;
 
     /**
+     * @param scopeName the name of the scope, for the line that says what the report covers
      * @param users the users of the report, in their order, with the names to show
      */
-    public TimesheetReportHtml(@NotNull List<User> users, @NotNull LocalDate start, @NotNull LocalDate end, int workingDayHours) {
+    public TimesheetReportHtml(@NotNull String scopeName, @NotNull List<User> users, @NotNull LocalDate start, @NotNull LocalDate end, int workingDayHours) {
+        this.scopeName = scopeName;
         this.users = users;
         this.start = start;
         this.end = end;
@@ -50,6 +61,10 @@ public class TimesheetReportHtml {
     public @NotNull String render(@NotNull Timesheet timesheet) {
         List<WorkRecord> records = timesheet.getWorkRecords() == null ? List.of() : timesheet.getWorkRecords();
         StringBuilder html = new StringBuilder("<div class=\"timesheet-report\">");
+        // The line the PDF of the report itself starts with (ui/src/utils/exportPdf.ts). Without it an
+        // empty month read as missing hours rather than as the period the settings chose.
+        html.append("<p style=\"font-size:9pt;\">Scope: ").append(escape(scopeName))
+                .append("&nbsp;&nbsp;&nbsp; Period: ").append(start).append(" - ").append(end).append("</p>");
         if (users.isEmpty()) {
             return html.append("<p>No users selected</p></div>").toString();
         }
@@ -67,11 +82,22 @@ public class TimesheetReportHtml {
         return html.append("</div>").toString();
     }
 
+    /**
+     * One month. The longest month of the period fills the page and the day width follows from it, so
+     * every block has the same WorkItem column and the same days: a shorter month is a shorter table.
+     */
     private void block(StringBuilder html, List<WorkRecord> records, List<LocalDate> days) {
-        html.append("<table style=\"border-collapse:collapse;font-size:7pt;margin-bottom:8px;\"><thead><tr style=\"background:#cfcfcf;\">")
+        int longestMonth = months().stream().mapToInt(List::size).max().orElse(days.size());
+        double dayPercent = (100 - LABEL_PERCENT) / longestMonth;
+        double tableWidth = LABEL_PERCENT + dayPercent * days.size();
+        html.append("<table style=\"border-collapse:collapse;table-layout:fixed;width:").append(percent(tableWidth))
+                .append(";font-size:7pt;margin-bottom:8px;\"><colgroup><col style=\"width:").append(percent(100 * LABEL_PERCENT / tableWidth))
+                .append(";\">");
+        String dayColumn = "<col style=\"width:" + percent(100 * dayPercent / tableWidth) + ";\">";
+        html.append(dayColumn.repeat(days.size())).append("</colgroup><thead><tr style=\"background:#cfcfcf;\">")
                 .append("<th style=\"").append(CELL).append("text-align:left;\">WorkItem</th>");
         for (LocalDate day : days) {
-            html.append("<th style=\"").append(CELL).append(weekend(day)).append("\">").append(day.format(DAY_MONTH)).append("</th>");
+            html.append("<th style=\"").append(DAY_HEAD).append(weekend(day)).append("\">").append(day.format(DAY_MONTH)).append("</th>");
         }
         html.append("</tr></thead><tbody>");
         Map<String, WorkItem> workItems = new LinkedHashMap<>();
@@ -80,7 +106,7 @@ public class TimesheetReportHtml {
             html.append("<tr><td style=\"").append(CELL).append("white-space:normal;\">").append(label(workItem.getValue())).append("</td>");
             for (LocalDate day : days) {
                 double hours = sum(on(records, day, workItem.getKey()));
-                html.append("<td style=\"").append(CELL).append(weekend(day)).append("\">").append(hours > 0 ? hours(hours) + " h" : "").append("</td>");
+                html.append("<td style=\"").append(DAY).append(weekend(day)).append("\">").append(hours > 0 ? hours(hours) + " h" : "").append("</td>");
             }
             html.append("</tr>");
         }
@@ -88,10 +114,14 @@ public class TimesheetReportHtml {
         for (LocalDate day : days) {
             double hours = sum(on(records, day, null));
             String weight = hours < workingDayHours ? "font-style:italic;" : "font-weight:bold;";
-            html.append("<td style=\"").append(CELL).append(weekend(day)).append(weight).append("\">")
+            html.append("<td style=\"").append(DAY).append(weekend(day)).append(weight).append("\">")
                     .append(hours > 0 ? hours(hours) + " h" : "").append("</td>");
         }
         html.append("</tr></tfoot></table>");
+    }
+
+    private static String percent(double value) {
+        return String.format(Locale.ROOT, "%.4f%%", value);
     }
 
     /** The days of the period, one list per calendar month. */

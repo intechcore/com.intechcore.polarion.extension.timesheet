@@ -3,7 +3,9 @@ package com.intechcore.polarion.extension.timesheet.rest.controller;
 import ch.sbb.polarion.extension.generic.properties.ConfigurationProperties;
 import ch.sbb.polarion.extension.generic.properties.CurrentExtensionConfiguration;
 import ch.sbb.polarion.extension.generic.service.PolarionService;
+import com.intechcore.polarion.extension.timesheet.manager.ReportStateStore;
 import com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager;
+import com.intechcore.polarion.extension.timesheet.model.ReportState;
 import com.intechcore.polarion.extension.timesheet.model.ScopeInfo;
 import com.intechcore.polarion.extension.timesheet.model.Timesheet;
 import com.intechcore.polarion.extension.timesheet.model.User;
@@ -34,6 +36,9 @@ import java.util.Set;
 @Path("/internal")
 @Singleton
 public class TimesheetInternalController {
+
+    /** The name of the root scope, here and in the PDF a widget writes on the server. */
+    public static final String REPOSITORY_SCOPE_NAME = "Repository (all projects)";
 
     protected final PolarionService polarionService;
 
@@ -84,6 +89,24 @@ public class TimesheetInternalController {
         return (userId == null || userId.isBlank()) ? null : new User(userId, userId);
     }
 
+    /**
+     * Keeps what the report shows on screen for the current user, so a PDF export of the page writes
+     * the same report: the export renders the widget on the server, where the report has no browser.
+     */
+    @Hidden
+    @PUT
+    @Path("/report-state/{state_key}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void saveReportState(@PathParam("state_key") String stateKey, ReportState state) {
+        String key = RequestValidator.validateStateKey(stateKey);
+        ReportState valid = RequestValidator.validateReportState(state);
+        String userId = polarionService.getSecurityService().getCurrentUser();
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("No user is signed in");
+        }
+        ReportStateStore.getInstance().save(userId, key, valid);
+    }
+
     @Operation(summary = "Returns all enabled Polarion users")
     @GET
     @Path("/users")
@@ -106,7 +129,7 @@ public class TimesheetInternalController {
     public List<ScopeInfo> getScopes() {
         List<ScopeInfo> scopes = new ArrayList<>();
         Set<String> seenPaths = new HashSet<>();
-        scopes.add(new ScopeInfo("/", "Repository (all projects)", "root", 0));
+        scopes.add(new ScopeInfo("/", REPOSITORY_SCOPE_NAME, "root", 0));
         seenPaths.add("/");
         IProjectGroup root = polarionService.getProjectService().getRootProjectGroup();
         if (root != null) {

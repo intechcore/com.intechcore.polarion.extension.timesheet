@@ -180,8 +180,12 @@ type").
   jsPDF's built-in `helvetica`. (Note for future: `GenericUiServlet` serves
   `.js .html .css .png .svg .gif .woff .woff2 .ico .txt` but **not `.ttf`**, and Polarion's CSP
   blocks `data:` fonts - so any bundled web font must be a served woff2.)
-- **PDF/print export of the report widget can't capture the client-rendered iframe** - that's
-  why export is done client-side via the report's **Export PDF** button (`utils/exportPdf.ts`).
+- **PDF/print export of the report widget can't capture the client-rendered iframe.** The report's
+  **Export PDF** button exports client-side (`utils/exportPdf.ts`). A whole-page export (the PDF
+  Exporter) renders on the server, so the widget writes the report there (`TimesheetReportHtml`).
+  It shows what the viewer last showed on screen: `useReportState` PUTs the selection to
+  `/internal/report-state/{stateKey}`, kept in memory per user for a day (`ReportStateStore`). The
+  key hashes the page and the widget settings: the API gives a widget no id of its own.
   It imports `jspdf-autotable/es`, the package's ESM entry: the default CommonJS one resolves to
   the module namespace rather than the function under the browser-mode test transform, which
   made the module impossible to load in a test.

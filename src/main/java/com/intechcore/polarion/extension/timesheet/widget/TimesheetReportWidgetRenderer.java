@@ -1,12 +1,18 @@
 package com.intechcore.polarion.extension.timesheet.widget;
 
 import ch.sbb.polarion.extension.generic.service.PolarionService;
+import com.intechcore.polarion.extension.timesheet.manager.ReportStateStore;
 import com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager;
+import com.intechcore.polarion.extension.timesheet.model.ReportState;
 import com.intechcore.polarion.extension.timesheet.model.Timesheet;
 import com.intechcore.polarion.extension.timesheet.model.User;
+import com.intechcore.polarion.extension.timesheet.rest.controller.TimesheetInternalController;
+import com.intechcore.polarion.extension.timesheet.util.ScopeFactoryImpl;
+import com.polarion.alm.projects.model.IProject;
 import com.polarion.alm.projects.model.IUser;
 import com.polarion.alm.server.api.model.rp.widget.AbstractWidgetRenderer;
 import com.polarion.alm.shared.api.Scope;
+import com.polarion.alm.shared.api.model.ModelObjectReference;
 import com.polarion.alm.shared.api.model.eo.EnumOption;
 import com.polarion.alm.shared.api.model.rp.parameter.BooleanParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.CompositeParameter;
@@ -26,8 +32,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -57,6 +66,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     private final boolean periodLocked;
     private final boolean hideControls;
     private final boolean printed;
+    private final String stateKey;
     private final PrintedReportSources sources;
 
     // The targets that turn the page into a document. A PDF export or a print shows no iframe.
@@ -69,9 +79,16 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
         @NotNull String userName(@NotNull String userId);
 
+        @NotNull String scopeName(@NotNull Scope scope);
+
         @Nullable String currentUser();
 
         @NotNull LocalDate today();
+
+        /** What the user last showed in this report on screen, or null. */
+        @Nullable ReportState reportState(@NotNull String userId, @NotNull String stateKey);
+
+        @NotNull Scope scope(@Nullable String scopePath);
     }
 
     public TimesheetReportWidgetRenderer(@NotNull RichPageWidgetCommonContext context) {
@@ -115,6 +132,24 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         periodTo = localDate(context.parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO));
 
         hideControls = isOn(context, TimesheetReportWidget.PARAMETER_HIDE_CONTROLS);
+
+        stateKey = stateKey(context.getDisplayedReference(), settingsUrl());
+    }
+
+    /**
+     * Names this report for the selection it keeps: the page and the widget settings, hashed. The API
+     * gives a widget no id of its own, and the page renders the same settings on screen and in a PDF
+     * export, so both find the same key. Two widgets with equal settings on one page share it.
+     */
+    static @NotNull String stateKey(@Nullable ModelObjectReference page, @NotNull String settings) {
+        String source = (page == null ? "" : page.toPath()) + "\n" + settings;
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(source.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            // Every Java platform provides SHA-256.
+            throw new IllegalStateException(e);
+        }
     }
 
     private static boolean isOn(@NotNull RichPageWidgetCommonContext context, @NotNull String name) {
@@ -141,7 +176,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         HtmlTagBuilder iframe = builder.tag().byName("iframe");
         iframe.attributes()
                 .id(iframeId)
-                .byName("src", buildAppUrl())
+                .byName("src", settingsUrl() + "&stateKey=" + stateKey)
                 .byName("scrolling", "no")
                 .width("100%")
                 .style("border:0;width:100%;min-height:200px;");
@@ -178,14 +213,37 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         }
     }
 
+    /** What a report covers: the scope, the users and the period. */
+    private record Selection(@NotNull Scope scope, @NotNull List<String> userIds, @NotNull LocalDate start, @NotNull LocalDate end) {
+    }
+
     /**
-     * The report as it opens with the widget settings, read on the server, for a document without
-     * iframes: the viewer when the widget shows the current user or names nobody, the months counted
-     * from the day of the server.
+     * The report for a document without iframes, read on the server. It shows what the viewer last
+     * showed on screen, in the controls the widget lets them change, and the widget settings otherwise.
      */
     @NotNull String printedReport() {
         String viewer = sources.currentUser();
-        List<String> ids = currentUser || userIds.isEmpty() ? (viewer == null ? List.of() : List.of(viewer)) : userIds;
+        Selection shown = fromSettings(viewer);
+        ReportState state = viewer == null ? null : sources.reportState(viewer, stateKey);
+        if (state != null) {
+            shown = onScreen(shown, state);
+        }
+        Timesheet timesheet = shown.userIds().isEmpty()
+                ? new Timesheet(shown.start().toString(), shown.end().toString(), List.of())
+                : sources.timesheet(shown.scope(), shown.userIds(), shown.start(), shown.end());
+        List<User> users = shown.userIds().stream().map(id -> new User(id, sources.userName(id))).toList();
+        return new TimesheetReportHtml(sources.scopeName(shown.scope()), users, shown.start(), shown.end(), workingDayHours).render(timesheet);
+    }
+
+    /**
+     * The report as it opens with the widget settings: the viewer when the widget shows the current
+     * user or names nobody, the months counted from the day of the server.
+     */
+    private @NotNull Selection fromSettings(@Nullable String viewer) {
+        List<String> ids = userIds;
+        if (currentUser || userIds.isEmpty()) {
+            ids = viewer == null ? List.of() : List.of(viewer);
+        }
         LocalDate today = sources.today();
         LocalDate start;
         LocalDate end;
@@ -200,10 +258,16 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
             start = today.withDayOfMonth(1);
             end = start.withDayOfMonth(start.lengthOfMonth());
         }
-        Timesheet timesheet = ids.isEmpty() ? new Timesheet(start.toString(), end.toString(), List.of())
-                : sources.timesheet(scope, ids, start, end);
-        List<User> users = ids.stream().map(id -> new User(id, sources.userName(id))).toList();
-        return new TimesheetReportHtml(users, start, end, workingDayHours).render(timesheet);
+        return new Selection(scope, ids, start, end);
+    }
+
+    /** What the viewer showed on screen, in each control the widget lets them change. */
+    private @NotNull Selection onScreen(@NotNull Selection settings, @NotNull ReportState state) {
+        return new Selection(
+                scopeLocked ? settings.scope() : sources.scope(state.getScopePath()),
+                userLocked ? settings.userIds() : List.of(state.getUserIds().split(",")),
+                periodLocked ? settings.start() : LocalDate.parse(state.getStartDate()),
+                periodLocked ? settings.end() : LocalDate.parse(state.getEndDate()));
     }
 
     /** The sources of a running Polarion. The service is made on first use: a page view needs none. */
@@ -234,6 +298,25 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
             }
         }
 
+        /** The name the scope list shows (/internal/scopes): a project the user may not read by its ID. */
+        @Override
+        public @NotNull String scopeName(@NotNull Scope scope) {
+            if (scope.isGlobal()) {
+                return TimesheetInternalController.REPOSITORY_SCOPE_NAME;
+            }
+            String projectId = scope.projectId();
+            if (projectId == null) {
+                String path = scope.path();
+                return path.substring(path.lastIndexOf('/') + 1);
+            }
+            try {
+                IProject project = polarionService().getProjectService().getProject(projectId);
+                return project.can().read() ? project.getName() : projectId;
+            } catch (RuntimeException e) {
+                return projectId;
+            }
+        }
+
         @Override
         public @Nullable String currentUser() {
             return polarionService().getSecurityService().getCurrentUser();
@@ -243,9 +326,19 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         public @NotNull LocalDate today() {
             return LocalDate.now();
         }
+
+        @Override
+        public @Nullable ReportState reportState(@NotNull String userId, @NotNull String stateKey) {
+            return ReportStateStore.getInstance().find(userId, stateKey);
+        }
+
+        @Override
+        public @NotNull Scope scope(@Nullable String scopePath) {
+            return new ScopeFactoryImpl().fromPath(scopePath);
+        }
     }
 
-    private @NotNull String buildAppUrl() {
+    private @NotNull String settingsUrl() {
         // Pass a canonical scope value that round-trips through ScopeFactoryImpl.fromPath and
         // matches the values offered by the /scopes endpoint: project id, "/" (root), or a group path.
         String scopeValue = scope.projectId() != null ? scope.projectId() : (scope.isGlobal() ? "/" : scope.path());

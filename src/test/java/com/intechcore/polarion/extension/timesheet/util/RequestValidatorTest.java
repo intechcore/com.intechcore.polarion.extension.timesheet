@@ -1,5 +1,6 @@
 package com.intechcore.polarion.extension.timesheet.util;
 
+import com.intechcore.polarion.extension.timesheet.model.ReportState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -163,5 +164,30 @@ class RequestValidatorTest {
     private static String userList(int count) {
         List<String> ids = IntStream.range(0, count).mapToObj("user%d"::formatted).toList();
         return ids.stream().collect(Collectors.joining(","));
+    }
+
+    // --- The selection a report keeps for a PDF export ---
+
+    @Test
+    void acceptsAStateKeyOnlyAsASha256InHex() {
+        String key = "a".repeat(64);
+        assertThat(RequestValidator.validateStateKey(key)).isEqualTo(key);
+        for (String bad : new String[]{null, "", "A".repeat(64), "a".repeat(63), "a".repeat(65), "../" + "a".repeat(61)}) {
+            assertThatThrownBy(() -> RequestValidator.validateStateKey(bad)).hasMessage("State key is not valid");
+        }
+    }
+
+    @Test
+    void checksAReportStateByTheRulesOfItsRequest() {
+        ReportState valid = RequestValidator.validateReportState(
+                new ReportState(" elibrary ", " aSeller , mTest ", "2026-06-01", "2026-06-30"));
+        assertThat(valid).isEqualTo(new ReportState("elibrary", "aSeller,mTest", "2026-06-01", "2026-06-30"));
+
+        ReportState noUser = new ReportState("/", "", "2026-06-01", "2026-06-30");
+        ReportState reversed = new ReportState("/", "aSeller", "2026-06-30", "2026-06-01");
+
+        assertThatThrownBy(() -> RequestValidator.validateReportState(null)).hasMessage("Report state is required");
+        assertThatThrownBy(() -> RequestValidator.validateReportState(noUser)).hasMessage("At least one user id is required");
+        assertThatThrownBy(() -> RequestValidator.validateReportState(reversed)).isInstanceOf(IllegalArgumentException.class);
     }
 }
