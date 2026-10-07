@@ -63,7 +63,7 @@ secrets, so its `build` job cannot fetch the Polarion artifacts and is skipped.
 - Java follows the conventions of the `ch.sbb.polarion.extension.generic` parent project.
 - The user interface is formatted by Prettier and checked by ESLint. Run `npm run format` and
   `npm run lint` in `ui/`.
-- The UI test suite keeps a 90% coverage gate on all four metrics.
+- The UI test suite keeps a 100% coverage gate on all four metrics.
 
 Additional guidelines:
 

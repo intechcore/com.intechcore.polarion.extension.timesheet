@@ -41,7 +41,7 @@ export interface Period {
 }
 
 /** A calendar month counted from the current one: 0 is this month, -1 the one before. */
-export function monthRange(offset = 0): Period {
+export function monthRange(offset: number): Period {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth() + offset;

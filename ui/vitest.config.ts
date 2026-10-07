@@ -128,12 +128,13 @@ export default defineConfig({
       // Excluded: the app bootstrap (main.tsx), declaration files and CSS. Do NOT exclude real product
       // code to hit the gate.
       exclude: ['src/**/*.d.ts', 'src/**/*.css', 'src/main.tsx'],
-      // 90% on all four metrics.
+      // 100% on all four metrics. Code no test can reach is a question about the code, not about the
+      // tests: remove it, or say in a test which input reaches it.
       thresholds: {
-        statements: 90,
-        functions: 90,
-        lines: 90,
-        branches: 90,
+        statements: 100,
+        functions: 100,
+        lines: 100,
+        branches: 100,
       },
     },
   },

@@ -45,7 +45,7 @@ repos:
         language: system
         pass_filenames: false
         files: ^ui/.*\.(ts|tsx|js|mjs)$
-      # Dockerized Vitest (behavior + visual regression) with the 90% coverage gate. Heavy (~30-60s+,
+      # Dockerized Vitest (behavior + visual regression) with the 100% coverage gate. Heavy (~30-60s+,
       # needs Docker running); gated on ui/ source changes.
       - id: ui-test-coverage-docker
         name: UI Vitest + coverage gate (Docker)

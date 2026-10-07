@@ -21,7 +21,7 @@ mvn clean package            # do NOT pass -s .mvn/settings.xml locally, it is f
 - **Tests** run on `mvn test`/`package`: Java via surefire (JUnit 5 + AssertJ + Mockito,
   inherited from the parent), and the frontend suite through the parent's test-phase execution.
   `-DskipJsTests=true` skips only the JS tests. Frontend tests live in `ui/test/**` and run in
-  **Vitest browser mode** (a real Chromium via Playwright), with an istanbul **90%** gate on all
+  **Vitest browser mode** (a real Chromium via Playwright), with an istanbul **100%** gate on all
   four metrics, plus visual-regression references in `ui/test/expected/` (regenerate only with
   `npm run test:update:docker`). Playwright **e2e** (`ui/e2e/*.spec.js`, REST mocked via
   `page.route`) **also runs in the build**, in the `test` phase after the unit suite; skip it with

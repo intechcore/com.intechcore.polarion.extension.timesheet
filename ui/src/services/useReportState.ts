@@ -26,12 +26,14 @@ export default function useReportState({ stateKey, scopePath, userIds, startDate
       return;
     }
     const timer = setTimeout(() => {
-      sendRequest({
+      // useRemote answers a network failure with a 503 rather than a rejection, and a selection
+      // the server refused only means the export falls back to the widget settings.
+      void sendRequest({
         method: 'PUT',
         url: `/report-state/${stateKey}`,
         contentType: 'application/json',
         body: JSON.stringify({ scopePath, userIds: userKey, startDate, endDate }),
-      }).catch(() => {});
+      });
     }, REPORT_STATE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [sendRequest, stateKey, scopePath, userKey, startDate, endDate]);

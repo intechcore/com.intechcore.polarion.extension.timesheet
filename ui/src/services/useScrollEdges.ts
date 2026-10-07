@@ -35,7 +35,8 @@ export default function useScrollEdges<T extends HTMLElement, B extends HTMLElem
       setEdges((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
 
       const scrollable = el.scrollWidth - el.clientWidth > 1;
-      const offset = el.querySelector<HTMLElement>('th')?.offsetWidth ?? 0;
+      // The scroller holds a report table, which always has its WorkItem head.
+      const offset = el.querySelector<HTMLElement>('th')!.offsetWidth;
       const contentWidth = el.scrollWidth - offset;
       setBar((prev) => {
         if (!scrollable) return null;
