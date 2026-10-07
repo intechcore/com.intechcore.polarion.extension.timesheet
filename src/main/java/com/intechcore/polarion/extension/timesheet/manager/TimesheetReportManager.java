@@ -5,6 +5,7 @@ import com.intechcore.polarion.extension.timesheet.model.*;
 import com.polarion.alm.projects.model.IGroupEntity;
 import com.polarion.alm.projects.model.IProject;
 import com.polarion.alm.projects.model.IProjectGroup;
+import com.polarion.alm.projects.model.IUser;
 import com.polarion.alm.shared.api.Scope;
 import com.polarion.alm.shared.api.model.wi.WorkItemReference;
 import com.polarion.alm.shared.api.transaction.TransactionalExecutor;
@@ -21,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TimesheetReportManager {
@@ -78,10 +77,16 @@ public class TimesheetReportManager {
 
     // Inclusive date-range check tolerant of the date format ("yyyy-MM-dd" or "yyyyMMdd").
     boolean isWithinPeriod(@NotNull String date, @NotNull String start, @NotNull String end) {
-        String d = date.replaceAll("[^0-9]", "");
-        String s = start.replaceAll("[^0-9]", "");
-        String e = end.replaceAll("[^0-9]", "");
+        String d = digits(date);
+        String s = digits(start);
+        String e = digits(end);
         return d.compareTo(s) >= 0 && d.compareTo(e) <= 0;
+    }
+
+    private static @NotNull String digits(@NotNull String value) {
+        StringBuilder digits = new StringBuilder(value.length());
+        value.chars().filter(c -> c >= '0' && c <= '9').forEach(c -> digits.append((char) c));
+        return digits.toString();
     }
 
     // Fills each work item with Polarion's native rendering (icon + linked id + title), as shown
@@ -107,14 +112,35 @@ public class TimesheetReportManager {
         });
     }
 
-    private static final Pattern ICON_SRC = Pattern.compile("<img[^>]*\\bsrc=\"([^\"]+)\"");
+    private static final String IMG = "<img";
+    private static final String SRC = "src=\"";
 
+    /** The src of the first image Polarion rendered with a src: the icon of the work item type. */
     @Nullable String extractIconUrl(@Nullable String html) {
         if (html == null) {
             return null;
         }
-        Matcher matcher = ICON_SRC.matcher(html);
-        return matcher.find() ? matcher.group(1) : null;
+        for (int img = html.indexOf(IMG); img >= 0; img = html.indexOf(IMG, img + IMG.length())) {
+            int end = html.indexOf('>', img);
+            String tag = end < 0 ? html.substring(img) : html.substring(img, end);
+            String src = attribute(tag);
+            if (src != null) {
+                return src;
+            }
+        }
+        return null;
+    }
+
+    /** The src of one tag. It must start an attribute, so a data-src does not count. */
+    private static @Nullable String attribute(@NotNull String tag) {
+        for (int at = tag.indexOf(SRC); at >= 0; at = tag.indexOf(SRC, at + 1)) {
+            int start = at + SRC.length();
+            int close = tag.indexOf('"', start);
+            if (Character.isWhitespace(tag.charAt(at - 1)) && close > start) {
+                return tag.substring(start, close);
+            }
+        }
+        return null;
     }
 
     private @Nullable String renderWorkItemHtml(@NotNull com.polarion.alm.shared.api.transaction.ReadOnlyTransaction transaction, @NotNull WorkItem workItem) {
@@ -144,6 +170,44 @@ public class TimesheetReportManager {
         return query;
     }
 
+    /** Whether Polarion knows the user. An id it does not know is answered with an unresolvable object. */
+    public boolean userExists(@NotNull String userId) {
+        try {
+            IUser user = polarionService.getProjectService().getUser(userId);
+            return !user.isUnresolvable();
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** Whether the scope names the repository, a project Polarion knows, or a project group. */
+    public boolean scopeExists(@NotNull Scope scope) {
+        try {
+            String projectId = scope.projectId();
+            if (projectId != null) {
+                IProject project = polarionService.getProjectService().getProject(projectId);
+                return !project.isUnresolvable();
+            }
+            return scope.isGlobal() || projectGroup(scope) != null;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    private @Nullable IProjectGroup projectGroup(@NotNull Scope scope) {
+        ILocation location = Location.getLocationWithRepository(IRepositoryService.DEFAULT, scope.path());
+        IGroupEntity groupEntity = polarionService.getProjectService().getGroupEntityAtLocation(location);
+        return groupEntity instanceof IProjectGroup projectGroup ? projectGroup : null;
+    }
+
+    /**
+     * A value as one term of the query, whatever it holds: quoted, with the quote and the backslash
+     * escaped. A value can then not carry query syntax, so the ids need no check of their characters.
+     */
+    static @NotNull String term(@NotNull String value) {
+        return '"' + value.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
+    }
+
     @NotNull String createWorkRecordsQuery(@NotNull String startDate, @NotNull String endDate) {
         return "(workRecords.date:[%s TO %s])"
                 .formatted(startDate.replace("-", ""), endDate.replace("-", ""));
@@ -156,25 +220,24 @@ public class TimesheetReportManager {
             return null;
         }
         return userIds.stream()
-                .map(userId -> "workRecords.user.id:" + userId)
+                .map(userId -> "workRecords.user.id:" + term(userId))
                 .collect(Collectors.joining(" OR "));
     }
 
     private @Nullable String createScopeQuery(@NotNull Scope scope) {
         @Nullable String projectId = scope.projectId();
         if (projectId != null) {
-            return "project.id:" + projectId;
+            return "project.id:" + term(projectId);
         } else {
             if (scope.isGlobal()) {
                 return null;
             } else {
-                ILocation location = Location.getLocationWithRepository(IRepositoryService.DEFAULT, scope.path());
-                IGroupEntity groupEntity = polarionService.getProjectService().getGroupEntityAtLocation(location);
-                if (groupEntity instanceof IProjectGroup projectGroup) {
+                IProjectGroup projectGroup = projectGroup(scope);
+                if (projectGroup != null) {
                     IPObjectList<IProject> projects = projectGroup.getDeepContainedProjects();
                     return projects.stream()
                             .map(IProject::getId)
-                            .map(id -> "project.id:" + id)
+                            .map(id -> "project.id:" + term(id))
                             .collect(Collectors.joining(" OR "));
                 }
             }

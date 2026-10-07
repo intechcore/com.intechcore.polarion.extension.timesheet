@@ -35,6 +35,9 @@ Releases before 0.1.4 are listed on the
 - Renovate refreshes `ui/package-lock.json` through lock file maintenance, reviewed by a person.
 
 ### Fixed
+- A project group with a space in its path, such as `/Demo Projects`, can be the scope of the
+  report. The validation no longer filters characters: every id goes into the query quoted, and
+  an id or a scope Polarion does not know is answered with 400.
 - The tables of a PDF export of the whole page have the columns of the report's own PDF: one
   WorkItem width, the longest month across the page and a shorter month as a shorter table.
 - The report a PDF export writes on the server starts with its scope and period, as the PDF

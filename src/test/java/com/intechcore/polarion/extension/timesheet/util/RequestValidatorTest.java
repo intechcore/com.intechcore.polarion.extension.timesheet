@@ -93,45 +93,28 @@ class RequestValidatorTest {
     }
 
     /**
-     * A hyphen inside an id is a character; the same hyphen in front of it is where the query syntax
-     * reads an operator, and {@code workRecords.user.id:-aSeller} would select every other user.
+     * The validator checks no characters: the query quotes every value (TimesheetReportManager), and
+     * the controller checks that the user exists. What looked like query syntax is a plain id here.
      */
-    @Test
-    void userId_takesAHyphenButNotAsTheFirstCharacter() {
-        assertThat(RequestValidator.validateUserId("a-seller")).isEqualTo("a-seller");
-        assertThatThrownBy(() -> RequestValidator.validateUserId("-aSeller"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User id holds characters which are not allowed");
-        assertThatThrownBy(() -> RequestValidator.validateUserIds("aSeller,-mTest"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User id holds characters which are not allowed");
-    }
-
-    @Test
-    void scopePath_takesAHyphenButNotAsTheFirstCharacter() {
-        assertThat(RequestValidator.validateScopePath("e-library")).isEqualTo("e-library");
-        assertThatThrownBy(() -> RequestValidator.validateScopePath("-elibrary"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Scope path holds characters which are not allowed");
-    }
-
     @ParameterizedTest
-    @ValueSource(strings = {"a b", "a:b", "a*", "aSeller OR workRecords.user.id:mTest", "a\"b", "a(b)", "ä"})
-    void userId_rejectsQuerySyntaxAndWhitespace(String userId) {
-        assertThatThrownBy(() -> RequestValidator.validateUserId(userId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User id holds characters which are not allowed");
-        assertThatThrownBy(() -> RequestValidator.validateUserIds("aSeller," + userId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User id holds characters which are not allowed");
+    @ValueSource(strings = {"a-seller", "-aSeller", "a b", "a:b", "a*", "aSeller OR workRecords.user.id:mTest", "a\"b", "ä"})
+    void userId_takesAnyCharacters(String userId) {
+        assertThat(RequestValidator.validateUserId(userId)).isEqualTo(userId);
+        assertThat(RequestValidator.validateUserIds("aSeller," + userId)).containsExactly("aSeller", userId.trim());
     }
 
     @Test
     void userId_rejectsNothingAndTooMuch() {
         assertThatThrownBy(() -> RequestValidator.validateUserId(null))
-                .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> RequestValidator.validateUserId("a".repeat(65)))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User id is required");
+        assertThatThrownBy(() -> RequestValidator.validateUserId(" "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User id is required");
+        String tooLong = "a".repeat(65);
+        assertThatThrownBy(() -> RequestValidator.validateUserId(tooLong))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User id must not exceed 64 characters");
         assertThat(RequestValidator.validateUserId("a".repeat(64))).hasSize(64);
     }
 
@@ -146,19 +129,20 @@ class RequestValidatorTest {
         assertThat(RequestValidator.validateScopePath(null)).isNull();
     }
 
+    /** A group name may hold spaces and more: the path is resolved, and a project id is quoted. */
     @ParameterizedTest
-    @ValueSource(strings = {"elibrary OR project.id:secret", "a b", "a:b", "a*", "a\"b"})
-    void scopePath_rejectsQuerySyntax(String scopePath) {
-        assertThatThrownBy(() -> RequestValidator.validateScopePath(scopePath))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Scope path holds characters which are not allowed");
+    @ValueSource(strings = {"/Demo Projects", "/Demo Projects/Team (A) & Co", "/Ümläute", "e-library", "-elibrary", "elibrary OR project.id:secret"})
+    void scopePath_takesAnyCharacters(String scopePath) {
+        assertThat(RequestValidator.validateScopePath(scopePath)).isEqualTo(scopePath);
     }
 
     @Test
     void scopePath_endsAtItsLength() {
         assertThat(RequestValidator.validateScopePath("a".repeat(256))).hasSize(256);
-        assertThatThrownBy(() -> RequestValidator.validateScopePath("a".repeat(257)))
-                .isInstanceOf(IllegalArgumentException.class);
+        String tooLong = "a".repeat(257);
+        assertThatThrownBy(() -> RequestValidator.validateScopePath(tooLong))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Scope path must not exceed 256 characters");
     }
 
     private static String userList(int count) {
@@ -172,7 +156,7 @@ class RequestValidatorTest {
     void acceptsAStateKeyOnlyAsASha256InHex() {
         String key = "a".repeat(64);
         assertThat(RequestValidator.validateStateKey(key)).isEqualTo(key);
-        for (String bad : new String[]{null, "", "A".repeat(64), "a".repeat(63), "a".repeat(65), "../" + "a".repeat(61)}) {
+        for (String bad : new String[]{null, "", "A".repeat(64), "a".repeat(63), "a".repeat(65), "../" + "a".repeat(61), "g".repeat(64)}) {
             assertThatThrownBy(() -> RequestValidator.validateStateKey(bad)).hasMessage("State key is not valid");
         }
     }

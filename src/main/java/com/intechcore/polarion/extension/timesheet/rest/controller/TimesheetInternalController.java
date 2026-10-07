@@ -57,9 +57,11 @@ public class TimesheetInternalController {
                                   @QueryParam("scope_path") String scopePath) {
         RequestValidator.validatePeriod(startDate, endDate);
         Scope scope = new ScopeFactoryImpl().fromPath(RequestValidator.validateScopePath(scopePath));
+        List<String> users = List.of(RequestValidator.validateUserId(userId));
 
-        return new TimesheetReportManager(polarionService)
-                .getTimesheet(scope, List.of(RequestValidator.validateUserId(userId)), startDate, endDate);
+        TimesheetReportManager manager = new TimesheetReportManager(polarionService);
+        requireExisting(manager, scope, users);
+        return manager.getTimesheet(scope, users, startDate, endDate);
     }
 
     @Operation(summary = "Returns timesheet report for several users for a given period")
@@ -74,8 +76,22 @@ public class TimesheetInternalController {
         Scope scope = new ScopeFactoryImpl().fromPath(RequestValidator.validateScopePath(scopePath));
         List<String> users = RequestValidator.validateUserIds(userIds);
 
-        return new TimesheetReportManager(polarionService)
-                .getTimesheet(scope, users, startDate, endDate);
+        TimesheetReportManager manager = new TimesheetReportManager(polarionService);
+        requireExisting(manager, scope, users);
+        return manager.getTimesheet(scope, users, startDate, endDate);
+    }
+
+    /**
+     * The validator bounds a request and the query quotes every value, so what is left to refuse is a
+     * name Polarion does not know. The message does not quote it.
+     */
+    private static void requireExisting(@NotNull TimesheetReportManager manager, @NotNull Scope scope, @NotNull List<String> userIds) {
+        if (!manager.scopeExists(scope)) {
+            throw new IllegalArgumentException("Scope does not exist");
+        }
+        if (!userIds.stream().allMatch(manager::userExists)) {
+            throw new IllegalArgumentException("User does not exist");
+        }
     }
 
     @Operation(summary = "Returns the id and name of the current user")
@@ -100,6 +116,9 @@ public class TimesheetInternalController {
     public void saveReportState(@PathParam("state_key") String stateKey, ReportState state) {
         String key = RequestValidator.validateStateKey(stateKey);
         ReportState valid = RequestValidator.validateReportState(state);
+        // A scope or a user that does not exist would fail the PDF export that reads this selection.
+        requireExisting(new TimesheetReportManager(polarionService), new ScopeFactoryImpl().fromPath(valid.getScopePath()),
+                List.of(valid.getUserIds().split(",")));
         String userId = polarionService.getSecurityService().getCurrentUser();
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("No user is signed in");
