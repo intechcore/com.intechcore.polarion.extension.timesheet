@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- A stand-in drawn for the tests: Polarion serves the real icon at this path, and the tests have
+       no Polarion. It keeps the size and the place of the icon in the pixel references. -->
+  <path d="M2.5 0.5h8l3 3v12h-11z" fill="#fff" stroke="#000"/>
+  <path d="M10.5 0.5v3h3" fill="none" stroke="#000"/>
+  <rect x="4" y="8" width="8" height="4" fill="#c00"/>
+</svg>

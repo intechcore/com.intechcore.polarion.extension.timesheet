@@ -203,6 +203,10 @@ type").
 - **The days scroll with their own bar**, `.timesheet-scrollbar`, under the table. A native
   scrollbar spans the WorkItem column too, so the table hides its own, and `useScrollEdges` syncs
   the two both ways. The table has no vertical scroll: the page scrolls it.
+- **The tests serve stand-ins for Polarion's images.** The app links icons Polarion serves under
+  `/polarion/ria/images/` (the PDF export icon of the Export PDF button). A plugin in
+  `vitest.config.ts` answers those paths from `ui/test/fixtures/`, so the pixel references hold an
+  icon. The stand-ins are drawn for the tests: Polarion's own icons stay out of the repository.
 - **The visual tests show scrollbars** (`ignoreDefaultArgs: ['--hide-scrollbars']`), so a reference
   proves a wide month can scroll.
 - **Chrome ignores `::-webkit-scrollbar` on an element that sets `scrollbar-width` or

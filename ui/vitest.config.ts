@@ -1,5 +1,8 @@
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
+import { readFile } from 'node:fs/promises';
+import { join, normalize } from 'node:path';
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 // Vitest browser mode (real Chromium via Playwright), the same setup as react-sbb-polarion: behavior
@@ -18,9 +21,35 @@ const componentDir = (testFileName: string): string => testFileName.split(/[\\/]
 // and the rendered element height, i.e. a red run that says nothing about the code.
 const pixelReferences = process.env.PIXEL_REFERENCES === '1';
 
+// Polarion serves its images under /polarion/ria/images at runtime, and the tests have no Polarion.
+// This answers those paths from test/fixtures, with stand-ins drawn for the tests, so the pixel
+// references hold an icon where the app shows one. A path the fixtures lack stays a 404, as before.
+const FIXTURES = join(import.meta.dirname, 'test/fixtures');
+function polarionImages(): Plugin {
+  return {
+    name: 'timesheet:polarion-images',
+    configureServer(server) {
+      server.middlewares.use('/polarion/ria/images', (req, res, next) => {
+        const file = normalize(join(FIXTURES, 'polarion/ria/images', (req.url ?? '').split('?')[0]));
+        if (!file.startsWith(FIXTURES) || !file.endsWith('.svg')) {
+          next();
+          return;
+        }
+        readFile(file).then(
+          (body) => {
+            res.setHeader('Content-Type', 'image/svg+xml');
+            res.end(body);
+          },
+          () => next(),
+        );
+      });
+    },
+  };
+}
+
 export default defineConfig({
   define: { __PIXEL_REFERENCES__: pixelReferences },
-  plugins: [react()],
+  plugins: [react(), polarionImages()],
   // Resolve React to this app's single instance, mirroring vite.config.js. Redundant while RSP is
   // consumed as a published tarball (React is a peer dependency there), but required the moment the
   // dependency is temporarily pointed at a local RSP checkout to iterate - otherwise the app and the

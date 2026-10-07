@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import type { ExportOptions } from '../utils/exportPdf';
 
+/**
+ * Polarion's own PDF export icon, served by the platform: the one of its document toolbar, and of the
+ * PDF Exporter's button.
+ */
+export const PDF_EXPORT_ICON = '/polarion/ria/images/dle/operations/actionPdfExport16.svg';
+
 interface Props extends ExportOptions {
   disabled?: boolean;
 }
@@ -31,7 +37,10 @@ export default function ExportPdfButton({ disabled, ...options }: Props) {
       disabled={disabled || busy}
       onClick={onClick}
     >
-      {busy ? 'Generating…' : 'Export PDF'}
+      {/* Decorative: the text names the action. RSP's icon class sizes it and spaces it off the text. */}
+      <img className="sbb-btn__icon" src={PDF_EXPORT_ICON} alt="" />
+      {/* An element, not bare text: RSP spaces the icon only when it is not the only child. */}
+      <span>{busy ? 'Generating…' : 'Export PDF'}</span>
     </button>
   );
 }

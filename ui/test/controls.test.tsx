@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
 import DateRangePicker from '../src/components/DateRangePicker';
-import ExportPdfButton from '../src/components/ExportPdfButton';
+import ExportPdfButton, { PDF_EXPORT_ICON } from '../src/components/ExportPdfButton';
 import ReportView from '../src/components/ReportView';
 import useRemote from '../src/services/useRemote';
 import { installFetchMock } from './mockFetch';
@@ -142,6 +142,29 @@ describe('the control row', () => {
     // 28px is RSP's --sbb-btn-height. The dialog button (sbb-btn--primary) has no fixed height and
     // grew to 35px, which towered over the 23px fields beside it.
     expect(document.querySelector('.export-pdf-button')!.getBoundingClientRect().height).toBe(28);
+  });
+
+  it("puts Polarion's PDF export icon before the label", async () => {
+    render(
+      <div className="app standard-admin-page">
+        <ExportPdfButton scopeName="" period={{ start: '', end: '' }} dates={[]} workingDayHours={8} users={[]} />
+      </div>,
+    );
+
+    await vi.waitFor(() => expect(document.querySelector('.export-pdf-button')).not.toBeNull());
+    const button = document.querySelector<HTMLButtonElement>('.export-pdf-button')!;
+    const icon = button.firstElementChild as HTMLImageElement;
+    expect(icon.tagName).toBe('IMG');
+    expect(icon.getAttribute('src')).toBe(PDF_EXPORT_ICON);
+    // Decorative: the label names the button for a screen reader.
+    expect(icon.alt).toBe('');
+    expect(button.textContent).toBe('Export PDF');
+    // The tests serve a stand-in at Polarion's path (vitest.config.ts), so the icon does load.
+    await vi.waitFor(() => expect(icon.naturalWidth).toBe(16));
+    expect(icon.getBoundingClientRect().width).toBe(15); // RSP's .sbb-btn__icon
+    // ... and stands 6px off the label.
+    const label = button.querySelector('span')!;
+    expect(label.getBoundingClientRect().left - icon.getBoundingClientRect().right).toBe(6);
   });
 });
 
