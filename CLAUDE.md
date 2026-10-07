@@ -95,7 +95,9 @@ java-kotlin, javascript-typescript), not as a workflow.
   `release.yml` would never see it.
 - `release.yml`: runs on a `v*` tag. It runs `deploy` with the parent's `gpg-sign` and
   `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
-  `com.intechcore.polarion.extensions`. `actions/attest-build-provenance` attests the deployed
+  `com.intechcore.polarion.extensions`. The job deploys with Maven 3.9.16, as the PDF Exporter does:
+  under Maven 3.10, central-publishing-maven-plugin 0.11.0 bundles `maven-metadata-local.xml` and
+  Central rejects the bundle. `actions/attest-build-provenance` attests the deployed
   jars and pom, and `gh release create` attaches them with the `.intoto.jsonl` bundle to a GitHub
   release in one call; releases are immutable, and the job stops before Maven Central when the
   release exists already. The release notes are the `CHANGELOG.md` section of the version. The job needs no

@@ -23,6 +23,19 @@ jobs:
           java-version: '21'
           distribution: temurin
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+      # Maven 3.10 makes the staging of central-publishing-maven-plugin 0.11.0 write
+      # maven-metadata-local.xml and _remote.repositories into the bundle, and Central rejects it:
+      # "Bundle has content that does NOT have a .pom file". The PDF Exporter deploys with Maven
+      # 3.9.16 for the same reason. Drop this step once the plugin copes.
+      - name: Set up Maven 3.9.16
+        env:
+          MAVEN_VERSION: 3.9.16
+          MAVEN_SHA512: 831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6
+        run: |
+          curl -fsSL -o "${RUNNER_TEMP}/maven.tar.gz" "https://repo1.maven.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+          echo "${MAVEN_SHA512}  ${RUNNER_TEMP}/maven.tar.gz" | sha512sum -c -
+          tar -xzf "${RUNNER_TEMP}/maven.tar.gz" -C "${RUNNER_TEMP}"
+          echo "${RUNNER_TEMP}/apache-maven-${MAVEN_VERSION}/bin" >> "${GITHUB_PATH}"
       # An immutable release cannot take files later, so a rerun cannot repair it. Stop before
       # Maven Central instead of publishing twice.
       - name: Refuse an existing release
@@ -56,7 +69,9 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn --batch-mode -s .mvn/settings.xml -P gpg-sign,central-publishing clean deploy
+        run: |
+          mvn --version
+          mvn --batch-mode -s .mvn/settings.xml -P gpg-sign,central-publishing clean deploy
       # Signs the provenance of the files deployed above, not of a rebuild. The gpg plugin
       # copies pom.xml to target/ before it signs it, so target/*.pom is the deployed pom.
       - name: Attest the build provenance
