@@ -21,8 +21,9 @@ Be direct and concise. No preamble, no praise. One idea per sentence. Never use 
   `Export-Package` and `Support-Email`.
 - `docs/openapi.json` is regenerated on every build and CI fails when the build changes it. A
   changed REST signature has to arrive with the regenerated file.
-- Report parameters reach a Polarion Lucene query. A new one goes through `util/RequestValidator`,
-  never straight into the query string.
+- Report parameters reach a Polarion Lucene query. A value goes in as a quoted term
+  (`TimesheetReportManager.term`), never as it is. `util/RequestValidator` bounds a request, and the
+  controller checks that each user and the scope exist. No regular expression filters characters.
 
 ## Java tests, `src/test/java/**`
 

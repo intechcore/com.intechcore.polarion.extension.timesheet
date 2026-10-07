@@ -186,7 +186,7 @@ class TimesheetReportManagerTest {
 
         manager.getTimesheet(scope, List.of(), "2026-08-01", "2026-08-31");
 
-        assertThat(capturedQuery()).isEqualTo("(workRecords.date:[20260801 TO 20260831]) AND (project.id:elibrary)");
+        assertThat(capturedQuery()).isEqualTo("(workRecords.date:[20260801 TO 20260831]) AND (project.id:\"elibrary\")");
     }
 
     /** The no-argument constructor is what the REST controllers use. */
@@ -201,9 +201,9 @@ class TimesheetReportManagerTest {
     @Test
     void createUserWorkRecordsQuery_joinsWithOr() {
         assertThat(manager.createUserWorkRecordsQuery(List.of("aSeller", "mTest")))
-                .isEqualTo("workRecords.user.id:aSeller OR workRecords.user.id:mTest");
+                .isEqualTo("workRecords.user.id:\"aSeller\" OR workRecords.user.id:\"mTest\"");
         assertThat(manager.createUserWorkRecordsQuery(List.of("solo")))
-                .isEqualTo("workRecords.user.id:solo");
+                .isEqualTo("workRecords.user.id:\"solo\"");
     }
 
     // --- The query the search is driven with ---
@@ -216,7 +216,7 @@ class TimesheetReportManagerTest {
         manager.getTimesheet(scope, List.of("aSeller"), "2026-08-01", "2026-08-31");
 
         assertThat(capturedQuery()).isEqualTo(
-                "(workRecords.date:[20260801 TO 20260831]) AND (workRecords.user.id:aSeller) AND (project.id:elibrary)");
+                "(workRecords.date:[20260801 TO 20260831]) AND (workRecords.user.id:\"aSeller\") AND (project.id:\"elibrary\")");
     }
 
     @Test
@@ -227,7 +227,7 @@ class TimesheetReportManagerTest {
         manager.getTimesheet(scope, List.of("aSeller", "mTest"), "2026-08-01", "2026-08-31");
 
         assertThat(capturedQuery()).isEqualTo(
-                "(workRecords.date:[20260801 TO 20260831]) AND (workRecords.user.id:aSeller OR workRecords.user.id:mTest)");
+                "(workRecords.date:[20260801 TO 20260831]) AND (workRecords.user.id:\"aSeller\" OR workRecords.user.id:\"mTest\")");
     }
 
     @Test
@@ -244,7 +244,7 @@ class TimesheetReportManagerTest {
 
         manager.getTimesheet(scope, List.of("aSeller"), "2026-08-01", "2026-08-31");
 
-        assertThat(capturedQuery()).endsWith("AND (project.id:elibrary OR project.id:drafts)");
+        assertThat(capturedQuery()).endsWith("AND (project.id:\"elibrary\" OR project.id:\"drafts\")");
     }
 
     /** A scope that is neither a project, nor global, nor a group has no query, and saying so beats guessing. */
@@ -375,5 +375,60 @@ class TimesheetReportManagerTest {
         assertThat(timesheet.getWorkRecords()).hasSize(1);
         assertThat(timesheet.getWorkRecords().getFirst().getWorkItem().getHtml()).isNull();
         assertThat(timesheet.getWorkRecords().getFirst().getWorkItem().getIconUrl()).isNull();
+    }
+
+    // --- Every value is one term of the query ---
+
+    /** Quoted, with the quote and the backslash escaped: a value cannot carry query syntax. */
+    @Test
+    void term_quotesAndEscapes() {
+        assertThat(TimesheetReportManager.term("aSeller")).isEqualTo("\"aSeller\"");
+        assertThat(TimesheetReportManager.term("aSeller OR workRecords.user.id:mTest"))
+                .isEqualTo("\"aSeller OR workRecords.user.id:mTest\"");
+        assertThat(TimesheetReportManager.term("a\"b\\c")).isEqualTo("\"a\\\"b\\\\c\"");
+    }
+
+    // --- What exists ---
+
+    @Test
+    void userExists_isFalseForAnUnresolvableUser() {
+        com.polarion.alm.projects.model.IUser known = mock(com.polarion.alm.projects.model.IUser.class);
+        com.polarion.alm.projects.model.IUser unknown = mock(com.polarion.alm.projects.model.IUser.class);
+        when(unknown.isUnresolvable()).thenReturn(true);
+        when(polarionService.getProjectService().getUser("aSeller")).thenReturn(known);
+        when(polarionService.getProjectService().getUser("nobody")).thenReturn(unknown);
+        when(polarionService.getProjectService().getUser("broken")).thenThrow(new IllegalStateException("no transaction"));
+
+        assertThat(manager.userExists("aSeller")).isTrue();
+        assertThat(manager.userExists("nobody")).isFalse();
+        assertThat(manager.userExists("broken")).isFalse();
+    }
+
+    @Test
+    void scopeExists_knowsTheRepositoryProjectsAndGroups() {
+        Scope scope = mock(Scope.class);
+        IProject known = mock(IProject.class);
+        IProject unknown = mock(IProject.class);
+        when(unknown.isUnresolvable()).thenReturn(true);
+        when(polarionService.getProjectService().getProject("elibrary")).thenReturn(known);
+        when(polarionService.getProjectService().getProject("nope")).thenReturn(unknown);
+
+        when(scope.isGlobal()).thenReturn(true);
+        assertThat(manager.scopeExists(scope)).isTrue();
+
+        when(scope.isGlobal()).thenReturn(false);
+        when(scope.projectId()).thenReturn("elibrary");
+        assertThat(manager.scopeExists(scope)).isTrue();
+        when(scope.projectId()).thenReturn("nope");
+        assertThat(manager.scopeExists(scope)).isFalse();
+
+        when(scope.projectId()).thenReturn(null);
+        when(scope.path()).thenReturn("/Demo Projects");
+        when(polarionService.getProjectService().getGroupEntityAtLocation(any())).thenReturn(mock(IProjectGroup.class));
+        assertThat(manager.scopeExists(scope)).isTrue();
+        when(polarionService.getProjectService().getGroupEntityAtLocation(any())).thenReturn(null);
+        assertThat(manager.scopeExists(scope)).isFalse();
+        when(polarionService.getProjectService().getGroupEntityAtLocation(any())).thenThrow(new IllegalStateException("no transaction"));
+        assertThat(manager.scopeExists(scope)).isFalse();
     }
 }

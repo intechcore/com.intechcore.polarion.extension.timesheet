@@ -363,7 +363,7 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
         {
           method: 'GET',
           match: /\/timesheet\?/,
-          json: { message: 'Scope path holds characters which are not allowed' },
+          json: { message: 'Scope does not exist' },
           status: 400,
         },
       ]),

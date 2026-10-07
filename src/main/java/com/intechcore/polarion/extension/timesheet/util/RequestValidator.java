@@ -9,16 +9,17 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Checks what the report endpoints receive, before any of it reaches a Polarion query.
  *
- * <p>Two reasons. The values are concatenated into the Lucene query the report runs, so a value
- * carrying query syntax would change the query instead of filling it. And an open request - every
- * user, every project, no end to the period - makes Polarion load the work records of the whole
- * repository, which is a single request against the availability of the server.
+ * <p>It bounds a request: an open one - every user, every project, no end to the period - makes
+ * Polarion load the work records of the whole repository, which is a single request against the
+ * availability of the server. It does not filter characters. The query takes every value as a quoted
+ * term (TimesheetReportManager), so no value can carry query syntax, and the controller checks that
+ * each user and the scope exist.
  *
  * <p>Every rejection is an {@link IllegalArgumentException}, which the generic extension answers
  * with 400. A message names the parameter and never quotes its value.
@@ -32,25 +33,14 @@ public class RequestValidator {
     /** The report draws one block per user, and the picker offers no more than a team. */
     public static final int MAX_USER_IDS = 50;
 
-    /**
-     * The id of a user. The set is wider than the ids Polarion itself creates, because an
-     * LDAP-backed installation can carry an e-mail-like login, and it still holds no character
-     * the Lucene query syntax gives a meaning to.
-     *
-     * <p>A hyphen is allowed inside an id and refused as its first character: a leading one lands
-     * where the query syntax reads an operator, and {@code workRecords.user.id:-aSeller} would
-     * prohibit that user rather than select them.
-     */
-    private static final Pattern USER_ID = Pattern.compile("[A-Za-z0-9._@][A-Za-z0-9._@-]{0,63}");
+    /** The longest user id Polarion keeps, with room for an LDAP login. */
+    public static final int MAX_USER_ID_LENGTH = 64;
 
-    /**
-     * A project id, or the location path of a project group, which adds the separator. A leading
-     * hyphen is refused for the reason above; a leading separator is the path of a group.
-     */
-    private static final Pattern SCOPE_PATH = Pattern.compile("[A-Za-z0-9._/][A-Za-z0-9._/-]{0,255}");
+    /** The longest scope: a project id, or the location path of a nested group. */
+    public static final int MAX_SCOPE_PATH_LENGTH = 256;
 
-    // The key a widget gives its report: a SHA-256 in hex (TimesheetReportWidgetRenderer).
-    private static final Pattern STATE_KEY = Pattern.compile("[0-9a-f]{64}");
+    // The key a widget gives its report: a SHA-256 in lowercase hex (TimesheetReportWidgetRenderer).
+    private static final int STATE_KEY_LENGTH = 64;
 
     /**
      * Checks that the period is complete, ordered and bounded.
@@ -96,20 +86,26 @@ public class RequestValidator {
     }
 
     /**
-     * Checks one user id.
+     * Checks one user id: present and bounded. Its characters need no check: the query takes it as a
+     * quoted term (TimesheetReportManager), and the controller checks that the user exists.
      *
      * @param userId the id to check
      * @return the id, unchanged
      */
     public static @NotNull String validateUserId(@Nullable String userId) {
-        if (userId == null || !USER_ID.matcher(userId).matches()) {
-            throw new IllegalArgumentException("User id holds characters which are not allowed");
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("User id is required");
+        }
+        if (userId.length() > MAX_USER_ID_LENGTH) {
+            throw new IllegalArgumentException("User id must not exceed " + MAX_USER_ID_LENGTH + " characters");
         }
         return userId;
     }
 
     /**
      * Checks the scope of a request. No scope is the repository, which the report offers as well.
+     * Its characters need no check: a project id goes into the query as a quoted term, a group path
+     * never reaches the query, and the controller checks that the project or the group exists.
      *
      * @param scopePath a project id, a project group path, or null
      * @return the path, trimmed
@@ -119,8 +115,8 @@ public class RequestValidator {
             return null;
         }
         String trimmed = scopePath.trim();
-        if (!trimmed.isEmpty() && !SCOPE_PATH.matcher(trimmed).matches()) {
-            throw new IllegalArgumentException("Scope path holds characters which are not allowed");
+        if (trimmed.length() > MAX_SCOPE_PATH_LENGTH) {
+            throw new IllegalArgumentException("Scope path must not exceed " + MAX_SCOPE_PATH_LENGTH + " characters");
         }
         return trimmed;
     }
@@ -140,7 +136,9 @@ public class RequestValidator {
      * @return the key, unchanged
      */
     public static @NotNull String validateStateKey(@Nullable String stateKey) {
-        if (stateKey == null || !STATE_KEY.matcher(stateKey).matches()) {
+        boolean valid = stateKey != null && stateKey.length() == STATE_KEY_LENGTH
+                && stateKey.chars().allMatch(c -> HexFormat.isHexDigit(c) && !Character.isUpperCase(c));
+        if (!valid) {
             throw new IllegalArgumentException("State key is not valid");
         }
         return stateKey;

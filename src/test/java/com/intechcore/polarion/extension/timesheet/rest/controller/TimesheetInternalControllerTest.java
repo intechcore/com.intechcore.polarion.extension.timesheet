@@ -157,18 +157,34 @@ class TimesheetInternalControllerTest {
                 .hasMessage("Period must not exceed 366 days");
     }
 
-    /** The parameters reach a Lucene query, so query syntax in them is refused, not escaped. */
+    /** The parameters reach a Lucene query: a date must be a date, and an id must name what exists. */
     @Test
     void bothEndpoints_refuseQuerySyntax() {
+        // The query quotes every value; what is left to refuse is a name Polarion does not know.
+        unknownUser("aSeller OR mTest");
+        unknownProject("elibrary OR project.id:secret");
+
         assertThatThrownBy(() -> controller.getTimesheetForUsers("aSeller OR mTest", "2026-08-01", "2026-08-31", "/"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User id holds characters which are not allowed");
+                .hasMessage("User does not exist");
         assertThatThrownBy(() -> controller.getTimesheet("aSeller", "2026-08-01] OR project.id:[* TO *", "2026-08-31", "/"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Start date must be an ISO date (yyyy-MM-dd)");
         assertThatThrownBy(() -> controller.getTimesheet("aSeller", "2026-08-01", "2026-08-31", "elibrary OR project.id:secret"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Scope path holds characters which are not allowed");
+                .hasMessage("Scope does not exist");
+    }
+
+    private void unknownUser(String userId) {
+        IUser unknown = mock(IUser.class);
+        when(unknown.isUnresolvable()).thenReturn(true);
+        when(polarionService.getProjectService().getUser(userId)).thenReturn(unknown);
+    }
+
+    private void unknownProject(String projectId) {
+        IProject unknown = mock(IProject.class);
+        when(unknown.isUnresolvable()).thenReturn(true);
+        when(polarionService.getProjectService().getProject(projectId)).thenReturn(unknown);
     }
 
     // --- The current user ---
@@ -299,9 +315,15 @@ class TimesheetInternalControllerTest {
         when(polarionService.getSecurityService().getCurrentUser()).thenReturn("aSeller");
         ReportState june = new ReportState("/", "aSeller", "2026-06-01", "2026-06-30");
 
+        unknownUser("nobody");
+        unknownProject("nope");
+
         assertThatThrownBy(() -> controller.saveReportState("not-a-key", june)).hasMessage("State key is not valid");
-        assertThatThrownBy(() -> controller.saveReportState("c".repeat(64), new ReportState("/", "a b", "2026-06-01", "2026-06-30")))
-                .hasMessage("User id holds characters which are not allowed");
+        // An unknown name would fail the PDF export that reads the selection.
+        assertThatThrownBy(() -> controller.saveReportState("c".repeat(64), new ReportState("/", "aSeller,nobody", "2026-06-01", "2026-06-30")))
+                .hasMessage("User does not exist");
+        assertThatThrownBy(() -> controller.saveReportState("c".repeat(64), new ReportState("nope", "aSeller", "2026-06-01", "2026-06-30")))
+                .hasMessage("Scope does not exist");
     }
 
     @Test
