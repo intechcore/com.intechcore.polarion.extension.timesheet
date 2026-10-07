@@ -166,6 +166,16 @@ class TimesheetReportManagerTest {
     void extractIconUrl_nullOrNoImage() {
         assertThat(manager.extractIconUrl(null)).isNull();
         assertThat(manager.extractIconUrl("<a href=\"#\">EL-1</a>")).isNull();
+        assertThat(manager.extractIconUrl("<img alt=\"x\"")).isNull();
+        assertThat(manager.extractIconUrl("<img src=\"\">")).isNull();
+    }
+
+    /** An image without a src, or with a data-src only, is skipped for the next one. */
+    @Test
+    void extractIconUrl_takesTheFirstRealSrc() {
+        assertThat(manager.extractIconUrl("<img data-src=\"/lazy.png\"><img\n  class=\"polarion-Icons\" src=\"/type.png\"/>"))
+                .isEqualTo("/type.png");
+        assertThat(manager.extractIconUrl("<img alt=\"src=&quot;\"> <img src=\"/b.png\">")).isEqualTo("/b.png");
     }
 
     @Test

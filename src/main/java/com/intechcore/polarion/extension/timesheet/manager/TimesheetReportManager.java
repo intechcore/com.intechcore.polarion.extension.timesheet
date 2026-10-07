@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TimesheetReportManager {
@@ -79,10 +77,16 @@ public class TimesheetReportManager {
 
     // Inclusive date-range check tolerant of the date format ("yyyy-MM-dd" or "yyyyMMdd").
     boolean isWithinPeriod(@NotNull String date, @NotNull String start, @NotNull String end) {
-        String d = date.replaceAll("[^0-9]", "");
-        String s = start.replaceAll("[^0-9]", "");
-        String e = end.replaceAll("[^0-9]", "");
+        String d = digits(date);
+        String s = digits(start);
+        String e = digits(end);
         return d.compareTo(s) >= 0 && d.compareTo(e) <= 0;
+    }
+
+    private static @NotNull String digits(@NotNull String value) {
+        StringBuilder digits = new StringBuilder(value.length());
+        value.chars().filter(c -> c >= '0' && c <= '9').forEach(c -> digits.append((char) c));
+        return digits.toString();
     }
 
     // Fills each work item with Polarion's native rendering (icon + linked id + title), as shown
@@ -108,14 +112,35 @@ public class TimesheetReportManager {
         });
     }
 
-    private static final Pattern ICON_SRC = Pattern.compile("<img[^>]*\\bsrc=\"([^\"]+)\"");
+    private static final String IMG = "<img";
+    private static final String SRC = "src=\"";
 
+    /** The src of the first image Polarion rendered with a src: the icon of the work item type. */
     @Nullable String extractIconUrl(@Nullable String html) {
         if (html == null) {
             return null;
         }
-        Matcher matcher = ICON_SRC.matcher(html);
-        return matcher.find() ? matcher.group(1) : null;
+        for (int img = html.indexOf(IMG); img >= 0; img = html.indexOf(IMG, img + IMG.length())) {
+            int end = html.indexOf('>', img);
+            String tag = end < 0 ? html.substring(img) : html.substring(img, end);
+            String src = attribute(tag);
+            if (src != null) {
+                return src;
+            }
+        }
+        return null;
+    }
+
+    /** The src of one tag. It must start an attribute, so a data-src does not count. */
+    private static @Nullable String attribute(@NotNull String tag) {
+        for (int at = tag.indexOf(SRC); at >= 0; at = tag.indexOf(SRC, at + 1)) {
+            int start = at + SRC.length();
+            int close = tag.indexOf('"', start);
+            if (Character.isWhitespace(tag.charAt(at - 1)) && close > start) {
+                return tag.substring(start, close);
+            }
+        }
+        return null;
     }
 
     private @Nullable String renderWorkItemHtml(@NotNull com.polarion.alm.shared.api.transaction.ReadOnlyTransaction transaction, @NotNull WorkItem workItem) {
