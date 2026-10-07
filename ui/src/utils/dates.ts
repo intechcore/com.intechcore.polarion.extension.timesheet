@@ -31,7 +31,7 @@ export function groupDatesByMonth(dates: Date[]): Date[][] {
 
 // Accepts "yyyy-MM-dd" or "yyyyMMdd"; builds a local Date (no timezone shift).
 export function parseDate(value: string): Date {
-  const compact = value.replace(/-/g, '');
+  const compact = value.split('-').join('');
   return new Date(Number(compact.slice(0, 4)), Number(compact.slice(4, 6)) - 1, Number(compact.slice(6, 8)));
 }
 
@@ -52,7 +52,9 @@ export function currentMonthRange(): Period {
   return monthRange(0);
 }
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+// A calendar date written as yyyy-MM-dd: it reads back as itself, which a day out of its month
+// (2026-02-30) or another layout (2026-3-2) does not.
+const isIsoDate = (value: string): boolean => value.length === 10 && formatISO(parseDate(value)) === value;
 
 /**
  * The period the widget asks for. A custom period needs both dates, in order; anything else, a widget
@@ -60,7 +62,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
  */
 export function widgetPeriod(period: string | null, from: string | null, to: string | null): Period {
   if (period === 'previous-month') return monthRange(-1);
-  if (period === 'custom' && from && to && ISO_DATE.test(from) && ISO_DATE.test(to) && from <= to) {
+  if (period === 'custom' && from && to && isIsoDate(from) && isIsoDate(to) && from <= to) {
     return { start: from, end: to };
   }
   return monthRange(0);

@@ -59,6 +59,8 @@ describe('dates utils', () => {
     expect(widgetPeriod('custom', '2026-04-15', '2026-03-02')).toEqual(june);
     expect(widgetPeriod('custom', '2026-03-02', null)).toEqual(june);
     expect(widgetPeriod('custom', '2026-3-2', '2026-04-15')).toEqual(june);
+    expect(widgetPeriod('custom', '2026-02-30', '2026-04-15')).toEqual(june);
+    expect(widgetPeriod('custom', 'yyyy-mm-dd', '2026-04-15')).toEqual(june);
     // A widget saved before the period existed passes none.
     expect(widgetPeriod(null, null, null)).toEqual(june);
   });
