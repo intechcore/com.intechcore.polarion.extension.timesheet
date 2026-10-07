@@ -42,8 +42,9 @@ function loadIcon(url: string): Promise<string | null> {
     const img = new Image();
     img.onload = () => {
       try {
-        const w = img.naturalWidth || 16;
-        const h = img.naturalHeight || 16;
+        // A loaded image always has a size: the browser gives an SVG without one a default.
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
         const canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
@@ -172,8 +173,8 @@ export async function exportTimesheetPdf({
       },
       didDrawCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
+          // The body rows are the work items, one to one.
           const wi = items[data.row.index];
-          if (!wi) return;
           const src = wi.iconUrl && icons.get(wi.iconUrl);
           if (src) {
             try {

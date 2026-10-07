@@ -86,4 +86,18 @@ class TimesheetReportHtmlTest {
         assertThat(html).contains("<col style=\"width:22.0000%;\">")
                 .contains("<col style=\"width:" + String.format(java.util.Locale.ROOT, "%.4f%%", 100 * 22 / (22 + 78.0 / 31 * 30)) + ";\">");
     }
+
+    /** A record without a user belongs to nobody in the report, and a work item without a project still links. */
+    @Test
+    void skipsARecordWithoutAUserAndLinksAWorkItemWithoutAProject() {
+        WorkRecord orphan = new WorkRecord("2026-10-02", new WorkItem(null, "EL-5", "Orphan", null, null), null, 3);
+        Timesheet timesheet = timesheet(record("2026-10-01", "EL-1", null, ALICE, 2), orphan);
+        WorkRecord projectless = new WorkRecord("2026-10-02", new WorkItem(null, "EL-6", "Loose", null, null), ALICE, 1);
+        timesheet.addWorkRecord(projectless);
+
+        String html = new TimesheetReportHtml("E-Library", List.of(ALICE), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), 8).render(timesheet);
+
+        assertThat(html).contains("<h4>Alice - total: 3 h</h4>").doesNotContain("EL-5")
+                .contains("<a href=\"/polarion/#/project//workitem?id=EL-6\">EL-6 - Loose</a>");
+    }
 }

@@ -21,7 +21,7 @@ mvn clean package            # do NOT pass -s .mvn/settings.xml locally, it is f
 - **Tests** run on `mvn test`/`package`: Java via surefire (JUnit 5 + AssertJ + Mockito,
   inherited from the parent), and the frontend suite through the parent's test-phase execution.
   `-DskipJsTests=true` skips only the JS tests. Frontend tests live in `ui/test/**` and run in
-  **Vitest browser mode** (a real Chromium via Playwright), with an istanbul **90%** gate on all
+  **Vitest browser mode** (a real Chromium via Playwright), with an istanbul **100%** gate on all
   four metrics, plus visual-regression references in `ui/test/expected/` (regenerate only with
   `npm run test:update:docker`). Playwright **e2e** (`ui/e2e/*.spec.js`, REST mocked via
   `page.route`) **also runs in the build**, in the `test` phase after the unit suite; skip it with
@@ -181,7 +181,7 @@ type").
   `.js .html .css .png .svg .gif .woff .woff2 .ico .txt` but **not `.ttf`**, and Polarion's CSP
   blocks `data:` fonts - so any bundled web font must be a served woff2.)
 - **PDF/print export of the report widget can't capture the client-rendered iframe.** The report's
-  **Export PDF** button exports client-side (`utils/exportPdf.ts`). A whole-page export (the PDF
+  **Export to PDF** button exports client-side (`utils/exportPdf.ts`). A whole-page export (the PDF
   Exporter) renders on the server, so the widget writes the report there (`TimesheetReportHtml`).
   It shows what the viewer last showed on screen: `useReportState` PUTs the selection to
   `/internal/report-state/{stateKey}`, kept in memory per user for a day (`ReportStateStore`). The
@@ -204,7 +204,7 @@ type").
   scrollbar spans the WorkItem column too, so the table hides its own, and `useScrollEdges` syncs
   the two both ways. The table has no vertical scroll: the page scrolls it.
 - **The tests serve stand-ins for Polarion's images.** The app links icons Polarion serves under
-  `/polarion/ria/images/` (the PDF export icon of the Export PDF button). A plugin in
+  `/polarion/ria/images/` (the PDF export icon of the Export to PDF button). A plugin in
   `vitest.config.ts` answers those paths from `ui/test/fixtures/`, so the pixel references hold an
   icon. The stand-ins are drawn for the tests: Polarion's own icons stay out of the repository.
 - **The visual tests show scrollbars** (`ignoreDefaultArgs: ['--hide-scrollbars']`), so a reference

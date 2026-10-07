@@ -1,5 +1,7 @@
+import { jsPDF } from 'jspdf';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkItem, WorkRecord } from '../src/types';
+import { formatISO } from '../src/utils/dates';
 import { exportTimesheetPdf } from '../src/utils/exportPdf';
 
 // The PDF export mirrors the on-screen report and the two are meant to stay in sync. jsPDF and its
@@ -126,5 +128,80 @@ describe('exportTimesheetPdf', () => {
     );
 
     expect(producedPdf().size).toBeGreaterThan(0);
+  });
+
+  describe('work item icons', () => {
+    // The tests serve stand-ins at Polarion's image paths (vitest.config.ts).
+    const ICON = '/polarion/ria/images/dle/operations/actionPdfExport16.svg';
+    const exportWith = (iconUrl: string) =>
+      exportTimesheetPdf(
+        options({ users: [{ name: 'Steve Developer', records: [record('2026-06-01', 8, { ...ITEM, iconUrl })] }] }),
+      );
+
+    it('draws the icon of a work item before its title', async () => {
+      const addImage = vi.spyOn(jsPDF.API, 'addImage');
+
+      await exportWith(ICON);
+
+      expect(addImage).toHaveBeenCalledOnce();
+      expect(String(addImage.mock.calls[0][0])).toMatch(/^data:image\/png;base64,/);
+    });
+
+    it('leaves the icon out when the browser cannot draw it, and still exports', async () => {
+      const addImage = vi.spyOn(jsPDF.API, 'addImage');
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+      await exportWith(ICON);
+
+      vi.restoreAllMocks();
+      const addImageAgain = vi.spyOn(jsPDF.API, 'addImage');
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+      vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(() => {
+        throw new DOMException('tainted', 'SecurityError');
+      });
+      await exportWith(ICON);
+
+      expect(addImage).not.toHaveBeenCalled();
+      expect(addImageAgain).not.toHaveBeenCalled();
+    });
+
+    it('still exports when jsPDF refuses the icon', async () => {
+      vi.spyOn(jsPDF.API, 'addImage').mockImplementation(() => {
+        throw new Error('unsupported image');
+      });
+
+      await exportWith(ICON);
+
+      expect(producedPdf().size).toBeGreaterThan(0);
+    });
+  });
+
+  it('starts a new page before a month table that would begin at the foot of the page', async () => {
+    // One user, four work items in every month of a year: twelve tables in a row, so one of them ends
+    // within reach of the foot of a page and the next one moves to a new page.
+    const year = Array.from({ length: 365 }, (_, i) => new Date(2026, 0, 1 + i));
+    const records = Array.from({ length: 12 }, (_, m) =>
+      [1, 2, 3, 4].map((n) => record(formatISO(new Date(2026, m, n + 2)), 2, { ...ITEM, id: `EL-${n}` })),
+    ).flat();
+
+    await exportTimesheetPdf(
+      options({
+        dates: year,
+        period: { start: '2026-01-01', end: '2026-12-31' },
+        users: [{ name: 'Steve Developer', records }],
+      }),
+    );
+
+    const pages = (await producedPdf().text()).match(/\/Type \/Page\b(?!s)/g) ?? [];
+    expect(pages.length).toBeGreaterThan(1);
+  });
+
+  it('starts a new page when the next table would not fit', async () => {
+    const users = Array.from({ length: 20 }, (_, i) => ({ name: `User ${i}`, records: [record('2026-06-01', 8)] }));
+
+    await exportTimesheetPdf(options({ users }));
+
+    // One page object per page; "/Type /Pages" is the page tree.
+    const pages = (await producedPdf().text()).match(/\/Type \/Page\b(?!s)/g) ?? [];
+    expect(pages.length).toBeGreaterThan(1);
   });
 });

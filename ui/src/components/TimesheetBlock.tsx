@@ -74,7 +74,7 @@ export default function TimesheetBlock({ workItems, records, dates, workingDayHo
                     .filter(Boolean)
                     .join(' ');
                   return (
-                    <td key={iso} className={className || undefined}>
+                    <td key={iso} className={className}>
                       {formatHours(hours)}
                     </td>
                   );

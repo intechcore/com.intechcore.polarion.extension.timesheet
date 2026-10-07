@@ -95,13 +95,14 @@ body {
    240/280px they inherited from the hand-rolled controls they replaced - a scope path or a couple of
    user chips outgrew that on any screen. The users picker grows twice as fast, since it is the one
    holding chips. The basis is the width each keeps when the row has nothing to spare; below that the
-   row wraps. */
+   row wraps. The users basis leaves room for the "Export to PDF" label at 995px, the width of a
+   full-page Live Report. */
 .timesheet-controls .control-scope {
   flex: 1 1 240px;
 }
 
 .timesheet-controls .control-users {
-  flex: 2 1 300px;
+  flex: 2 1 270px;
 }
 
 .timesheet-controls .control-scope .searchable-dropdown,
@@ -114,7 +115,7 @@ body {
   font-style: italic;
 }
 
-/* Export PDF is RSP's `sbb-btn sbb-btn--control`, so it carries no colours of its own. Its cell uses
+/* Export to PDF is RSP's `sbb-btn sbb-btn--control`, so it carries no colours of its own. Its cell uses
    the same empty label as the other controls to line the row up. */
 
 /* The multi-select grows with its chips (min-height, not height), and RSP's 4px padding puts a

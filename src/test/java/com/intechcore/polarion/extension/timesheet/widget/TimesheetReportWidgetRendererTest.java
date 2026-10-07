@@ -636,4 +636,60 @@ class TimesheetReportWidgetRendererTest {
 
         assertThat(sources.calls).containsExactly(List.of(List.of("aSeller", "mTest"), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31)));
     }
+
+    /** Every Java platform provides SHA-256; a platform without it is a broken one, said as such. */
+    @Test
+    void failsLoudlyWithoutSha256() {
+        try (org.mockito.MockedStatic<java.security.MessageDigest> digests = org.mockito.Mockito.mockStatic(java.security.MessageDigest.class)) {
+            digests.when(() -> java.security.MessageDigest.getInstance("SHA-256"))
+                    .thenThrow(new java.security.NoSuchAlgorithmException("SHA-256"));
+
+            assertThatThrownBy(() -> TimesheetReportWidgetRenderer.stateKey(null, "?scope=elibrary"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasCauseInstanceOf(java.security.NoSuchAlgorithmException.class);
+        }
+    }
+
+    /** In Polarion the export reads the viewer's selection from the store, scope included; a user without a name shows the ID. */
+    @Test
+    void readsTheSelectionOnScreenFromPolarion() {
+        when(scope.projectId()).thenReturn("elibrary");
+        String key = stateKeyOfThePage();
+        when(context.target()).thenReturn(com.polarion.alm.shared.api.utils.html.RichTextRenderTarget.PRINT);
+        com.intechcore.polarion.extension.timesheet.manager.ReportStateStore.getInstance().save("viewer", key,
+                new com.intechcore.polarion.extension.timesheet.model.ReportState("library", "nameless", "2026-06-01", "2026-06-30"));
+        com.polarion.alm.projects.model.IUser nameless = mock(com.polarion.alm.projects.model.IUser.class);
+        try (org.mockito.MockedConstruction<ch.sbb.polarion.extension.generic.service.PolarionService> ignored =
+                     org.mockito.Mockito.mockConstruction(ch.sbb.polarion.extension.generic.service.PolarionService.class,
+                             org.mockito.Mockito.withSettings().defaultAnswer(org.mockito.Mockito.RETURNS_DEEP_STUBS),
+                             (service, construction) -> {
+                                 when(service.getSecurityService().getCurrentUser()).thenReturn("viewer");
+                                 when(service.getProjectService().getUser("nameless")).thenReturn(nameless);
+                                 when(service.getProjectService().getProject("library").can().read()).thenReturn(true);
+                                 when(service.getProjectService().getProject("library").getName()).thenReturn("Document Library");
+                             });
+             org.mockito.MockedConstruction<com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager> ignoredManagers =
+                     org.mockito.Mockito.mockConstruction(com.intechcore.polarion.extension.timesheet.manager.TimesheetReportManager.class,
+                             (manager, construction) -> when(manager.getTimesheet(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
+                                     anyString(), anyString())).thenReturn(new com.intechcore.polarion.extension.timesheet.model.Timesheet("a", "b", List.of())))) {
+
+            String html = new TimesheetReportWidgetRenderer(context).printedReport();
+
+            assertThat(html).contains("Scope: Document Library").contains("Period: 2026-06-01 - 2026-06-30").contains("nameless - total: 0 h");
+        }
+    }
+
+    /** A widget that names nobody shows its viewer, as the report on screen does. */
+    @Test
+    void printsTheViewerWhenTheWidgetNamesNobody() {
+        @SuppressWarnings("unchecked")
+        StrictList<EnumOption> none = mock(StrictList.class);
+        when(none.asList()).thenReturn(List.of());
+        EnumParameter nobody = mock(EnumParameter.class);
+        when(nobody.values()).thenReturn(none);
+        when(context.<EnumParameter>parameter(TimesheetReportWidget.PARAMETER_USER_IDS)).thenReturn(nobody);
+        Sources sources = new Sources("viewer");
+
+        assertThat(printed(sources)).contains("Name of viewer - total: 8 h");
+    }
 }

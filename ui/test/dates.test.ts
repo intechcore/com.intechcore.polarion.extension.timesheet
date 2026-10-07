@@ -63,6 +63,10 @@ describe('dates utils', () => {
     expect(widgetPeriod(null, null, null)).toEqual(june);
   });
 
+  it('groupDatesByMonth gives no month for no dates', () => {
+    expect(groupDatesByMonth([])).toEqual([]);
+  });
+
   it('groupDatesByMonth splits across month boundaries', () => {
     const dates = [new Date(2026, 4, 30), new Date(2026, 4, 31), new Date(2026, 5, 1), new Date(2026, 5, 2)];
     const groups = groupDatesByMonth(dates);

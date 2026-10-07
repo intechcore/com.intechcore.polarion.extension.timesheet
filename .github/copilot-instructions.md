@@ -59,7 +59,7 @@ Be direct and concise. No preamble, no praise. One idea per sentence. Never use 
   image. Regenerate them with `npm run test:update:docker`, never by hand.
 - A visual test that resizes the viewport or parks the pointer must run last in its file. One
   browser page runs the whole file, so both outlive the test.
-- Coverage is gated at 90% on all four metrics.
+- Coverage is gated at 100% on all four metrics.
 
 ## Build, `pom.xml`
 

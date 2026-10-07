@@ -198,7 +198,7 @@ describe('ReportView', () => {
     expect(document.querySelector('table.timesheet')).not.toBeNull();
     expect(document.querySelector('.timesheet-controls')).toBeNull();
     expect(document.querySelector('.timesheet-report h3')).toBeNull();
-    expect(text()).not.toContain('Export PDF');
+    expect(text()).not.toContain('Export to PDF');
   });
 
   it('tells the server what it shows, for a PDF export of the page', async () => {
@@ -234,6 +234,34 @@ describe('ReportView', () => {
     await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
     await new Promise((resolve) => setTimeout(resolve, 400)); // past the pause before a save
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false);
+  });
+
+  it('draws no days for a period that ends before it starts', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
+
+    await userEvent.fill(document.querySelector<HTMLInputElement>('input[type="date"]')!, '2026-07-15');
+
+    await vi.waitFor(() => expect(document.querySelector('table.timesheet')).toBeNull());
+    expect(document.querySelector<HTMLButtonElement>('.export-pdf-button')?.disabled).toBe(true);
+  });
+
+  it('survives option lists that are not JSON', async () => {
+    const notJson = () =>
+      new Response('<html>login</html>', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    installFetchMock([
+      { method: 'GET', match: /\/users$/, respond: notJson },
+      { method: 'GET', match: /\/scopes$/, respond: notJson },
+      { method: 'GET', match: /\/current-user$/, respond: notJson },
+      { method: 'GET', match: /\/timesheet\?/, json: TIMESHEET },
+    ]);
+    render(<ReportView />);
+
+    // Nothing to offer and nobody to default to: the report says so instead of breaking.
+    await vi.waitFor(() => expect(text()).toContain('No users selected'));
+    expect(document.querySelectorAll('.control-scope select option')).toHaveLength(0);
   });
 
   it('asks the backend for the selected scope and period', async () => {

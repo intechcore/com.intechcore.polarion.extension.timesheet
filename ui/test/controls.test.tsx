@@ -144,6 +144,34 @@ describe('the control row', () => {
     expect(document.querySelector('.export-pdf-button')!.getBoundingClientRect().height).toBe(28);
   });
 
+  it('logs a failed export and is ready for the next one', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // jsPDF hands the document over through a blob URL; failing there fails the export.
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      throw new Error('no blob URLs');
+    });
+    render(
+      <div className="app standard-admin-page">
+        <ExportPdfButton
+          scopeName="E-Library"
+          period={{ start: '2026-06-01', end: '2026-06-01' }}
+          dates={[new Date(2026, 5, 1)]}
+          workingDayHours={8}
+          users={[{ name: 'Steve Developer', records: [] }]}
+        />
+      </div>,
+    );
+    await vi.waitFor(() => expect(document.querySelector('.export-pdf-button')).not.toBeNull());
+    const button = document.querySelector<HTMLButtonElement>('.export-pdf-button')!;
+
+    await userEvent.click(button);
+
+    await vi.waitFor(() => expect(error).toHaveBeenCalled());
+    await vi.waitFor(() => expect(button.textContent).toBe('Export to PDF'));
+    expect(button.disabled).toBe(false);
+    vi.restoreAllMocks();
+  });
+
   it("puts Polarion's PDF export icon before the label", async () => {
     render(
       <div className="app standard-admin-page">
@@ -158,7 +186,7 @@ describe('the control row', () => {
     expect(icon.getAttribute('src')).toBe(PDF_EXPORT_ICON);
     // Decorative: the label names the button for a screen reader.
     expect(icon.alt).toBe('');
-    expect(button.textContent).toBe('Export PDF');
+    expect(button.textContent).toBe('Export to PDF');
     // The tests serve a stand-in at Polarion's path (vitest.config.ts), so the icon does load.
     await vi.waitFor(() => expect(icon.naturalWidth).toBe(16));
     expect(icon.getBoundingClientRect().width).toBe(15); // RSP's .sbb-btn__icon
