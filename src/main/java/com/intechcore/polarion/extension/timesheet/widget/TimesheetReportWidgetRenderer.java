@@ -10,7 +10,6 @@ import com.polarion.alm.shared.api.model.rp.parameter.DateParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.EnumParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.IntegerParameter;
 import com.polarion.alm.shared.api.model.rp.parameter.ScopeParameter;
-import com.polarion.alm.shared.api.model.rp.parameter.impl.dataset.ScopeParameterImpl;
 import com.polarion.alm.shared.api.model.rp.widget.RichPageWidgetCommonContext;
 import com.polarion.alm.shared.api.utils.html.HtmlFragmentBuilder;
 import com.polarion.alm.shared.api.utils.html.HtmlTagBuilder;
@@ -41,12 +40,14 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
     private final Scope scope;
     private final boolean scopeLocked;
+    private final boolean currentUser;
     private final List<String> userIds;
     private final boolean userLocked;
     private final int workingDayHours;
     private final String period;
     private final LocalDate periodFrom;
     private final LocalDate periodTo;
+    private final boolean periodLocked;
     private final boolean hideControls;
 
     public TimesheetReportWidgetRenderer(@NotNull RichPageWidgetCommonContext context) {
@@ -54,18 +55,17 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
 
         ScopeParameter scopeParameter = context.parameter(TimesheetReportWidget.PARAMETER_SCOPE);
         scope = scopeParameter.scope();
-        // "Default (current scope)" in the widget settings selects no scope, and the report stays on
-        // the scope of the page. The interface cannot tell that apart from a scope chosen by hand.
-        scopeLocked = scopeParameter instanceof ScopeParameterImpl impl && impl.getSelectedScope() == null;
-
         // Polarion builds every parameter from the definition, so a widget saved before one existed
-        // gets its default: the users of the settings, the current month, the controls shown.
-        BooleanParameter currentUserParameter = context.parameter(TimesheetReportWidget.PARAMETER_CURRENT_USER);
-        userLocked = currentUserParameter.value();
+        // gets its default: everything may be changed, the users of the settings, the current month,
+        // the controls shown.
+        scopeLocked = !isOn(context, TimesheetReportWidget.PARAMETER_ALLOW_SCOPE);
+        userLocked = !isOn(context, TimesheetReportWidget.PARAMETER_ALLOW_USERS);
+        periodLocked = !isOn(context, TimesheetReportWidget.PARAMETER_ALLOW_PERIOD);
 
+        currentUser = isOn(context, TimesheetReportWidget.PARAMETER_CURRENT_USER);
         EnumParameter userIdsParameter = context.parameter(TimesheetReportWidget.PARAMETER_USER_IDS);
-        // The report shows its viewer then, and the users of the settings would only mislead.
-        userIds = userLocked ? List.of() : userIdsParameter.values().asList().stream()
+        // The report opens on its viewer then, and the users of the settings would only mislead.
+        userIds = currentUser ? List.of() : userIdsParameter.values().asList().stream()
                 .map(EnumOption::id)
                 .toList();
 
@@ -83,8 +83,12 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
         periodFrom = localDate(context.parameter(TimesheetReportWidget.PARAMETER_PERIOD_FROM));
         periodTo = localDate(context.parameter(TimesheetReportWidget.PARAMETER_PERIOD_TO));
 
-        BooleanParameter hideControlsParameter = context.parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS);
-        hideControls = hideControlsParameter.value();
+        hideControls = isOn(context, TimesheetReportWidget.PARAMETER_HIDE_CONTROLS);
+    }
+
+    private static boolean isOn(@NotNull RichPageWidgetCommonContext context, @NotNull String name) {
+        BooleanParameter parameter = context.parameter(name);
+        return parameter.value();
     }
 
     /**
@@ -148,10 +152,12 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
                 + "&scope=" + enc(scopeValue)
                 + (scopeLocked ? "&scopeLocked=true" : "")
                 + "&userIds=" + enc(String.join(",", userIds))
+                + (currentUser ? "&currentUser=true" : "")
                 + (userLocked ? "&userLocked=true" : "")
                 + "&workingDayInHours=" + workingDayHours
                 + "&period=" + enc(period)
                 + customPeriod()
+                + (periodLocked ? "&periodLocked=true" : "")
                 + (hideControls ? "&hideControls=true" : "");
     }
 

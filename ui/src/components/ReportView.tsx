@@ -20,12 +20,12 @@ const SCOPE_ICON: Record<ScopeInfo['type'], string> = {
 };
 
 /**
- * The one option a locked picker offers, without the indent of the tree. Its id stands in for the name
- * while the list loads, or when the list leaves it out: the scope list skips what the user may not read.
+ * The options a locked picker offers: its selection, without the indent of the tree. An id stands in
+ * for the name while the list loads, or when the list leaves it out: the scope list skips what the
+ * user may not read.
  */
-function lockedTo(options: SelectOption[], id: string | null): SelectOption[] {
-  if (!id) return [];
-  return [{ ...(options.find((o) => o.id === id) ?? { id, name: id }), indent: false }];
+function lockedTo(options: SelectOption[], ids: string[]): SelectOption[] {
+  return ids.map((id) => ({ ...(options.find((o) => o.id === id) ?? { id, name: id }), indent: false }));
 }
 
 export default function ReportView() {
@@ -35,10 +35,12 @@ export default function ReportView() {
     const wdh = parseInt(q.get('workingDayInHours') ?? '', 10);
     return {
       scopePath: q.get('scope') || '/',
-      // The widget follows the scope of its page: that scope is the only one the report may show.
+      // Each lock keeps one control at what the widget set up; they combine freely.
       scopeLocked: q.get('scopeLocked') === 'true',
-      // The widget shows every viewer their own hours: the viewer is the only user it may show.
       userLocked: q.get('userLocked') === 'true',
+      periodLocked: q.get('periodLocked') === 'true',
+      // The report opens on its viewer, whoever set the widget up.
+      currentUser: q.get('currentUser') === 'true',
       userIds: (q.get('userIds') ?? '')
         .split(',')
         .map((u) => u.trim())
@@ -51,7 +53,7 @@ export default function ReportView() {
   }, []);
 
   const { users, scopes, currentUserId } = useReportOptions();
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(seed.userLocked ? [] : seed.userIds);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(seed.currentUser ? [] : seed.userIds);
   const [scopePath, setScopePath] = useState(seed.scopePath);
   const [startDate, setStartDate] = useState(seed.period.start);
   const [endDate, setEndDate] = useState(seed.period.end);
@@ -84,9 +86,9 @@ export default function ReportView() {
     iconURL: SCOPE_ICON[scope.type],
     indent: scope.depth > 0,
   }));
-  const scopeOptions = seed.scopeLocked ? lockedTo(allScopeOptions, scopePath) : allScopeOptions;
+  const scopeOptions = seed.scopeLocked ? lockedTo(allScopeOptions, [scopePath]) : allScopeOptions;
   const allUserOptions: SelectOption[] = users.map((user) => ({ id: user.id, name: `${user.name} (${user.id})` }));
-  const userOptions = seed.userLocked ? lockedTo(allUserOptions, currentUserId) : allUserOptions;
+  const userOptions = seed.userLocked ? lockedTo(allUserOptions, selectedUserIds) : allUserOptions;
 
   const scopeName = scopes.find((s) => s.path === scopePath)?.name ?? scopePath;
   const pdfUsers = selectedUserIds.map((id) => ({ name: userName(id), records: recordsByUser.get(id) ?? [] }));
@@ -126,6 +128,7 @@ export default function ReportView() {
               endDate={endDate}
               onStartChange={setStartDate}
               onEndChange={setEndDate}
+              disabled={seed.periodLocked}
             />
             <div className="control">
               <span>&nbsp;</span>
