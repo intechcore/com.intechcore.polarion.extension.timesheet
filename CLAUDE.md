@@ -213,6 +213,14 @@ type").
   plugin in `vitest.config.ts` answers those paths, SVG and GIF, from `ui/test/fixtures/`, so the
   pixel references hold an icon. The stand-ins are drawn for the tests (the scope icons are one-color
   squares): Polarion's own icons stay out of the repository.
+- **The report of a PDF export has a pixel reference too.** `TimesheetReportHtmlReferenceTest` keeps
+  `ui/test/fixtures/printed-report.html` equal to what `TimesheetReportHtml` writes; after a change,
+  rewrite it with `mvn test -Dtest=TimesheetReportHtmlReferenceTest -Dupdate.printed=true`, then
+  `npm run test:update:docker`. `PrintedReport.visual.test.tsx` draws it under the PDF Exporter's own
+  style sheets (`ui/test/fixtures/pdf-exporter/`, copied unchanged from its release, see the README
+  there), at the width of a landscape A4 and A3 page body. Chromium draws it, the PDF Exporter prints
+  through WeasyPrint: the reference pins the layout and the styles, not the exact glyphs. The title
+  markup in the golden file is the one Polarion 2606 renders.
 - **The visual tests show scrollbars** (`ignoreDefaultArgs: ['--hide-scrollbars']`), so a reference
   proves a wide month can scroll.
 - **Chrome ignores `::-webkit-scrollbar` on an element that sets `scrollbar-width` or
