@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { readFile } from 'node:fs/promises';
-import { join, normalize } from 'node:path';
+import { extname, join, normalize } from 'node:path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
@@ -25,19 +25,21 @@ const pixelReferences = process.env.PIXEL_REFERENCES === '1';
 // This answers those paths from test/fixtures, with stand-ins drawn for the tests, so the pixel
 // references hold an icon where the app shows one. A path the fixtures lack stays a 404, as before.
 const FIXTURES = join(import.meta.dirname, 'test/fixtures');
+const IMAGE_TYPES: Record<string, string> = { '.svg': 'image/svg+xml', '.gif': 'image/gif' };
 function polarionImages(): Plugin {
   return {
     name: 'timesheet:polarion-images',
     configureServer(server) {
       server.middlewares.use('/polarion/ria/images', (req, res, next) => {
         const file = normalize(join(FIXTURES, 'polarion/ria/images', (req.url ?? '').split('?')[0]));
-        if (!file.startsWith(FIXTURES) || !file.endsWith('.svg')) {
+        const type = IMAGE_TYPES[extname(file)];
+        if (!file.startsWith(FIXTURES) || !type) {
           next();
           return;
         }
         readFile(file).then(
           (body) => {
-            res.setHeader('Content-Type', 'image/svg+xml');
+            res.setHeader('Content-Type', type);
             res.end(body);
           },
           () => next(),

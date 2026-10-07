@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
 import App from '../src/App';
+import ExportPdfButton from '../src/components/ExportPdfButton';
 import ReportView from '../src/components/ReportView';
 import TimesheetBlock from '../src/components/TimesheetBlock';
 import UserTimesheet from '../src/components/UserTimesheet';
@@ -89,7 +90,7 @@ async function pageShot(name: string, width = 1280) {
  * page, so the page is stretched under it: an element capture takes the pixels of its box, popup
  * included.
  */
-async function popupShot(trigger: string, name: string) {
+async function popupShot(trigger: string, name: string, inPopup?: () => Promise<void>) {
   const app = document.querySelector('.app') as HTMLElement;
   await page.viewport(1280, 480);
   app.style.minHeight = '460px';
@@ -99,19 +100,32 @@ async function popupShot(trigger: string, name: string) {
       [...document.querySelectorAll<HTMLElement>('.sd-portal .options')].some((o) => o.getClientRects().length > 0),
     ).toBe(true),
   );
+  await inPopup?.();
   // The pointer stays on the trigger: parking it would move it over the popup.
   await settleBeforeCapture(false);
   await expect(page.elementLocator(app)).toMatchScreenshot(name);
 }
 
 /** The report in the app shell at the default viewport, for a capture of its control row. */
-function openControls(search: string) {
+function openControls(search: string, routes: Route[] = reportRoutes()) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(2026, 5, 17));
   window.history.replaceState({}, '', search);
-  installFetchMock(reportRoutes());
+  installFetchMock(routes);
   render(inAppShell(<ReportView />));
 }
+
+// The PDF export never finishes in this file, so the button can be photographed while it works.
+vi.mock('../src/utils/exportPdf', () => ({ exportTimesheetPdf: () => new Promise<void>(() => {}) }));
+
+// A team, for a user picker that holds more chips than one line.
+const TEAM: User[] = [
+  ...USERS,
+  { id: 'aSeller', name: 'Ayato Seller' },
+  { id: 'jRequirement', name: 'Jai Requirement' },
+  { id: 'pGUI', name: 'Philip GUI' },
+  { id: 'rProject', name: 'Rea Project' },
+];
 
 const origUrl = window.location.pathname + window.location.search;
 
@@ -300,6 +314,69 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
     await shot('table', 'native-workitem');
   });
 
+  it('control row: a locked scope the list leaves out shows its id', async () => {
+    // The scope list skips the projects the user may not read.
+    openControls('?scope=support&scopeLocked=true&userIds=sDeveloper');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await settleBeforeCapture();
+    await shot('.timesheet-controls', 'controls-scope-fallback');
+  });
+
+  it('control row: more users than one line of chips holds', async () => {
+    openControls(
+      `?scope=elibrary&userIds=${TEAM.map((u) => u.id).join(',')}`,
+      reportRoutes([{ method: 'GET', match: /\/users$/, json: TEAM }]),
+    );
+    await vi.waitFor(() => expect(document.querySelectorAll('.control-users .sd-chip')).toHaveLength(TEAM.length));
+    await settleBeforeCapture();
+    await shot('.timesheet-controls', 'controls-many-users');
+  });
+
+  it('a month scrolled to its middle: days hidden on both sides', async () => {
+    render(
+      inAppShell(
+        <UserTimesheet
+          title="Steve Developer"
+          records={[record('2026-06-01', 8), record('2026-06-15', 4), record('2026-06-30', 2)]}
+          dates={datesInPeriod(parseDate('2026-06-01'), parseDate('2026-06-30'))}
+          workingDayHours={8}
+        />,
+      ),
+    );
+
+    await vi.waitFor(() => expect(document.querySelector('table')).not.toBeNull());
+    const wrap = document.querySelector<HTMLElement>('.timesheet-table-wrap')!;
+    wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;
+    await vi.waitFor(() =>
+      expect(document.querySelector('.timesheet-table-frame')!.className).toBe(
+        'timesheet-table-frame scrolled-left more-right',
+      ),
+    );
+    await settleBeforeCapture();
+    await shot('.user-timesheet', 'scroll-middle');
+  });
+
+  it('the export button while the PDF is made', async () => {
+    render(
+      inAppShell(
+        <ExportPdfButton
+          scopeName="E-Library"
+          period={{ start: '2026-06-01', end: '2026-06-30' }}
+          dates={[new Date(2026, 5, 1)]}
+          workingDayHours={8}
+          users={[]}
+        />,
+      ),
+    );
+    await vi.waitFor(() => expect(document.querySelector('.export-pdf-button')).not.toBeNull());
+
+    await userEvent.click(document.querySelector<HTMLElement>('.export-pdf-button')!);
+
+    await vi.waitFor(() => expect(document.querySelector('.export-pdf-button')!.textContent).toBe('Generating…'));
+    await settleBeforeCapture();
+    await shot('.export-pdf-button', 'export-busy');
+  });
+
   /**
    * The page as the widget embeds it: App puts the `.app standard-admin-page feature-report` shell
    * around ReportView, and that shell is what the component captures above cannot show.
@@ -379,6 +456,36 @@ describe.skipIf(!__PIXEL_REFERENCES__)('ReportView visual states', () => {
     );
     await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
     await popupShot('.control-scope .sd-trigger', 'scope-popup');
+  });
+
+  it('the page while the timesheet loads', async () => {
+    openReport(
+      '?feature=report&scope=elibrary&userIds=sDeveloper',
+      reportRoutes([
+        {
+          method: 'GET',
+          match: /\/timesheet\?/,
+          respond: () => new Promise<Response>(() => {}) as unknown as Response,
+        },
+      ]),
+    );
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Updating…'));
+    await pageShot('report-loading');
+  });
+
+  it('the scope popup when the search finds nothing', async () => {
+    openReport(
+      '?feature=report&scope=elibrary&userIds=sDeveloper',
+      reportRoutes([{ method: 'GET', match: /\/scopes$/, json: SCOPE_TREE }]),
+    );
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Steve Developer - total'));
+    await popupShot('.control-scope .sd-trigger', 'scope-popup-no-matches', async () => {
+      const search = [...document.querySelectorAll<HTMLInputElement>('.sd-portal .search-box')].find(
+        (b) => b.getClientRects().length > 0,
+      )!;
+      await userEvent.fill(search, 'no such scope');
+      await vi.waitFor(() => expect(document.body.textContent).toContain('No matches'));
+    });
   });
 
   it('the user popup: checkboxes for the selection', async () => {
