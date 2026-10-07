@@ -21,7 +21,7 @@ const componentDir = (testFileName: string): string => testFileName.split(/[\\/]
 // and the rendered element height, i.e. a red run that says nothing about the code.
 const pixelReferences = process.env.PIXEL_REFERENCES === '1';
 
-// Polarion serves its images under /polarion/ria/images at runtime, and the tests have no Polarion.
+// Polarion serves its images under /polarion (ria/images, icons) at runtime, and the tests have no Polarion.
 // This answers those paths from test/fixtures, with stand-ins drawn for the tests, so the pixel
 // references hold an icon where the app shows one. A path the fixtures lack stays a 404, as before.
 const FIXTURES = join(import.meta.dirname, 'test/fixtures');
@@ -30,8 +30,8 @@ function polarionImages(): Plugin {
   return {
     name: 'timesheet:polarion-images',
     configureServer(server) {
-      server.middlewares.use('/polarion/ria/images', (req, res, next) => {
-        const file = normalize(join(FIXTURES, 'polarion/ria/images', (req.url ?? '').split('?')[0]));
+      server.middlewares.use('/polarion', (req, res, next) => {
+        const file = normalize(join(FIXTURES, 'polarion', (req.url ?? '').split('?')[0]));
         const type = IMAGE_TYPES[extname(file)];
         if (!file.startsWith(FIXTURES) || !type) {
           next();

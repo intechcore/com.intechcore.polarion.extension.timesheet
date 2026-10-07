@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <!-- A stand-in drawn for the tests: the work item type icon Polarion renders in a title. -->
-  <rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#efe3f5" stroke="#8e44ad"/>
-  <path d="M4 8l3 3 5-6" fill="none" stroke="#8e44ad" stroke-width="1.5"/>
-</svg>

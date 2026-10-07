@@ -35,12 +35,16 @@ class TimesheetReportHtmlReferenceTest {
     private static final User BORIS = new User("bTest", "Boris Test");
     private static final User CLARA = new User("cUser", "Clara User");
 
-    // Polarion's own rendering of a title, with the type icon the tests serve a stand-in for.
-    private static final String ICON = "<img src=\"/polarion/ria/images/enums/type_task.svg\" class=\"polarion-Icons\"/>";
-
+    /**
+     * A title as Polarion renders it (WorkItemReference.render() on Polarion 2606), with the type icon
+     * at the path Polarion serves it from; the tests serve a stand-in there.
+     */
     private static WorkItem item(String id, String title) {
-        String rendered = "<span class=\"polarion-no-style-cleanup\"><a class=\"polarion-Hyperlink\" href=\"#\">"
-                + ICON + "<span>" + id + "</span><span> - " + title + "</span></a></span>";
+        String rendered = "<span class=\"polarion-no-style-cleanup\" style=\"white-space:nowrap;\" title=\"" + id + " - " + title + "\">"
+                + "<a style=\"font-size:1em;\" target=\"_top\" class=\"polarion-Hyperlink\" href=\"#/project/elibrary/workitem?id=" + id + "\">"
+                + "<span style=\"white-space:nowrap;\"><img src=\"/polarion/icons/default/enums/type_requirement.gif\" class=\"polarion-Icons\""
+                + " onmousedown=\"return false;\" contentEditable=\"false\"/></span>"
+                + "<span style=\"color:#000000;\">" + id + "</span><span style=\"white-space: normal\"> - " + title + "</span></a></span>";
         return new WorkItem(PROJECT, id, title, rendered, null);
     }
 
