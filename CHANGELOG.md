@@ -9,6 +9,8 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-07
+
 ### Added
 - The export button reads **Export to PDF** and shows Polarion's PDF export icon before its label.
 - A PDF export of the whole page shows the report as the person exporting last showed it on
