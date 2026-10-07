@@ -13,9 +13,11 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The report of the widget as static HTML, for a PDF export or a print of the page: an iframe has no
@@ -28,6 +30,7 @@ public class TimesheetReportHtml {
     private static final DateTimeFormatter DAY_MONTH = DateTimeFormatter.ofPattern("dd.MM");
     private static final String CELL = "border:1px solid #000000;padding:2px 3px;white-space:nowrap;";
     private static final String WEEKEND = "background:#eaeaea;";
+    private static final Set<DayOfWeek> WEEKEND_DAYS = EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
 
     private final List<User> users;
     private final LocalDate start;
@@ -134,7 +137,7 @@ public class TimesheetReportHtml {
     }
 
     private static String weekend(LocalDate day) {
-        return day.getDayOfWeek() == DayOfWeek.SATURDAY || day.getDayOfWeek() == DayOfWeek.SUNDAY ? WEEKEND : "";
+        return WEEKEND_DAYS.contains(day.getDayOfWeek()) ? WEEKEND : "";
     }
 
     /** Hours as the report writes them: 8, 7.5, never 8.0. */

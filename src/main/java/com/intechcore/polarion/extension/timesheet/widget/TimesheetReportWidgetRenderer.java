@@ -60,7 +60,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     private final PrintedReportSources sources;
 
     // The targets that turn the page into a document. A PDF export or a print shows no iframe.
-    private static final Set<RichTextRenderTarget> PRINTED = Set.of(RichTextRenderTarget.PDF_EXPORT,
+    private static final Set<RichTextRenderTarget> DOCUMENT_TARGETS = Set.of(RichTextRenderTarget.PDF_EXPORT,
             RichTextRenderTarget.COMPARE_PDF_EXPORT, RichTextRenderTarget.PRINT, RichTextRenderTarget.COMPARE_PRINT);
 
     /** What a printed report reads on the server: the work records, user names, the viewer and today. */
@@ -81,7 +81,7 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
     TimesheetReportWidgetRenderer(@NotNull RichPageWidgetCommonContext context, @NotNull PrintedReportSources sources) {
         super(context);
         this.sources = sources;
-        printed = PRINTED.contains(context.target());
+        printed = DOCUMENT_TARGETS.contains(context.target());
 
         ScopeParameter scopeParameter = context.parameter(TimesheetReportWidget.PARAMETER_SCOPE);
         scope = scopeParameter.scope();
