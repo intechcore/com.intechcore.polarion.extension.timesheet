@@ -201,6 +201,41 @@ describe('ReportView', () => {
     expect(text()).not.toContain('Export PDF');
   });
 
+  it('tells the server what it shows, for a PDF export of the page', async () => {
+    const key = 'a'.repeat(64);
+    setUrl(`?feature=report&scope=elibrary&userIds=sDeveloper&stateKey=${key}`);
+    const fetchMock = installFetchMock([
+      { method: 'PUT', match: /\/report-state\//, respond: () => new Response(null, { status: 204 }) },
+      ...optionRoutes(),
+    ]);
+    render(<ReportView />);
+    const saved = () =>
+      fetchMock.mock.calls
+        .filter(([, init]) => init?.method === 'PUT')
+        .map(([u, init]) => [String(u), JSON.parse(String(init?.body))]);
+
+    await vi.waitFor(() =>
+      expect(saved().at(-1)).toEqual([
+        `/polarion/timesheet/rest/internal/report-state/${key}`,
+        { scopePath: 'elibrary', userIds: 'sDeveloper', startDate: '2026-06-01', endDate: '2026-06-30' },
+      ]),
+    );
+
+    await userEvent.fill(document.querySelector<HTMLInputElement>('input[type="date"]')!, '2026-05-01');
+
+    await vi.waitFor(() => expect(saved().at(-1)?.[1].startDate).toBe('2026-05-01'));
+  });
+
+  it('keeps nothing on the server outside a widget', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper');
+    const fetchMock = installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total'));
+    await new Promise((resolve) => setTimeout(resolve, 400)); // past the pause before a save
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false);
+  });
+
   it('asks the backend for the selected scope and period', async () => {
     setUrl('?scope=elibrary&userIds=sDeveloper');
     const fetchMock = installFetchMock(optionRoutes());

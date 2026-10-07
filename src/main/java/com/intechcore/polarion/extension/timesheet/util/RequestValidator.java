@@ -1,5 +1,6 @@
 package com.intechcore.polarion.extension.timesheet.util;
 
+import com.intechcore.polarion.extension.timesheet.model.ReportState;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,6 +48,9 @@ public class RequestValidator {
      * hyphen is refused for the reason above; a leading separator is the path of a group.
      */
     private static final Pattern SCOPE_PATH = Pattern.compile("[A-Za-z0-9._/][A-Za-z0-9._/-]{0,255}");
+
+    // The key a widget gives its report: a SHA-256 in hex (TimesheetReportWidgetRenderer).
+    private static final Pattern STATE_KEY = Pattern.compile("[0-9a-f]{64}");
 
     /**
      * Checks that the period is complete, ordered and bounded.
@@ -127,5 +131,34 @@ public class RequestValidator {
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(name + " must be an ISO date (yyyy-MM-dd)", e);
         }
+    }
+
+    /**
+     * Checks the key under which a report keeps its selection.
+     *
+     * @param stateKey the key the widget passed to its report
+     * @return the key, unchanged
+     */
+    public static @NotNull String validateStateKey(@Nullable String stateKey) {
+        if (stateKey == null || !STATE_KEY.matcher(stateKey).matches()) {
+            throw new IllegalArgumentException("State key is not valid");
+        }
+        return stateKey;
+    }
+
+    /**
+     * Checks a selection a report sends, by the rules of the timesheet request it stands for.
+     *
+     * @param state the selection
+     * @return the selection, with the scope path and the user ids trimmed
+     */
+    public static @NotNull ReportState validateReportState(@Nullable ReportState state) {
+        if (state == null) {
+            throw new IllegalArgumentException("Report state is required");
+        }
+        validatePeriod(state.getStartDate(), state.getEndDate());
+        String scopePath = validateScopePath(state.getScopePath());
+        List<String> userIds = validateUserIds(state.getUserIds());
+        return new ReportState(scopePath, String.join(",", userIds), state.getStartDate(), state.getEndDate());
     }
 }

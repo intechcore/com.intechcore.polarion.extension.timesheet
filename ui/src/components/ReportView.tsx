@@ -3,6 +3,7 @@ import { SearchableSelect } from '@sbb-polarion/react-sbb-polarion';
 import type { SelectOption } from '@sbb-polarion/react-sbb-polarion';
 import useIframeAutoHeight from '../services/useIframeAutoHeight';
 import useReportOptions from '../services/useReportOptions';
+import useReportState from '../services/useReportState';
 import useTimesheet from '../services/useTimesheet';
 import type { ScopeInfo } from '../types';
 import { datesInPeriod, parseDate, widgetPeriod } from '../utils/dates';
@@ -49,6 +50,8 @@ export default function ReportView() {
       period: widgetPeriod(q.get('period'), q.get('from'), q.get('to')),
       // The page shows the tables only: what the widget set up is all there is to see.
       hideControls: q.get('hideControls') === 'true',
+      // The key under which the server keeps what this report shows, for a PDF export of the page.
+      stateKey: q.get('stateKey'),
     };
   }, []);
 
@@ -66,6 +69,7 @@ export default function ReportView() {
   }, [currentUserId]);
 
   const { timesheet, error, fetching } = useTimesheet({ userIds: selectedUserIds, startDate, endDate, scopePath });
+  useReportState({ stateKey: seed.stateKey, scopePath, userIds: selectedUserIds, startDate, endDate });
 
   const dates = useMemo(() => {
     const from = parseDate(startDate);

@@ -1,6 +1,8 @@
 package com.intechcore.polarion.extension.timesheet.rest.controller;
 
 import ch.sbb.polarion.extension.generic.service.PolarionService;
+import com.intechcore.polarion.extension.timesheet.manager.ReportStateStore;
+import com.intechcore.polarion.extension.timesheet.model.ReportState;
 import com.intechcore.polarion.extension.timesheet.model.ScopeInfo;
 import com.intechcore.polarion.extension.timesheet.model.Timesheet;
 import com.intechcore.polarion.extension.timesheet.model.User;
@@ -276,5 +278,37 @@ class TimesheetInternalControllerTest {
         List<ScopeInfo> scopes = controller.getScopes();
 
         assertThat(scopes).extracting(ScopeInfo::getPath).containsExactly("/", "dev");
+    }
+
+    // --- The selection a report keeps for a PDF export ---
+
+    @Test
+    void saveReportState_keepsTheSelectionForTheCurrentUser() {
+        when(polarionService.getSecurityService().getCurrentUser()).thenReturn("aSeller");
+        String key = "b".repeat(64);
+
+        controller.saveReportState(key, new ReportState("elibrary", "aSeller,mTest", "2026-06-01", "2026-06-30"));
+
+        assertThat(ReportStateStore.getInstance().find("aSeller", key))
+                .isEqualTo(new ReportState("elibrary", "aSeller,mTest", "2026-06-01", "2026-06-30"));
+        assertThat(ReportStateStore.getInstance().find("mTest", key)).isNull();
+    }
+
+    @Test
+    void saveReportState_refusesWhatTheReportCouldNotRequest() {
+        when(polarionService.getSecurityService().getCurrentUser()).thenReturn("aSeller");
+        ReportState june = new ReportState("/", "aSeller", "2026-06-01", "2026-06-30");
+
+        assertThatThrownBy(() -> controller.saveReportState("not-a-key", june)).hasMessage("State key is not valid");
+        assertThatThrownBy(() -> controller.saveReportState("c".repeat(64), new ReportState("/", "a b", "2026-06-01", "2026-06-30")))
+                .hasMessage("User id holds characters which are not allowed");
+    }
+
+    @Test
+    void saveReportState_needsASignedInUser() {
+        when(polarionService.getSecurityService().getCurrentUser()).thenReturn(" ");
+
+        assertThatThrownBy(() -> controller.saveReportState("d".repeat(64), new ReportState("/", "aSeller", "2026-06-01", "2026-06-30")))
+                .hasMessage("No user is signed in");
     }
 }

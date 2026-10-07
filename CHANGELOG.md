@@ -10,6 +10,8 @@ Releases before 0.1.4 are listed on the
 ## [Unreleased]
 
 ### Added
+- A PDF export of the whole page shows the report as the person exporting last showed it on
+  screen, in the controls the widget lets them change.
 - The widget option **Show hours of** opens the report on the selected users or on its viewer.
 - The widget settings show only what applies: the users, the custom dates and the **Allow
   changing** options appear when they take effect.

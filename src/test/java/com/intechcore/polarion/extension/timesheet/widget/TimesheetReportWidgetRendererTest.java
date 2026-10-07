@@ -119,11 +119,17 @@ class TimesheetReportWidgetRendererTest {
         when(builder.tag()).thenReturn(tags);
     }
 
+    /** The URL of the report, without the key that ends it: the settings it carries. */
     private String renderedUrl() {
+        String url = renderedUrlWithKey();
+        return url.substring(0, url.indexOf("&stateKey="));
+    }
+
+    private String renderedUrlWithKey() {
         new TimesheetReportWidgetRenderer(context).render(builder);
 
         ArgumentCaptor<String> src = ArgumentCaptor.forClass(String.class);
-        verify(attributes).byName(eq("src"), src.capture());
+        verify(attributes, org.mockito.Mockito.atLeastOnce()).byName(eq("src"), src.capture());
         return src.getValue();
     }
 
@@ -394,6 +400,7 @@ class TimesheetReportWidgetRendererTest {
     private static final class Sources implements TimesheetReportWidgetRenderer.PrintedReportSources {
         private final String viewer;
         private final java.util.List<java.util.List<Object>> calls = new java.util.ArrayList<>();
+        private final java.util.Map<String, com.intechcore.polarion.extension.timesheet.model.ReportState> states = new java.util.HashMap<>();
 
         Sources(String viewer) {
             this.viewer = viewer;
@@ -414,6 +421,18 @@ class TimesheetReportWidgetRendererTest {
         @Override
         public String userName(String userId) {
             return "Name of " + userId;
+        }
+
+        @Override
+        public com.intechcore.polarion.extension.timesheet.model.ReportState reportState(String userId, String stateKey) {
+            return states.get(userId + "/" + stateKey);
+        }
+
+        @Override
+        public Scope scope(String scopePath) {
+            Scope chosen = mock(Scope.class);
+            when(chosen.projectId()).thenReturn(scopePath);
+            return chosen;
         }
 
         @Override
@@ -543,5 +562,78 @@ class TimesheetReportWidgetRendererTest {
             when(scope.projectId()).thenReturn("broken");
             assertThat(new TimesheetReportWidgetRenderer(context).printedReport()).contains("Scope: broken");
         }
+    }
+
+    // --- What the viewer showed on screen, for a PDF export ---
+
+    private String stateKeyOfThePage() {
+        String url = renderedUrlWithKey();
+        return url.substring(url.indexOf("&stateKey=") + "&stateKey=".length());
+    }
+
+    /** The page and the settings name the report: the same on every render, different for another page or setting. */
+    @Test
+    void namesTheReportByThePageAndItsSettings() {
+        com.polarion.alm.shared.api.model.ModelObjectReference page = mock(com.polarion.alm.shared.api.model.ModelObjectReference.class);
+        when(page.toPath()).thenReturn("elibrary/custom/Time Sheet Report");
+        com.polarion.alm.shared.api.model.ModelObjectReference other = mock(com.polarion.alm.shared.api.model.ModelObjectReference.class);
+        when(other.toPath()).thenReturn("elibrary/custom/Other");
+
+        String key = TimesheetReportWidgetRenderer.stateKey(page, "?scope=elibrary");
+        assertThat(key).matches("[0-9a-f]{64}").isEqualTo(TimesheetReportWidgetRenderer.stateKey(page, "?scope=elibrary"));
+        assertThat(TimesheetReportWidgetRenderer.stateKey(other, "?scope=elibrary")).isNotEqualTo(key);
+        assertThat(TimesheetReportWidgetRenderer.stateKey(page, "?scope=library")).isNotEqualTo(key);
+        assertThat(TimesheetReportWidgetRenderer.stateKey(null, "?scope=elibrary")).isNotEqualTo(key);
+    }
+
+    @Test
+    void passesItsKeyToTheReport() {
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(stateKeyOfThePage()).matches("[0-9a-f]{64}");
+    }
+
+    /** The export shows what the viewer last showed on screen: scope, users and period. */
+    @Test
+    void printsWhatTheViewerShowedOnScreen() {
+        when(scope.projectId()).thenReturn("elibrary");
+        Sources sources = new Sources("viewer");
+        sources.states.put("viewer/" + stateKeyOfThePage(),
+                new com.intechcore.polarion.extension.timesheet.model.ReportState("library", "mTest", "2026-06-01", "2026-08-31"));
+
+        String html = new TimesheetReportWidgetRenderer(context, sources).printedReport();
+
+        assertThat(html).contains("Scope: Scope of library").contains("Period: 2026-06-01 - 2026-08-31").contains("Name of mTest");
+        assertThat(sources.calls).containsExactly(List.of(List.of("mTest"), LocalDate.of(2026, 6, 1), LocalDate.of(2026, 8, 31)));
+    }
+
+    /** A control the widget locks keeps its setting, whatever the screen showed. */
+    @Test
+    void keepsTheLockedControlsAtTheirSettings() {
+        when(scope.projectId()).thenReturn("elibrary");
+        flag(TimesheetReportWidget.PARAMETER_ALLOW_SCOPE, false);
+        flag(TimesheetReportWidget.PARAMETER_ALLOW_USERS, false);
+        flag(TimesheetReportWidget.PARAMETER_ALLOW_PERIOD, false);
+        Sources sources = new Sources("viewer");
+        sources.states.put("viewer/" + stateKeyOfThePage(),
+                new com.intechcore.polarion.extension.timesheet.model.ReportState("library", "mTest", "2026-06-01", "2026-08-31"));
+
+        String html = new TimesheetReportWidgetRenderer(context, sources).printedReport();
+
+        assertThat(html).contains("Scope: Scope of elibrary").contains("Period: 2026-10-01 - 2026-10-31");
+        assertThat(sources.calls).containsExactly(List.of(List.of("aSeller", "mTest"), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31)));
+    }
+
+    /** Another viewer's screen is not this viewer's export. */
+    @Test
+    void readsOnlyTheSelectionOfTheViewer() {
+        when(scope.projectId()).thenReturn("elibrary");
+        Sources sources = new Sources("viewer");
+        sources.states.put("someoneElse/" + stateKeyOfThePage(),
+                new com.intechcore.polarion.extension.timesheet.model.ReportState("library", "mTest", "2026-06-01", "2026-08-31"));
+
+        new TimesheetReportWidgetRenderer(context, sources).printedReport();
+
+        assertThat(sources.calls).containsExactly(List.of(List.of("aSeller", "mTest"), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31)));
     }
 }
