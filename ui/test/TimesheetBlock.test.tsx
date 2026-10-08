@@ -81,6 +81,60 @@ describe('TimesheetBlock', () => {
     expect(document.querySelector('td a')?.getAttribute('href')).toBe('/polarion/#/project/elibrary/workitem?id=EL-2');
   });
 
+  it('sends the link Polarion renders to the work item in Polarion, in the whole window', async () => {
+    // As Polarion 2606 renders a title: a link relative to its own page, aimed at the top window.
+    const rendered = item(
+      'DEV-13720',
+      'Performance tests',
+      '<span class="polarion-no-style-cleanup"><a target="_top" class="polarion-Hyperlink" href="#/project/dev/workitem?id=DEV-13720">' +
+        '<span>DEV-13720</span><span> - Performance tests</span></a></span>',
+    );
+    await show(
+      <TimesheetBlock
+        workItems={[rendered]}
+        records={[rec('2026-06-01', 2, rendered)]}
+        dates={[monday]}
+        workingDayHours={8}
+      />,
+    );
+
+    const link = document.querySelector('td a')!;
+    // Relative to the frame it opened the report again; it opens the work item instead.
+    expect(link.getAttribute('href')).toBe('/polarion/#/project/dev/workitem?id=DEV-13720');
+    expect(link.getAttribute('target')).toBe('_top');
+  });
+
+  it('opens any link of a title in the whole window, not in the frame', async () => {
+    const rendered = item(
+      'EL-4',
+      'Elsewhere',
+      '<a href="/polarion/#/project/elibrary/workitem?id=EL-4">EL-4</a> <a href="#x" target="_blank">x</a>',
+    );
+    await show(
+      <TimesheetBlock
+        workItems={[rendered]}
+        records={[rec('2026-06-01', 2, rendered)]}
+        dates={[monday]}
+        workingDayHours={8}
+      />,
+    );
+
+    const links = [...document.querySelectorAll('td a')];
+    expect(links.map((l) => l.getAttribute('target'))).toEqual(['_top', '_top']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual([
+      '/polarion/#/project/elibrary/workitem?id=EL-4',
+      '/polarion/#x',
+    ]);
+  });
+
+  it('opens the plain link of a work item in the whole window too', async () => {
+    await show(<TimesheetBlock workItems={[el1]} records={records} dates={[monday]} workingDayHours={8} />);
+
+    const link = screen.getByText('EL-1 - Title 1').closest('a')!;
+    expect(link.getAttribute('href')).toBe('/polarion/#/project/elibrary/workitem?id=EL-1');
+    expect(link.getAttribute('target')).toBe('_top');
+  });
+
   it('keeps the state styling Polarion sets and drops the rest of the CSS', async () => {
     const styled = item(
       'EL-4',

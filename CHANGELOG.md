@@ -16,6 +16,8 @@ Releases before 0.1.4 are listed on the
 ### Fixed
 - A month that nearly fits the widget fits: the days narrow down to 38px rather than scroll
   for a few pixels. They stay at 48px on a wide widget.
+- A work item in the report opens in Polarion, in the whole window. Its link resolved against
+  the frame of the report and opened the report again.
 
 ## [0.2.0] - 2026-10-07
 
