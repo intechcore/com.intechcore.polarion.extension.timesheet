@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
 import { page } from 'vitest/browser';
 import UserTimesheet from '../src/components/UserTimesheet';
+import { MAX_DAY_WIDTH, MIN_DAY_WIDTH, dayWidth } from '../src/services/useScrollEdges';
 import type { WorkItem, WorkRecord } from '../src/types';
 import { datesInPeriod, parseDate } from '../src/utils/dates';
 
@@ -173,6 +174,53 @@ describe('UserTimesheet', () => {
 
     expect(document.querySelector('.timesheet-table-frame')!.className).toBe('timesheet-table-frame');
     expect(document.querySelector<HTMLElement>('.timesheet-scrollbar')!.hidden).toBe(true);
+  });
+
+  describe('the width of a day', () => {
+    // September and October 2026: 30 and 31 days.
+    const autumn = datesInPeriod(parseDate('2026-09-01'), parseDate('2026-10-31'));
+    const autumnRecords = [rec('2026-09-15', 2, JUNE_ITEM), rec('2026-10-15', 4, JUNE_ITEM)];
+    const tables = () => [...document.querySelectorAll<HTMLElement>('.timesheet-table-wrap')];
+    const dayOf = (wrap: HTMLElement) => wrap.querySelectorAll('thead th')[1].getBoundingClientRect().width;
+    const overflow = (wrap: HTMLElement) => wrap.scrollWidth - wrap.clientWidth;
+
+    it('narrows the days so that a month which nearly fits fits', async () => {
+      // 31 days of 48px and the 412px label need 2241px: 2000px used to scroll by 261px.
+      await page.viewport(2000, 720);
+      await show(<UserTimesheet title="Steve Developer" records={autumnRecords} dates={autumn} workingDayHours={8} />);
+
+      await vi.waitFor(() => expect(tables().map(overflow)).toEqual([0, 0]));
+      // The bar follows once the narrower days have reached the table.
+      await vi.waitFor(() =>
+        expect(document.querySelectorAll<HTMLElement>('.timesheet-scrollbar:not([hidden])')).toHaveLength(0),
+      );
+      // Both blocks keep the same days, so the 30-day month is the shorter table.
+      expect(dayOf(tables()[0])).toBe(dayOf(tables()[1]));
+      expect(tables()[0].querySelector('table')!.getBoundingClientRect().width).toBeLessThan(
+        tables()[1].querySelector('table')!.getBoundingClientRect().width,
+      );
+    });
+
+    it('keeps a day at 48px on a wide widget', async () => {
+      await page.viewport(2600, 720);
+      await show(<UserTimesheet title="Steve Developer" records={autumnRecords} dates={autumn} workingDayHours={8} />);
+
+      await vi.waitFor(() => expect(dayOf(tables()[1])).toBe(MAX_DAY_WIDTH + 11));
+    });
+
+    it('scrolls at the narrowest day when the month does not fit', async () => {
+      await page.viewport(1280, 720);
+      await show(<UserTimesheet title="Steve Developer" records={autumnRecords} dates={autumn} workingDayHours={8} />);
+
+      await vi.waitFor(() => expect(dayOf(tables()[1])).toBe(MIN_DAY_WIDTH + 11));
+      expect(overflow(tables()[1])).toBeGreaterThan(0);
+    });
+
+    it('fills the scroller with the longest month, between the narrowest and the widest day', () => {
+      expect(dayWidth(2000, 412, 31)).toBe(Math.floor((2000 - 412) / 31) - 11);
+      expect(dayWidth(5000, 412, 31)).toBe(MAX_DAY_WIDTH);
+      expect(dayWidth(800, 412, 31)).toBe(MIN_DAY_WIDTH);
+    });
   });
 
   it('says so instead of drawing empty grids when the user booked nothing', async () => {

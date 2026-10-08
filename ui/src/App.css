@@ -264,10 +264,12 @@ table.timesheet {
   border-spacing: 0;
 }
 
-/* Day columns hold "dd.MM" at 13px bold, which needs ~36px plus the cell padding. */
+/* Day columns hold "dd.MM" at 13px bold, which needs ~36px plus the cell padding. The block sets
+   --day-width between 38px and 48px so that the longest month of the period fills the widget when it
+   can (useScrollEdges): a month that misses by a few pixels fits instead of scrolling. */
 table.timesheet th,
 table.timesheet td {
-  width: 48px;
+  width: var(--day-width, 48px);
 }
 
 table.timesheet td,

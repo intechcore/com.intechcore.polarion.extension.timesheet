@@ -16,7 +16,10 @@ export default function UserTimesheet({ title, records, dates, workingDayHours }
   // Each block covers only its own month: it lists the work items booked in that month, and a month
   // with no records at all is left out. Reporting a year used to repeat every work item of the whole
   // period in all twelve tables, most of them empty. The PDF export drops the same blocks.
-  const months = groupDatesByMonth(dates)
+  const allMonths = groupDatesByMonth(dates);
+  // Every block takes its day width from the longest month of the period, as the PDF does.
+  const longestMonth = Math.max(...allMonths.map((m) => m.length), 1);
+  const months = allMonths
     .map((monthDates) => ({ monthDates, monthRecords: recordsWithin(records, monthDates) }))
     .filter(({ monthRecords }) => monthRecords.length > 0);
 
@@ -33,6 +36,7 @@ export default function UserTimesheet({ title, records, dates, workingDayHours }
           records={monthRecords}
           dates={monthDates}
           workingDayHours={workingDayHours}
+          longestMonth={longestMonth}
         />
       ))}
     </div>

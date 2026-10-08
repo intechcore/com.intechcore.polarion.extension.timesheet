@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import useScrollEdges from '../services/useScrollEdges';
 import type { WorkItem, WorkRecord } from '../types';
 import { formatDayMonth, formatISO, isWeekend } from '../utils/dates';
@@ -9,12 +10,20 @@ interface Props {
   records: WorkRecord[];
   dates: Date[];
   workingDayHours: number;
+  /** The days of the longest month of the period, which sets the width of a day in every block. */
+  longestMonth?: number;
 }
 
 // One month block of a user's timesheet (kept in sync with the PDF block layout).
-export default function TimesheetBlock({ workItems, records, dates, workingDayHours }: Props) {
+export default function TimesheetBlock({
+  workItems,
+  records,
+  dates,
+  workingDayHours,
+  longestMonth = dates.length,
+}: Props) {
   const blockTotal = dates.reduce((acc, d) => acc + sumHours(records, formatISO(d)), 0);
-  const { ref, barRef, edges, bar } = useScrollEdges<HTMLDivElement, HTMLDivElement>();
+  const { ref, barRef, edges, bar, dayWidth } = useScrollEdges<HTMLDivElement, HTMLDivElement>(longestMonth);
   // The frame shades the side where days are hidden, so a cut-off column reads as scrollable.
   const frameClass = ['timesheet-table-frame', edges.left && 'scrolled-left', edges.right && 'more-right']
     .filter(Boolean)
@@ -24,7 +33,7 @@ export default function TimesheetBlock({ workItems, records, dates, workingDayHo
     <div className="timesheet-block">
       <div className={frameClass}>
         <div className="timesheet-table-wrap" ref={ref}>
-          <table className="timesheet">
+          <table className="timesheet" style={{ '--day-width': `${dayWidth}px` } as CSSProperties}>
             <thead>
               <tr>
                 <th>WorkItem</th>
