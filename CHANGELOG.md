@@ -9,6 +9,8 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-08
+
 ### Added
 - The topic **Timesheet** shows the report as a page of a project or of the repository. In a
   project it shows that project only.
