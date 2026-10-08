@@ -41,6 +41,19 @@ function stripForeignStyle(element: HTMLElement): void {
   }
 }
 
+/**
+ * Polarion links a work item as "#/project/…/workitem?id=…", relative to its own page. In the frame of
+ * the report that resolves against the report, so the link opened the report again. It goes to the
+ * page of Polarion instead, in the whole window rather than in the frame, as Polarion's links do.
+ */
+function openInPolarion(link: HTMLAnchorElement): void {
+  const href = link.getAttribute('href');
+  if (href?.startsWith('#')) {
+    link.setAttribute('href', `/polarion/${href}`);
+  }
+  link.setAttribute('target', '_top');
+}
+
 export function sanitizeWorkItemHtml(html: string): string {
   // A fragment rather than a string, so the declarations are filtered on the sanitized nodes
   // themselves. Reparsing the output would be a second pass over markup already cleared once.
@@ -50,6 +63,7 @@ export function sanitizeWorkItemHtml(html: string): string {
     RETURN_DOM_FRAGMENT: true,
   });
   fragment.querySelectorAll<HTMLElement>('[style]').forEach(stripForeignStyle);
+  fragment.querySelectorAll('a').forEach(openInPolarion);
 
   const holder = document.createElement('div');
   holder.append(fragment);

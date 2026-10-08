@@ -53,7 +53,7 @@ export default function TimesheetBlock({
                       {wi.html ? (
                         <span dangerouslySetInnerHTML={{ __html: sanitizeWorkItemHtml(wi.html) }} />
                       ) : (
-                        <a href={workItemUrl(wi)} target="_blank" rel="noreferrer">
+                        <a href={workItemUrl(wi)} target="_top">
                           {wi.id} - {wi.title}
                         </a>
                       )}
