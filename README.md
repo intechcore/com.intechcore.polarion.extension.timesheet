@@ -74,6 +74,24 @@ The report itself provides controls - a scope selector, a multi-user selector, a
 
 A PDF export or a print of the whole page (for example with the PDF Exporter) shows the report as the person exporting last showed it on screen: the scope, the users and the period they chose, in the controls the widget lets them change. The report sends its selection to the server as it changes, and the server keeps it for a day. Without one, the export opens as the widget settings say: the selected users, or the viewer for **Viewer of the page**, and the period counted from the day of the server. The document starts with the scope and the period it covers.
 
+### Topic
+
+The topic `Timesheet` shows the report as a page of its own, without a Live Report. In a project it
+shows that project only; in the repository the scope may be changed. It opens on the viewer and the
+current month.
+
+A view of a project or of the repository lists the topic once an administrator adds it:
+
+1. Open the project and select ⚙ (Actions) ➙ 🔧 Administration in the navigation.
+2. Select `Portal` ➙ `Topics`, then select `Edit` for the view that users open.
+3. Insert the topic into the topics configuration:
+   ```xml
+   …
+   <topic id="timesheet"/>
+   …
+   ```
+4. Select 💾 `Save`. The topic appears in the navigation for the users of that view.
+
 ## REST API
 
 This extension provides a REST API. Its OpenAPI specification can be obtained [here](docs/openapi.json).

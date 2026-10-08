@@ -133,6 +133,10 @@ Two layers: a Java/Polarion backend and a React frontend.
   context, which holds the Vite bundle, the administration-menu icons and the generated
   `html/about.html`. There is no `timesheet-admin` webapp any more.
 - The admin **About** entry in `hivemodule.xml` opens the SPA directly at `?feature=about`.
+- `TimesheetNavigationExtender` - the topic `Timesheet` (`customNavigationExtenders` in
+  `hivemodule.xml`), as the GitHub extension has it. Its page is the SPA at `?feature=report`: in a
+  project `scope=<project>&scopeLocked=true`, in the repository `scope=/`. A view lists it once an
+  administrator adds `<topic id="timesheet"/>` to its topics.
 - The extension does **not** serve `/configuration-properties` itself: generic provides it, and
   a second resource on that path makes Jersey reject the whole REST application at startup.
 
