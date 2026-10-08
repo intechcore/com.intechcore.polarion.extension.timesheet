@@ -13,6 +13,10 @@ Releases before 0.1.4 are listed on the
 - The topic **Timesheet** shows the report as a page of a project or of the repository. In a
   project it shows that project only.
 
+### Fixed
+- A month that nearly fits the widget fits: the days narrow down to 38px rather than scroll
+  for a few pixels. They stay at 48px on a wide widget.
+
 ## [0.2.0] - 2026-10-07
 
 ### Added

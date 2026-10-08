@@ -208,6 +208,9 @@ type").
   than its columns, so it comes out at exactly their sum. `auto` squeezes it into the container,
   and `max-content` measures the unwrapped titles and gives the surplus to the columns: both drew a
   different WorkItem column per block. Titles wrap; long months scroll in `.timesheet-table-wrap`.
+- **A day is 38px to 48px wide.** `useScrollEdges` sets `--day-width` so that the longest month of
+  the period fills the widget, as the PDF does; `UserTimesheet` passes that month to every block,
+  so all blocks keep the same days. Only a month that misses at 38px scrolls.
 - **The WorkItem column is `position: sticky`**, so the days scroll under it. That needs
   `border-collapse: separate`: under `collapse` the borders of a sticky cell scroll away.
   `useScrollEdges` shades the side that hides days: a shadow under the column, a fade on the right.
