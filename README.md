@@ -74,6 +74,9 @@ The report itself provides controls - a scope selector, a multi-user selector, a
 
 A PDF export or a print of the whole page (for example with the PDF Exporter) shows the report as the person exporting last showed it on screen: the scope, the users and the period they chose, in the controls the widget lets them change. The report sends its selection to the server as it changes, and the server keeps it for a day. Without one, the export opens as the widget settings say: the selected users, or the viewer for **Viewer of the page**, and the period counted from the day of the server. The document starts with the scope and the period it covers.
 
+With PDF Exporter 13.11 or later, the report's own **Export to PDF** button can also export this widget alone: it offers
+**Only Timesheet Report**, and the PDF holds the title of the page and this report, as described above.
+
 ### Topic
 
 The topic `Timesheet` shows the report as a page of its own, without a Live Report. In a project it
