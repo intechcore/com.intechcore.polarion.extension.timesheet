@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SearchableSelect } from '@sbb-polarion/react-sbb-polarion';
+import { SearchableSelect, useOfferForPdfExport } from '@sbb-polarion/react-sbb-polarion';
 import type { SelectOption } from '@sbb-polarion/react-sbb-polarion';
 import useIframeAutoHeight from '../services/useIframeAutoHeight';
 import useReportOptions from '../services/useReportOptions';
@@ -79,6 +79,8 @@ export default function ReportView() {
 
   const recordsByUser = useMemo(() => groupByUser(timesheet?.workRecords ?? []), [timesheet]);
   useIframeAutoHeight();
+  // pdf-exporter's "Export to PDF" button of the report may then export this widget alone, as the server renders it.
+  useOfferForPdfExport('Timesheet Report');
 
   const userName = (id: string): string => users.find((u) => u.id === id)?.name ?? id;
 

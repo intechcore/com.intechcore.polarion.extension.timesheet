@@ -236,6 +236,20 @@ describe('ReportView', () => {
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false);
   });
 
+  it('offers itself to the "Export to PDF" button of the report, while it is shown', async () => {
+    // The test runs in an iframe of the runner, where the widget runs in an iframe of the report
+    type Offers = { [key: string]: Set<{ title: string; anchor: () => Element | null }> | undefined };
+    const offers = () => [...((window.top as unknown as Offers).__pdfExporterExportTargets ?? [])];
+    installFetchMock(optionRoutes());
+    const rendered = await render(<ReportView />);
+
+    expect(offers().map((offer) => offer.title)).toEqual(['Timesheet Report']);
+    expect(offers()[0].anchor()).toBe(window.frameElement);
+
+    await rendered.unmount();
+    expect(offers()).toEqual([]);
+  });
+
   it('draws no days for a period that ends before it starts', async () => {
     setUrl('?feature=report&scope=elibrary&userIds=sDeveloper');
     installFetchMock(optionRoutes());
