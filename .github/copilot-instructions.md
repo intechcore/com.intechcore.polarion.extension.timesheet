@@ -35,8 +35,9 @@ Be direct and concise. No preamble, no praise. One idea per sentence. Never use 
 
 - The report renders in an iframe inside a Live Report column, about 690px wide. A change that
   assumes more width is a page-layout change, not a code one.
-- The report tables need both `table-layout: fixed` and `width: max-content`. Dropping either lets
-  the browser resize the columns per month.
+- The report tables need both `table-layout: fixed` and `width: 0`. A fixed table is never narrower
+  than its columns, so it comes out at their sum. `auto` or `max-content` lets the browser size the
+  columns per block.
 - `useIframeAutoHeight` must keep measuring the picker popups. They are `position: fixed` portals on
   `<body>`, so they add nothing to `body.scrollHeight` and the iframe would cut the option list off.
   Measure the popups only, never a full-viewport overlay.
@@ -75,7 +76,8 @@ Be direct and concise. No preamble, no praise. One idea per sentence. Never use 
 - Pass `github.head_ref` and `github.base_ref` through `env`, never inline in a `run` block.
 - A checkout carries no credential: `persist-credentials: false`, and a token reaches the one step
   that pushes.
-- The publish job runs in the `release` environment, which the team approves.
+- The publish job runs on a `v*` tag without an approval: no environment gates it, on purpose since
+  0.2.0. Do not ask for one back.
 
 ## Documentation, `**/*.md`
 
