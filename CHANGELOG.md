@@ -9,6 +9,10 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Changed
+- Renovate offers a new TypeScript major on the Dependency Dashboard for approval instead of a pull
+  request. TypeScript 7 waits for typescript-eslint, whose peer range ends below 6.1.
+
 ### Fixed
 - Removing the last user while the report loads no longer leaves "Updating…" on screen next to
   "No users selected", nor an earlier error under it.
