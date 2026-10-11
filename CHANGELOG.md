@@ -9,6 +9,11 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Fixed
+- The About page in Polarion leaves out the build and contributing sections, which concern
+  maintainers only, and links the OpenAPI file, the license, the notice and the security policy
+  on GitHub. Its relative links led to error pages under `/polarion/timesheet-app/ui/`.
+
 ## [0.2.1] - 2026-10-08
 
 ### Added

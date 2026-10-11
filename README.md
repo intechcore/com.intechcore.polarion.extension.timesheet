@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/intechcore/com.intechcore.polarion.extension.timesheet)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)](https://central.sonatype.com/artifact/com.intechcore.polarion.extensions/com.intechcore.polarion.extension.timesheet)
 [![Java 21](https://img.shields.io/badge/java-21-blue.svg)](https://openjdk.org/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/blob/main/LICENSE)
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=coverage)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
@@ -21,16 +21,6 @@
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=intechcore_com.intechcore.polarion.extension.timesheet&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=intechcore_com.intechcore.polarion.extension.timesheet)
 
 This Polarion extension provides the ability to generate timesheet reports.
-
-## Build
-
-This extension can be produced using Maven:
-
-```bash
-mvn clean package
-```
-
-The build also compiles the React user interface in `ui/` and bundles it into the extension under `webapp/timesheet-app`. No separate Node installation is required.
 
 ## Installation to Polarion
 
@@ -97,19 +87,15 @@ A view of a project or of the repository lists the topic once an administrator a
 
 ## REST API
 
-This extension provides a REST API. Its OpenAPI specification can be obtained [here](docs/openapi.json).
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the build, the tests and the pull request rules.
+This extension provides a REST API. Its OpenAPI specification can be obtained [here](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/blob/main/docs/openapi.json).
 
 ## Disclaimer
 
-This software is provided "as is", without warranty of any kind, as the [LICENSE](LICENSE) states.
+This software is provided "as is", without warranty of any kind, as the [LICENSE](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/blob/main/LICENSE) states.
 Use it at your own risk. Intechcore GmbH is not liable for damage from its use, as far as the law
 allows. It is published free of charge, outside of any commercial offering, with no obligation to
-support it. Security reports are welcome, see [SECURITY.md](SECURITY.md).
+support it. Security reports are welcome, see [SECURITY.md](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/blob/main/SECURITY.md).
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Apache License 2.0. See [LICENSE](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/blob/main/LICENSE) and [NOTICE](https://github.com/intechcore/com.intechcore.polarion.extension.timesheet/blob/main/NOTICE).
