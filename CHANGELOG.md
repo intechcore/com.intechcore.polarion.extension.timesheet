@@ -9,6 +9,12 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Fixed
+- Removing the last user while the report loads no longer leaves "Updating…" on screen next to
+  "No users selected", nor an earlier error under it.
+- A report of a project group without projects is empty. It failed: the query then held an
+  empty `AND ()` group, which Polarion rejects, and so did a PDF export of such a widget.
+
 ## [0.2.1] - 2026-10-08
 
 ### Added

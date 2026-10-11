@@ -38,6 +38,7 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -255,6 +256,24 @@ class TimesheetReportManagerTest {
         manager.getTimesheet(scope, List.of("aSeller"), "2026-08-01", "2026-08-31");
 
         assertThat(capturedQuery()).endsWith("AND (project.id:\"elibrary\" OR project.id:\"drafts\")");
+    }
+
+    /** A group without projects selects nothing: the report is empty, and no query with an empty "AND ()" goes out. */
+    @Test
+    void getTimesheet_groupWithoutProjectsIsEmpty() {
+        Scope scope = mock(Scope.class);
+        when(scope.path()).thenReturn("/empty");
+        IProjectGroup group = mock(IProjectGroup.class);
+        Stream<IProject> contained = Stream.empty();
+        IPObjectList<IProject> projects = mock(IPObjectList.class);
+        when(projects.stream()).thenReturn(contained);
+        when(group.getDeepContainedProjects()).thenReturn(projects);
+        when(polarionService.getProjectService().getGroupEntityAtLocation(any())).thenReturn(group);
+
+        Timesheet timesheet = manager.getTimesheet(scope, List.of("aSeller"), "2026-08-01", "2026-08-31");
+
+        assertThat(timesheet.getWorkRecords()).isEmpty();
+        verify(dataService, never()).searchInstances(eq(IWorkItem.PROTO), anyString(), isNull());
     }
 
     /** A scope that is neither a project, nor global, nor a group has no query, and saying so beats guessing. */

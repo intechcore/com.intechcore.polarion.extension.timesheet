@@ -38,7 +38,11 @@ public class TimesheetReportManager {
 
     @SuppressWarnings("unchecked")
     public Timesheet getTimesheet(@NotNull Scope scope, @NotNull List<String> userIds, @NotNull String startDate, @NotNull String endDate) {
-        String query = createQuery(scope, userIds, startDate, endDate);
+        @Nullable String query = createQuery(scope, userIds, startDate, endDate);
+        if (query == null) {
+            // A group without projects selects nothing, and Polarion rejects the empty "AND ()" it would give.
+            return new Timesheet(startDate, endDate, new ArrayList<>());
+        }
 
         List<IWorkItem> workItems = polarionService.getTrackerService().getDataService().searchInstances(IWorkItem.PROTO, query, null);
 
@@ -157,13 +161,17 @@ public class TimesheetReportManager {
         }
     }
 
-    private @NotNull String createQuery(@NotNull Scope scope, @NotNull List<String> userIds, @NotNull String startDate, @NotNull String endDate) {
+    /** The query of the report, or null for a scope that selects no project at all. */
+    private @Nullable String createQuery(@NotNull Scope scope, @NotNull List<String> userIds, @NotNull String startDate, @NotNull String endDate) {
         @NotNull String query = createWorkRecordsQuery(startDate, endDate);
         @Nullable String queryUserWorkRecords = createUserWorkRecordsQuery(userIds);
         if (queryUserWorkRecords != null) {
             query = query + " AND (" + queryUserWorkRecords + ")";
         }
         @Nullable String scopeQuery = createScopeQuery(scope);
+        if (scopeQuery != null && scopeQuery.isEmpty()) {
+            return null;
+        }
         if (scopeQuery != null) {
             query = query + " AND (" + scopeQuery + ")";
         }
@@ -224,6 +232,7 @@ public class TimesheetReportManager {
                 .collect(Collectors.joining(" OR "));
     }
 
+    /** The project filter of a scope: null for every project, and empty for a group without projects. */
     private @Nullable String createScopeQuery(@NotNull Scope scope) {
         @Nullable String projectId = scope.projectId();
         if (projectId != null) {
