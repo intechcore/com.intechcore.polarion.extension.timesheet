@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
@@ -138,6 +139,47 @@ describe('useTimesheet', () => {
     await vi.waitFor(() => expect(state.current).toBeDefined());
     expect(state.current!.timesheet).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  /** Renders the hook with a selection the test can change, as removing a user chip does. */
+  function selectable() {
+    const seen: { current: ReturnType<typeof useTimesheet> | undefined; select: (ids: string[]) => void } = {
+      current: undefined,
+      select: () => undefined,
+    };
+    function Probe() {
+      const [userIds, setUserIds] = useState(params.userIds);
+      seen.select = setUserIds;
+      seen.current = useTimesheet({ ...params, userIds });
+      return <div data-testid="probe" />;
+    }
+    render(<Probe />);
+    return seen;
+  }
+
+  it('stops updating when the last user is removed while the request runs', async () => {
+    // The request never answers, so it is still running when the selection empties.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    const state = selectable();
+    await vi.waitFor(() => expect(state.current!.fetching).toBe(true));
+
+    state.select([]);
+
+    await vi.waitFor(() => expect(state.current!.fetching).toBe(false));
+    expect(state.current!.timesheet).toBeNull();
+  });
+
+  it('drops the error of an earlier request when the last user is removed', async () => {
+    installFetchMock([{ method: 'GET', match: /\/timesheet\?/, json: { message: 'scope is unknown' }, status: 400 }]);
+    const state = selectable();
+    await vi.waitFor(() => expect(state.current!.error).toBe('scope is unknown'));
+
+    state.select([]);
+
+    await vi.waitFor(() => expect(state.current!.error).toBeNull());
   });
 
   it('surfaces the message the backend sent', async () => {
