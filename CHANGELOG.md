@@ -10,6 +10,10 @@ Releases before 0.1.4 are listed on the
 ## [Unreleased]
 
 ### Fixed
+- Removing the last user while the report loads no longer leaves "Updating…" on screen next to
+  "No users selected", nor an earlier error under it.
+- A report of a project group without projects is empty. It failed: the query then held an
+  empty `AND ()` group, which Polarion rejects, and so did a PDF export of such a widget.
 - The instructions for reviewers and agents match the code: the report tables use `width: 0`,
   not `max-content`; the release needs no approval of an environment; and `bump-version.yml`
   checks out without a credential and hands `PAT_TOKEN` to its push step only.

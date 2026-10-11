@@ -21,7 +21,11 @@ export default function useTimesheet({ userIds, startDate, endDate, scopePath }:
 
   useEffect(() => {
     if (!userKey || !startDate || !endDate) {
+      // A request still running when the selection empties is cancelled below, so its finally
+      // never resets these: nothing is being fetched, and an earlier failure no longer applies.
       setTimesheet(null);
+      setFetching(false);
+      setError(null);
       return;
     }
     setFetching(true);
