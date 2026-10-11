@@ -14,6 +14,12 @@ Releases before 0.1.4 are listed on the
   "No users selected", nor an earlier error under it.
 - A report of a project group without projects is empty. It failed: the query then held an
   empty `AND ()` group, which Polarion rejects, and so did a PDF export of such a widget.
+- The instructions for reviewers and agents match the code: the report tables use `width: 0`,
+  not `max-content`; the release needs no approval of an environment; and `bump-version.yml`
+  checks out without a credential and hands `PAT_TOKEN` to its push step only.
+- The About page in Polarion leaves out the build and contributing sections, which concern
+  maintainers only, and links the OpenAPI file, the license, the notice and the security policy
+  on GitHub. Its relative links led to error pages under `/polarion/timesheet-app/ui/`.
 
 ## [0.2.1] - 2026-10-08
 

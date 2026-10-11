@@ -90,9 +90,9 @@ java-kotlin, javascript-typescript), not as a workflow.
   Security tab.
 - `bump-version.yml`: dispatched by hand with `patch`, `minor` or `major`. It sets the release
   version in the pom, moves the Unreleased entries of `CHANGELOG.md` into a section for that
-  version, commits it, tags it `v<version>` and pushes. It checks out with `PAT_TOKEN`
-  on purpose: a tag pushed with the default `GITHUB_TOKEN` starts no further workflow, so
-  `release.yml` would never see it.
+  version, commits it, tags it `v<version>` and pushes. The checkout carries no credential; the
+  push step alone gets `PAT_TOKEN`, through `GIT_ASKPASS`. A PAT on purpose: a tag pushed with the
+  default `GITHUB_TOKEN` starts no further workflow, so `release.yml` would never see it.
 - `release.yml`: runs on a `v*` tag. It runs `deploy` with the parent's `gpg-sign` and
   `central-publishing` profiles, so the tag is tested, signed and published to Maven Central under
   `com.intechcore.polarion.extensions`. The job deploys with Maven 3.9.16, as the PDF Exporter does:
