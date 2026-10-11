@@ -9,6 +9,10 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Fixed
+- A report of a project group without projects is empty. It failed: the query then held an
+  empty `AND ()` group, which Polarion rejects, and so did a PDF export of such a widget.
+
 ## [0.2.1] - 2026-10-08
 
 ### Added
