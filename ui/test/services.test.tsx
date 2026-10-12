@@ -8,7 +8,7 @@ import useRemote from '../src/services/useRemote';
 import useReportOptions from '../src/services/useReportOptions';
 import useTimesheet from '../src/services/useTimesheet';
 import type { ScopeInfo, Timesheet, User } from '../src/types';
-import { installFetchMock } from './mockFetch';
+import { installFetchMock, jsonResponse } from './mockFetch';
 
 // The data layer: how requests are addressed, and what each hook exposes while and after they answer.
 // Hooks are exercised through a probe component, which is how they run in the app.
@@ -130,6 +130,7 @@ describe('useTimesheet', () => {
     expect(url).toContain('scope_path=elibrary');
     expect(state.current!.fetching).toBe(false);
     expect(state.current!.error).toBeNull();
+    expect(state.current!.took).toBeGreaterThanOrEqual(0);
   });
 
   it('asks for nothing until a user and a period are chosen', async () => {
@@ -170,6 +171,24 @@ describe('useTimesheet', () => {
 
     await vi.waitFor(() => expect(state.current!.fetching).toBe(false));
     expect(state.current!.timesheet).toBeNull();
+  });
+
+  it('drops the answer of a request the selection has left behind', async () => {
+    let answer: (response: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>((resolve) => (answer = resolve))),
+    );
+    const state = selectable();
+    await vi.waitFor(() => expect(state.current!.fetching).toBe(true));
+
+    state.select([]);
+    await vi.waitFor(() => expect(state.current!.fetching).toBe(false));
+    answer(jsonResponse(TIMESHEET));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(state.current!.timesheet).toBeNull();
+    expect(state.current!.took).toBe(0);
   });
 
   it('drops the error of an earlier request when the last user is removed', async () => {

@@ -10,12 +10,14 @@ interface Params {
 }
 
 // Loads the timesheet for the given selection. The previous result is kept until the new one
-// arrives (no flicker); `fetching` only drives a subtle indicator.
+// arrives (no flicker); `fetching` only drives a subtle indicator. `took` is how long the request
+// of the shown timesheet took, in milliseconds.
 export default function useTimesheet({ userIds, startDate, endDate, scopePath }: Params) {
   const { sendRequest } = useRemote();
   const [timesheet, setTimesheet] = useState<Timesheet | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
+  const [took, setTook] = useState(0);
 
   const userKey = userIds.join(',');
 
@@ -37,6 +39,7 @@ export default function useTimesheet({ userIds, startDate, endDate, scopePath }:
       end_date: endDate,
       scope_path: scopePath,
     });
+    const started = performance.now();
     sendRequest({ method: 'GET', url: `/timesheet?${query.toString()}` })
       .then(async (response) => {
         if (!response.ok) {
@@ -45,7 +48,12 @@ export default function useTimesheet({ userIds, startDate, endDate, scopePath }:
         }
         return response.json() as Promise<Timesheet>;
       })
-      .then((data) => !cancelled && setTimesheet(data))
+      .then((data) => {
+        if (!cancelled) {
+          setTimesheet(data);
+          setTook(performance.now() - started);
+        }
+      })
       .catch((e: Error) => !cancelled && setError(e.message))
       .finally(() => !cancelled && setFetching(false));
     return () => {
@@ -53,5 +61,5 @@ export default function useTimesheet({ userIds, startDate, endDate, scopePath }:
     };
   }, [sendRequest, userKey, startDate, endDate, scopePath]);
 
-  return { timesheet, error, fetching };
+  return { timesheet, error, fetching, took };
 }

@@ -96,6 +96,7 @@ class TimesheetReportWidgetRendererTest {
         DateParameter noDate = dateParameter(LocalDate.now());
         when(context.<CustomEnumParameter>parameter(TimesheetReportWidget.PARAMETER_USERS_MODE)).thenReturn(noUsersMode);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).thenReturn(off);
+        when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_SHOW_TIME)).thenReturn(off);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_SCOPE)).thenReturn(on);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_USERS)).thenReturn(on);
         when(context.<BooleanParameter>parameter(TimesheetReportWidget.PARAMETER_ALLOW_PERIOD)).thenReturn(on);
@@ -252,6 +253,15 @@ class TimesheetReportWidgetRendererTest {
         when(scope.projectId()).thenReturn("elibrary");
 
         assertThat(renderedUrl()).endsWith("&period=current-month&hideControls=true");
+    }
+
+    @Test
+    void passesTheGenerationTimeWhenTheWidgetAsks() {
+        flag(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS, true);
+        flag(TimesheetReportWidget.PARAMETER_SHOW_TIME, true);
+        when(scope.projectId()).thenReturn("elibrary");
+
+        assertThat(renderedUrl()).endsWith("&period=current-month&hideControls=true&showTime=true");
     }
 
     @Test
@@ -469,6 +479,18 @@ class TimesheetReportWidgetRendererTest {
 
         assertThat(sources.calls).containsExactly(List.of(List.of("aSeller", "mTest"), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31)));
         assertThat(html).contains("Name of aSeller - total: 8 h").contains("Name of mTest - total: 0 h").contains("EL-1 - Spec");
+    }
+
+    /** The printed report says how long the server took, in milliseconds or seconds. */
+    @Test
+    void writesTheGenerationTimeBelowAPrintedReport() {
+        assertThat(TimesheetReportWidgetRenderer.generatedIn(java.time.Duration.ofMillis(850))).contains(">Generated in 850 ms</p>");
+        assertThat(TimesheetReportWidgetRenderer.generatedIn(java.time.Duration.ofMillis(1420))).contains(">Generated in 1.4 s</p>");
+
+        assertThat(printed(new Sources("viewer"))).doesNotContain("Generated in");
+        flag(TimesheetReportWidget.PARAMETER_SHOW_TIME, true);
+        org.mockito.Mockito.clearInvocations(builder);
+        assertThat(printed(new Sources("viewer"))).containsPattern("Generated in \\d+ ms</p>$");
     }
 
     @Test

@@ -25,6 +25,7 @@ public class TimesheetReportWidget extends RichPageWidget {
     public static final String PERIOD_FROM = "From";
     public static final String PERIOD_TO = "To";
     public static final String HIDE_CONTROLS = "Hide controls";
+    public static final String SHOW_TIME = "Show the generation time";
     public static final String ALLOW_SCOPE = "Allow changing scope";
     public static final String ALLOW_USERS = "Allow changing users";
     public static final String ALLOW_PERIOD = "Allow changing period";
@@ -38,6 +39,7 @@ public class TimesheetReportWidget extends RichPageWidget {
     public static final String PARAMETER_PERIOD_FROM = "periodFrom";
     public static final String PARAMETER_PERIOD_TO = "periodTo";
     public static final String PARAMETER_HIDE_CONTROLS = "hideControls";
+    public static final String PARAMETER_SHOW_TIME = "showTime";
     public static final String PARAMETER_ALLOW_SCOPE = "allowScope";
     public static final String PARAMETER_ALLOW_USERS = "allowUsers";
     public static final String PARAMETER_ALLOW_PERIOD = "allowPeriod";
@@ -112,6 +114,8 @@ public class TimesheetReportWidget extends RichPageWidget {
 
         // The page shows the tables only: no title, no scope, users, period or export.
         parameters.put(PARAMETER_HIDE_CONTROLS, parameterFactory.bool(HIDE_CONTROLS).value(false).dependencySource(true).build());
+        // A line below the report says how long it took.
+        parameters.put(PARAMETER_SHOW_TIME, parameterFactory.bool(SHOW_TIME).value(false).build());
 
         IntegerParameter workingDayInHoursParameter = parameterFactory.integer(WORKING_DAY_IN_HOURS).value(FULL_TIME_HOURS).build();
         CompositeParameter advancedCompositeParameter = parameterFactory.composite(COMPOSITE_PARAMETER_ADVANCED)

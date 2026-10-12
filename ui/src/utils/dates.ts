@@ -2,6 +2,9 @@ export const pad = (n: number): string => String(n).padStart(2, '0');
 export const formatISO = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 export const formatDayMonth = (d: Date): string => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}`;
 export const isWeekend = (d: Date): boolean => d.getDay() === 0 || d.getDay() === 6;
+/** A duration as the printed widget writes it: 850 ms, or 1.4 s. */
+export const formatTook = (millis: number): string =>
+  millis < 1000 ? `${Math.round(millis)} ms` : `${(millis / 1000).toFixed(1)} s`;
 
 export function chunk<T>(items: T[], size: number): T[][] {
   const blocks: T[][] = [];

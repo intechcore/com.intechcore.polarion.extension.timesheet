@@ -9,6 +9,9 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Added
+- The widget can say below the report how long the report took.
+
 ### Changed
 - Renovate offers a new TypeScript major on the Dependency Dashboard for approval instead of a pull
   request. TypeScript 7 waits for typescript-eslint, whose peer range ends below 6.1.

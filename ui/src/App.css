@@ -115,6 +115,12 @@ body {
   font-style: italic;
 }
 
+.timesheet-generation-time {
+  color: #6b6b6b;
+  font-size: 11px;
+  margin: 4px 0 0;
+}
+
 /* Export to PDF is RSP's `sbb-btn sbb-btn--control`, so it carries no colours of its own. Its cell uses
    the same empty label as the other controls to line the row up. */
 
