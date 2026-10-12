@@ -9,6 +9,8 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-12
+
 ### Added
 - The widget can say below the report how long the report took.
 
