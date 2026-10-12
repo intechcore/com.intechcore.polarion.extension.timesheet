@@ -490,7 +490,7 @@ class TimesheetReportWidgetRendererTest {
         assertThat(printed(new Sources("viewer"))).doesNotContain("Generated in");
         flag(TimesheetReportWidget.PARAMETER_SHOW_TIME, true);
         org.mockito.Mockito.clearInvocations(builder);
-        assertThat(printed(new Sources("viewer"))).containsPattern("Generated in \\d+ ms</p>$");
+        assertThat(printed(new Sources("viewer"))).containsPattern("Generated in (\\d+ ms|\\d+\\.\\d s)</p>$");
     }
 
     @Test

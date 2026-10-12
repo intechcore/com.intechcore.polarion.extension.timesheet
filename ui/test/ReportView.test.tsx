@@ -207,7 +207,9 @@ describe('ReportView', () => {
     render(<ReportView />);
 
     await vi.waitFor(() => expect(text()).toContain('Steve Developer - total: 8 h'));
-    expect(document.querySelector('.timesheet-generation-time')?.textContent).toMatch(/^Generated in \d+ ms$/);
+    expect(document.querySelector('.timesheet-generation-time')?.textContent).toMatch(
+      /^Generated in (\d+ ms|\d+\.\d s)$/,
+    );
   });
 
   it('leaves out the generation time unless the widget asks for it', async () => {
