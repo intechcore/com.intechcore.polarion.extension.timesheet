@@ -201,6 +201,26 @@ describe('ReportView', () => {
     expect(text()).not.toContain('Export to PDF');
   });
 
+  it('says how long the report took when the widget asks for it', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper&showTime=true');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total: 8 h'));
+    expect(document.querySelector('.timesheet-generation-time')?.textContent).toMatch(
+      /^Generated in (\d+ ms|\d+\.\d s)$/,
+    );
+  });
+
+  it('leaves out the generation time unless the widget asks for it', async () => {
+    setUrl('?feature=report&scope=elibrary&userIds=sDeveloper');
+    installFetchMock(optionRoutes());
+    render(<ReportView />);
+
+    await vi.waitFor(() => expect(text()).toContain('Steve Developer - total: 8 h'));
+    expect(document.querySelector('.timesheet-generation-time')).toBeNull();
+  });
+
   it('tells the server what it shows, for a PDF export of the page', async () => {
     const key = 'a'.repeat(64);
     setUrl(`?feature=report&scope=elibrary&userIds=sDeveloper&stateKey=${key}`);

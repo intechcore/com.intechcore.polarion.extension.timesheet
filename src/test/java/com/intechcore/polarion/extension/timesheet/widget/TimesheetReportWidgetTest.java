@@ -80,6 +80,9 @@ class TimesheetReportWidgetTest {
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_PERIOD_FROM)).isNotNull();
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_PERIOD_TO)).isNotNull();
         assertThat(parameters.get(TimesheetReportWidget.PARAMETER_HIDE_CONTROLS)).isNotNull();
+        // The generation time stays off until the author turns it on.
+        assertThat(parameters.get(TimesheetReportWidget.PARAMETER_SHOW_TIME)).isNotNull();
+        verify(parameterFactory.bool(TimesheetReportWidget.SHOW_TIME)).value(false);
         // Every "Allow changing" is on by default: a new widget locks nothing.
         for (String allow : List.of(TimesheetReportWidget.ALLOW_SCOPE, TimesheetReportWidget.ALLOW_USERS, TimesheetReportWidget.ALLOW_PERIOD)) {
             verify(parameterFactory.bool(allow)).value(true);

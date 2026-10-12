@@ -5,6 +5,7 @@ import {
   datesInPeriod,
   formatDayMonth,
   formatISO,
+  formatTook,
   groupDatesByMonth,
   isWeekend,
   parseDate,
@@ -13,6 +14,11 @@ import {
 
 describe('dates utils', () => {
   afterEach(() => vi.useRealTimers());
+
+  it('formatTook writes milliseconds below a second, and seconds from there', () => {
+    expect(formatTook(849.6)).toBe('850 ms');
+    expect(formatTook(1420)).toBe('1.4 s');
+  });
 
   it('formatISO / formatDayMonth', () => {
     const d = new Date(2026, 5, 1); // 2026-06-01
