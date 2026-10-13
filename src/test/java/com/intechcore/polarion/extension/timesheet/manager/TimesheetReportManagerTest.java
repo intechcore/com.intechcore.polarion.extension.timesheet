@@ -312,6 +312,21 @@ class TimesheetReportManagerTest {
         assertThat(first.getWorkItem().getTitle()).isEqualTo("Write");
         assertThat(first.getWorkItem().getProject().getId()).isEqualTo("elibrary");
         assertThat(first.getWorkItem().getProject().getName()).isEqualTo("eLibrary");
+        assertThat(first.getWorkItem().isResolved()).isFalse();
+    }
+
+    /** The PDF of the report strikes a resolved work item through, as Polarion's rendering does. */
+    @Test
+    void getTimesheet_marksAResolvedWorkItem() {
+        Scope scope = mock(Scope.class);
+        when(scope.projectId()).thenReturn("elibrary");
+        IWorkRecord done = record("2026-08-03", "aSeller", "Adam Seller", "elibrary", "eLibrary", "EL-1", "Write", 2.5f);
+        when(done.getWorkItem().isResolved()).thenReturn(true);
+        searchReturns(workItemWith(done));
+
+        Timesheet timesheet = manager.getTimesheet(scope, List.of("aSeller"), "2026-08-01", "2026-08-31");
+
+        assertThat(timesheet.getWorkRecords().getFirst().getWorkItem().isResolved()).isTrue();
     }
 
     /**

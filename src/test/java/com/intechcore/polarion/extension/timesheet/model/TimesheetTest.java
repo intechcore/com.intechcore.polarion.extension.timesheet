@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TimesheetTest {
 
     private static WorkRecord record(double hours) {
-        return new WorkRecord("2026-08-03", new WorkItem(new Project("elibrary", "eLibrary"), "EL-1", "Title", null, null),
+        return new WorkRecord("2026-08-03", new WorkItem(new Project("elibrary", "eLibrary"), "EL-1", "Title", null, null, false),
                 new User("aSeller", "Adam Seller"), hours);
     }
 

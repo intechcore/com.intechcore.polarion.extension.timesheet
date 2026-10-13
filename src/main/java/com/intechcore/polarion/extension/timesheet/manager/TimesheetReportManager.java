@@ -63,7 +63,8 @@ public class TimesheetReportManager {
                                             workRecord.getWorkItem().getId(),
                                             workRecord.getWorkItem().getTitle(),
                                             null,
-                                            null
+                                            null,
+                                            workRecord.getWorkItem().isResolved()
                                     ),
                                     new User(workRecord.getUser().getId(), workRecord.getUser().getName()),
                                     workRecord.getTimeSpent().getHours()

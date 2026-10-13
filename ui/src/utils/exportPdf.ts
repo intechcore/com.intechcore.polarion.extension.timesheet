@@ -33,7 +33,56 @@ export interface ExportOptions {
 const MARGIN = 32;
 const LABEL_WIDTH = 240; // WorkItem / Total column - fixed
 const FONT_SIZE = 8;
-const ICON_SIZE = 11;
+const CELL_PADDING = 2;
+const ICON_SIZE = 9;
+// The icon is inline, as on screen: it starts the first line, and the lines below start under it.
+const ICON_GAP = 3;
+// The colors of the report on screen (App.css): a black id and a blue title.
+const ID_COLOR: [number, number, number] = [0, 0, 0];
+const TITLE_COLOR: [number, number, number] = [25, 127, 162];
+
+/** A piece of one line of a WorkItem label, in one color. */
+export interface LabelRun {
+  text: string;
+  kind: 'id' | 'title';
+}
+
+/**
+ * Wraps "id - title" into lines of the given width, at word boundaries, as the browser wraps it on
+ * screen. The first line is shorter by `indent`: the icon stands there. A word longer than a line
+ * gets a line of its own.
+ */
+export function labelLines(
+  workItem: Pick<WorkItem, 'id' | 'title'>,
+  width: number,
+  indent: number,
+  measure: (text: string) => number,
+): LabelRun[][] {
+  const words: LabelRun[] = [
+    { text: workItem.id, kind: 'id' },
+    ...['-', ...workItem.title.split(/\s+/).filter(Boolean)].map((text) => ({ text, kind: 'title' as const })),
+  ];
+  const lines: LabelRun[][] = [[]];
+  let used = 0;
+  for (const word of words) {
+    const line = lines[lines.length - 1];
+    const room = width - (lines.length === 1 ? indent : 0);
+    const spaced = line.length ? ` ${word.text}` : word.text;
+    if (line.length && used + measure(spaced) > room) {
+      lines.push([{ ...word }]);
+      used = measure(word.text);
+      continue;
+    }
+    const last = line[line.length - 1];
+    if (last?.kind === word.kind) {
+      last.text += spaced;
+    } else {
+      line.push({ text: spaced, kind: word.kind });
+    }
+    used += measure(spaced);
+  }
+  return lines;
+}
 
 // Loads an icon and flattens it onto a white background via canvas. jsPDF renders PNG alpha
 // poorly (visible halo/border artifacts), so we hand it an opaque image instead.
@@ -132,17 +181,29 @@ export async function exportTimesheetPdf({
     const rowTotal = rowDates.reduce((acc, d) => acc + sumHours(records, formatISO(d)), 0);
     const foot = [[`Total: ${rowTotal} h`, ...rowDates.map((d) => formatHours(sumHours(records, formatISO(d))))]];
 
+    // The WorkItem labels are drawn by didDrawCell: autoTable gives a cell one color and no inline icon.
+    // It gets the lines only, so that the row takes their height.
+    doc.setFontSize(FONT_SIZE);
+    const labelWidth = LABEL_WIDTH - 2 * CELL_PADDING;
+    const labels = items.map((wi) =>
+      labelLines(wi, labelWidth, wi.iconUrl && icons.has(wi.iconUrl) ? ICON_SIZE + ICON_GAP : 0, (text) =>
+        doc.getTextWidth(text),
+      ),
+    );
+
     autoTable(doc, {
       head,
       body,
       foot,
       startY: startY + 6,
+      // A label is drawn whole, so a row must not split across two pages.
+      rowPageBreak: 'avoid',
       margin: { left: MARGIN, right: MARGIN },
       tableWidth: LABEL_WIDTH + rowDates.length * dayColWidth,
       styles: {
         font: PDF_FONT,
         fontSize: FONT_SIZE,
-        cellPadding: 2,
+        cellPadding: CELL_PADDING,
         halign: 'center',
         cellWidth: dayColWidth,
         lineColor: [0, 0, 0],
@@ -152,7 +213,7 @@ export async function exportTimesheetPdf({
       headStyles: { fillColor: [207, 207, 207], textColor: 20, halign: 'center' },
       footStyles: { fillColor: [255, 255, 255], textColor: 20, fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: LABEL_WIDTH, halign: 'left', cellPadding: { top: 2, right: 2, bottom: 2, left: 18 } },
+        0: { cellWidth: LABEL_WIDTH, halign: 'left' },
       },
       didParseCell: (data) => {
         // autoTable applies columnStyles to body cells only, so the head and foot cells of the
@@ -161,6 +222,9 @@ export async function exportTimesheetPdf({
         // WorkItem column up to the day width and pushed the table past the right margin.
         if (data.column.index === 0) {
           data.cell.styles.cellWidth = LABEL_WIDTH;
+        }
+        if (data.section === 'body' && data.column.index === 0) {
+          data.cell.text = labels[data.row.index].map((line) => line.map((run) => run.text).join(''));
         }
         if (data.section !== 'head' && data.column.index > 0 && weekendColumns.has(data.column.index)) {
           data.cell.styles.fillColor = [234, 234, 234];
@@ -171,25 +235,48 @@ export async function exportTimesheetPdf({
           data.cell.styles.fontStyle = hours < workingDayHours ? 'italic' : 'bold';
         }
       },
+      willDrawCell: (data) => {
+        // The label is drawn below, in its colors. autoTable would draw it once more in one color.
+        if (data.section === 'body' && data.column.index === 0) {
+          data.cell.text = [];
+        }
+      },
       didDrawCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
           // The body rows are the work items, one to one.
           const wi = items[data.row.index];
+          const left = data.cell.x + CELL_PADDING;
+          const top = data.cell.y + CELL_PADDING;
+          const lineHeight = FONT_SIZE * doc.getLineHeightFactor();
+          // As autoTable places a first line: its baseline sits this far below the top of the text.
+          const baseline = top + FONT_SIZE * (2 - 1.15);
+          let indent = 0;
           const src = wi.iconUrl && icons.get(wi.iconUrl);
           if (src) {
             try {
-              doc.addImage(
-                src,
-                'PNG',
-                data.cell.x + 4,
-                data.cell.y + (data.cell.height - ICON_SIZE) / 2,
-                ICON_SIZE,
-                ICON_SIZE,
-              );
+              // Centered on the letters of the first line, as an inline image on screen.
+              doc.addImage(src, 'PNG', left, baseline - FONT_SIZE * 0.35 - ICON_SIZE / 2, ICON_SIZE, ICON_SIZE);
+              indent = ICON_SIZE + ICON_GAP;
             } catch {
               /* skip if the image can't be drawn */
             }
           }
+          labels[data.row.index].forEach((line, i) => {
+            let x = left + (i === 0 ? indent : 0);
+            const y = baseline + i * lineHeight;
+            line.forEach((run) => {
+              const width = doc.getTextWidth(run.text);
+              doc.setTextColor(...(run.kind === 'id' ? ID_COLOR : TITLE_COLOR));
+              doc.text(run.text, x, y);
+              if (run.kind === 'id' && wi.resolved) {
+                // A resolved work item has its id struck through, as Polarion renders it.
+                doc.setDrawColor(...ID_COLOR);
+                doc.setLineWidth(0.5);
+                doc.line(x, y - FONT_SIZE * 0.3, x + width, y - FONT_SIZE * 0.3);
+              }
+              x += width;
+            });
+          });
           // Make the whole WorkItem cell a link to the work item in Polarion.
           doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, {
             url: `${window.location.origin}${workItemUrl(wi)}`,

@@ -423,7 +423,7 @@ class TimesheetReportWidgetRendererTest {
                     new com.intechcore.polarion.extension.timesheet.model.Timesheet(start.toString(), end.toString(), new java.util.ArrayList<>());
             timesheet.addWorkRecord(new com.intechcore.polarion.extension.timesheet.model.WorkRecord(start.toString(),
                     new com.intechcore.polarion.extension.timesheet.model.WorkItem(
-                            new com.intechcore.polarion.extension.timesheet.model.Project("elibrary", "E-Library"), "EL-1", "Spec", null, null),
+                            new com.intechcore.polarion.extension.timesheet.model.Project("elibrary", "E-Library"), "EL-1", "Spec", null, null, false),
                     new com.intechcore.polarion.extension.timesheet.model.User(userIds.get(0), "ignored"), 8));
             return timesheet;
         }

@@ -533,6 +533,9 @@
           "project": {
             "$ref": "#/components/schemas/Project"
           },
+          "resolved": {
+            "type": "boolean"
+          },
           "title": {
             "type": "string"
           }

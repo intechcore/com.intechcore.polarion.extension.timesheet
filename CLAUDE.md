@@ -247,6 +247,10 @@ type").
   global `styles`, and a column takes the widest of its cells - so a numeric `styles.cellWidth`
   silently overrides a per-column width in those two rows. Set such widths in `didParseCell`,
   which runs for every section. A test watches for autoTable's "could not fit page" warning.
+- **autoTable draws a cell in one color, without an inline image.** `exportPdf.ts` therefore wraps
+  the WorkItem label itself (`labelLines`), hands autoTable the lines for the row height only, and
+  draws icon, ID and title in `didDrawCell`. jsPDF defines `text`, `line` and `setTextColor` on each
+  document, not on `jsPDF.API`: a test spies on them through the `initialized` event.
 - **Build-log noise is treated as an error.** `frontend-maven-plugin` labels everything npm and
   Vite write to stderr as `[ERROR]`. `ui/.npmrc` drops npm to `loglevel=warn`, and
   `vite.config.js` installs a `customLogger` that hides "doesn't exist at build time" for

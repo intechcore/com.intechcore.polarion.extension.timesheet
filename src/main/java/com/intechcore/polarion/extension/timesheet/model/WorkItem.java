@@ -13,4 +13,5 @@ public class WorkItem {
     private String title;
     private String html;    // Polarion's native rendering (icon + linked id + title), set by the manager
     private String iconUrl; // the work item type icon URL (extracted from the native rendering), used by the PDF
+    private boolean resolved; // the PDF strikes its ID through, as Polarion's rendering does
 }

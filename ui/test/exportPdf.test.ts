@@ -1,8 +1,9 @@
 import { jsPDF } from 'jspdf';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import type { WorkItem, WorkRecord } from '../src/types';
 import { formatISO } from '../src/utils/dates';
-import { exportTimesheetPdf } from '../src/utils/exportPdf';
+import { exportTimesheetPdf, labelLines } from '../src/utils/exportPdf';
 
 // The PDF export mirrors the on-screen report and the two are meant to stay in sync. jsPDF and its
 // autotable plugin run for real here - it is a browser test, and they work in a browser - so the
@@ -203,5 +204,117 @@ describe('exportTimesheetPdf', () => {
     // One page object per page; "/Type /Pages" is the page tree.
     const pages = (await producedPdf().text()).match(/\/Type \/Page\b(?!s)/g) ?? [];
     expect(pages.length).toBeGreaterThan(1);
+  });
+
+  describe('work item label', () => {
+    const ICON = '/polarion/ria/images/dle/operations/actionPdfExport16.svg';
+    const LONG: WorkItem = {
+      ...ITEM,
+      id: 'DEV-13645',
+      title:
+        'DeleteDummyWorkitemsHook: one unresolvable link aborts the whole check and lets a protected workitem be deleted',
+      iconUrl: ICON,
+    };
+    const exportItem = (workItem: WorkItem) =>
+      exportTimesheetPdf(
+        options({ users: [{ name: 'Steve Developer', records: [record('2026-06-01', 8, workItem)] }] }),
+      );
+    // jsPDF defines text, setTextColor and line on each document rather than on jsPDF.API, so the spies
+    // go on the document as jsPDF creates it: its "initialized" event hands the handler the document.
+    let doc: { text: Mock; setTextColor: Mock; line: Mock };
+    const onInitialized: [string, (this: jsPDF) => void] = [
+      'initialized',
+      function (this: jsPDF) {
+        doc = {
+          text: vi.spyOn(this, 'text') as unknown as Mock,
+          setTextColor: vi.spyOn(this, 'setTextColor') as unknown as Mock,
+          line: vi.spyOn(this, 'line') as unknown as Mock,
+        };
+      },
+    ];
+    const events = (jsPDF.API as unknown as { events: unknown[] }).events;
+    beforeEach(() => events.push(onInitialized));
+    afterEach(() => events.splice(events.indexOf(onInitialized), 1));
+    const textCalls = () =>
+      doc.text.mock.calls.map(([value, x, y]) => ({ value: String(value), x: Number(x), y: Number(y) }));
+
+    it('starts the first line after the icon and the next lines under it, as on screen', async () => {
+      const addImage = vi.spyOn(jsPDF.API, 'addImage');
+
+      await exportItem(LONG);
+
+      const id = textCalls().find((c) => c.value === 'DEV-13645')!;
+      const wrapped = textCalls().filter((c) => c.y > id.y && c.y < id.y + 30 && !/^\d|Total/.test(c.value));
+      const [, , iconX, iconY, , iconHeight] = addImage.mock.calls[0] as unknown as number[];
+      expect(wrapped.length).toBeGreaterThan(0);
+      // The wrapped lines start where the icon does, left of the id.
+      expect(wrapped.every((c) => Math.abs(c.x - iconX) < 0.01)).toBe(true);
+      expect(id.x).toBeGreaterThan(iconX);
+      // The icon stands on the first line, not in the middle of the cell.
+      expect(iconY).toBeLessThan(id.y);
+      expect(iconY + iconHeight).toBeGreaterThan(id.y - 4);
+    });
+
+    it('writes the id in black and the title in the blue of the report', async () => {
+      await exportItem({ ...ITEM, title: 'Title 1' });
+
+      // The color in force when a text is written: the last one set before it.
+      const colorOf = (value: string) => {
+        const at = doc.text.mock.invocationCallOrder[doc.text.mock.calls.findIndex(([v]) => v === value)];
+        const before = doc.setTextColor.mock.invocationCallOrder.filter((n) => n < at).length - 1;
+        return doc.setTextColor.mock.calls[before];
+      };
+      expect(colorOf('EL-1')).toEqual([0, 0, 0]);
+      expect(colorOf(' - Title 1')).toEqual([25, 127, 162]);
+    });
+
+    it('strikes the id of a resolved work item through, and only then', async () => {
+      // The struck lines: level, starting at the id and a little above its baseline.
+      const struck = () => {
+        const id = textCalls().find((c) => c.value === 'EL-1')!;
+        return doc.line.mock.calls.filter(([x1, y1, , y2]) => x1 === id.x && y1 === y2 && y1 < id.y && y1 > id.y - 8);
+      };
+
+      await exportItem({ ...ITEM });
+      expect(struck()).toHaveLength(0);
+
+      await exportItem({ ...ITEM, resolved: true });
+      expect(struck()).toHaveLength(1);
+    });
+  });
+});
+
+describe('labelLines', () => {
+  // One unit per character: the widths are easy to count.
+  const measure = (text: string) => text.length;
+
+  it('keeps a short label on one line, the id apart from the title', () => {
+    expect(labelLines({ id: 'EL-1', title: 'Title 1' }, 40, 0, measure)).toEqual([
+      [
+        { text: 'EL-1', kind: 'id' },
+        { text: ' - Title 1', kind: 'title' },
+      ],
+    ]);
+  });
+
+  it('wraps at words, with a first line shorter by the icon', () => {
+    // "EL-1 - aaaa" is 11 wide: it fits 12, but not 12 less an indent of 2.
+    expect(labelLines({ id: 'EL-1', title: 'aaaa bbbb' }, 12, 2, measure)).toEqual([
+      [
+        { text: 'EL-1', kind: 'id' },
+        { text: ' -', kind: 'title' },
+      ],
+      [{ text: 'aaaa bbbb', kind: 'title' }],
+    ]);
+  });
+
+  it('gives a word longer than a line a line of its own', () => {
+    expect(labelLines({ id: 'EL-1', title: 'abcdefghijkl' }, 8, 0, measure)).toEqual([
+      [
+        { text: 'EL-1', kind: 'id' },
+        { text: ' -', kind: 'title' },
+      ],
+      [{ text: 'abcdefghijkl', kind: 'title' }],
+    ]);
   });
 });

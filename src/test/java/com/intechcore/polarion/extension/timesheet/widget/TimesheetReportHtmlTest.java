@@ -23,7 +23,7 @@ class TimesheetReportHtmlTest {
     private static final User ALICE = new User("alice", "Alice");
 
     private static WorkRecord record(String date, String workItemId, String html, User user, double hours) {
-        return new WorkRecord(date, new WorkItem(PROJECT, workItemId, "Title <" + workItemId + ">", html, null), user, hours);
+        return new WorkRecord(date, new WorkItem(PROJECT, workItemId, "Title <" + workItemId + ">", html, null, false), user, hours);
     }
 
     private static Timesheet timesheet(WorkRecord... records) {
@@ -90,9 +90,9 @@ class TimesheetReportHtmlTest {
     /** A record without a user belongs to nobody in the report, and a work item without a project still links. */
     @Test
     void skipsARecordWithoutAUserAndLinksAWorkItemWithoutAProject() {
-        WorkRecord orphan = new WorkRecord("2026-10-02", new WorkItem(null, "EL-5", "Orphan", null, null), null, 3);
+        WorkRecord orphan = new WorkRecord("2026-10-02", new WorkItem(null, "EL-5", "Orphan", null, null, false), null, 3);
         Timesheet timesheet = timesheet(record("2026-10-01", "EL-1", null, ALICE, 2), orphan);
-        WorkRecord projectless = new WorkRecord("2026-10-02", new WorkItem(null, "EL-6", "Loose", null, null), ALICE, 1);
+        WorkRecord projectless = new WorkRecord("2026-10-02", new WorkItem(null, "EL-6", "Loose", null, null, false), ALICE, 1);
         timesheet.addWorkRecord(projectless);
 
         String html = new TimesheetReportHtml("E-Library", List.of(ALICE), LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), 8).render(timesheet);
