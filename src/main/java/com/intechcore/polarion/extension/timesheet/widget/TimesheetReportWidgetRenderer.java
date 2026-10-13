@@ -34,12 +34,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -226,7 +224,6 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
      * showed on screen, in the controls the widget lets them change, and the widget settings otherwise.
      */
     @NotNull String printedReport() {
-        long started = System.nanoTime();
         String viewer = sources.currentUser();
         Selection shown = fromSettings(viewer);
         ReportState state = viewer == null ? null : sources.reportState(viewer, stateKey);
@@ -237,15 +234,8 @@ public class TimesheetReportWidgetRenderer extends AbstractWidgetRenderer {
                 ? new Timesheet(shown.start().toString(), shown.end().toString(), List.of())
                 : sources.timesheet(shown.scope(), shown.userIds(), shown.start(), shown.end());
         List<User> users = shown.userIds().stream().map(id -> new User(id, sources.userName(id))).toList();
-        String report = new TimesheetReportHtml(sources.scopeName(shown.scope()), users, shown.start(), shown.end(), workingDayHours).render(timesheet);
-        return showTime ? report + generatedIn(Duration.ofNanos(System.nanoTime() - started)) : report;
-    }
-
-    /** The line below a printed report: how long the server took to read the records and write the report. */
-    static @NotNull String generatedIn(@NotNull Duration duration) {
-        long millis = duration.toMillis();
-        String took = millis < 1000 ? millis + " ms" : String.format(Locale.ROOT, "%.1f s", millis / 1000.0);
-        return "<p style=\"font-size:8pt;color:#6b6b6b;margin:4px 0 0;\">Generated in " + took + "</p>";
+        // The generation time is left out: it would be the time of the server, not the one the page showed.
+        return new TimesheetReportHtml(sources.scopeName(shown.scope()), users, shown.start(), shown.end(), workingDayHours).render(timesheet);
     }
 
     /**
