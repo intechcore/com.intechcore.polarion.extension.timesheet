@@ -9,6 +9,10 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Fixed
+- A PDF export or a print of the page leaves out the generation time. It showed the time of the
+  server, which differs from the one on the page.
+
 ## [0.3.0] - 2026-10-12
 
 ### Added

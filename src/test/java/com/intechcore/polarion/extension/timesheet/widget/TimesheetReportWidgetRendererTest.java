@@ -481,16 +481,12 @@ class TimesheetReportWidgetRendererTest {
         assertThat(html).contains("Name of aSeller - total: 8 h").contains("Name of mTest - total: 0 h").contains("EL-1 - Spec");
     }
 
-    /** The printed report says how long the server took, in milliseconds or seconds. */
+    /** The generation time is a line of the page only: a printed report has none, whatever the widget says. */
     @Test
-    void writesTheGenerationTimeBelowAPrintedReport() {
-        assertThat(TimesheetReportWidgetRenderer.generatedIn(java.time.Duration.ofMillis(850))).contains(">Generated in 850 ms</p>");
-        assertThat(TimesheetReportWidgetRenderer.generatedIn(java.time.Duration.ofMillis(1420))).contains(">Generated in 1.4 s</p>");
+    void printsNoGenerationTime() {
+        flag(TimesheetReportWidget.PARAMETER_SHOW_TIME, true);
 
         assertThat(printed(new Sources("viewer"))).doesNotContain("Generated in");
-        flag(TimesheetReportWidget.PARAMETER_SHOW_TIME, true);
-        org.mockito.Mockito.clearInvocations(builder);
-        assertThat(printed(new Sources("viewer"))).containsPattern("Generated in (\\d+ ms|\\d+\\.\\d s)</p>$");
     }
 
     @Test

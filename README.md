@@ -57,7 +57,7 @@ The widget settings preset what the report opens on:
 - **Period**: the current month (the default), the previous month, or **Custom** with **From** and **To**. The months are counted when the page opens. A date left untouched is today.
 - **Allow changing scope**, **Allow changing users**, **Allow changing period**: on by default. Turned off, the control keeps what the settings preset and is locked. They combine freely, for example every viewer sees their own hours and only those.
 - **Hide controls**: the page shows the tables only, without the title, the selectors, the period and the export.
-- **Show the generation time**: off by default. A line below the report says how long it took: on the page, reading the work records; in a PDF, reading them and writing the report on the server.
+- **Show the generation time**: off by default. A line below the report on the page says how long reading the work records took. A PDF or a print leaves it out.
 
 The settings show only what applies: **Users** for selected users, **From** and **To** for a custom period, and the **Allow changing** options while the controls are shown.
 
