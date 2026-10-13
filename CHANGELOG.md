@@ -12,6 +12,9 @@ Releases before 0.1.4 are listed on the
 ### Fixed
 - A PDF export or a print of the page leaves out the generation time. It showed the time of the
   server, which differs from the one on the page.
+- The work items in **Export to PDF** look as in the report: the icon starts the first line and
+  the next lines start under it, the title is blue, and a resolved work item has its ID struck
+  through. The icon stood in the middle of the cell, with the text in a column beside it.
 
 ## [0.3.0] - 2026-10-12
 

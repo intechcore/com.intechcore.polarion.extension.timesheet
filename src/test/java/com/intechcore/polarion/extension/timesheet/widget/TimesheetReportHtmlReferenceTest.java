@@ -45,14 +45,14 @@ class TimesheetReportHtmlReferenceTest {
                 + "<span style=\"white-space:nowrap;\"><img src=\"/polarion/icons/default/enums/type_requirement.gif\" class=\"polarion-Icons\""
                 + " onmousedown=\"return false;\" contentEditable=\"false\"/></span>"
                 + "<span style=\"color:#000000;\">" + id + "</span><span style=\"white-space: normal\"> - " + title + "</span></a></span>";
-        return new WorkItem(PROJECT, id, title, rendered, null);
+        return new WorkItem(PROJECT, id, title, rendered, null, false);
     }
 
     /** June, July and August 2026: 30 and 31 days, weekends, full and part days, a user without records. */
     static String report() {
         WorkItem refactor = item("EL-14463", "Refactor the loan renewal workflow");
         WorkItem review = item("EL-14460", "Review the REST API documentation and the examples of every endpoint it lists");
-        WorkItem plain = new WorkItem(PROJECT, "EL-7", "Abbreviations and Terms", null, null);
+        WorkItem plain = new WorkItem(PROJECT, "EL-7", "Abbreviations and Terms", null, null, false);
         List<WorkRecord> records = new ArrayList<>(List.of(
                 new WorkRecord("2026-06-01", refactor, ANNA, 8),
                 new WorkRecord("2026-06-02", review, ANNA, 4),

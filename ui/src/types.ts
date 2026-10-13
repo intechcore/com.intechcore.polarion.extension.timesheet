@@ -14,6 +14,7 @@ export interface WorkItem {
   title: string;
   html?: string; // Polarion's native rendering (icon + linked id + title)
   iconUrl?: string; // work item type icon URL (used by the PDF export)
+  resolved?: boolean; // the PDF export strikes the id through, as Polarion's rendering does
 }
 
 export interface WorkRecord {
