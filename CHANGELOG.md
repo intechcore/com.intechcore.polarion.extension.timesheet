@@ -9,6 +9,9 @@ Releases before 0.1.4 are listed on the
 
 ## [Unreleased]
 
+### Changed
+- The extension builds on `ch.sbb.polarion.extension.generic` 16.3.0.
+
 ### Fixed
 - A PDF export or a print of the page leaves out the generation time. It showed the time of the
   server, which differs from the one on the page.
