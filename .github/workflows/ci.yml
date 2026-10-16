@@ -16,6 +16,7 @@ jobs:
   # check that does not run blocks the merge.
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -37,6 +38,7 @@ jobs:
     # A pull request from a fork gets no secrets, so Nexus refuses the Polarion artifacts.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # At job level, so the analysis step can ask whether the token is there. A step cannot read
     # its own env in an if condition, and the secrets context is not available there at all.
     env:
@@ -115,6 +117,7 @@ jobs:
           fi
   pre-commit:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -148,6 +151,7 @@ jobs:
   conventional-commits:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
