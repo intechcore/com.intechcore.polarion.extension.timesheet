@@ -121,5 +121,5 @@ jobs:
             echo "Releasing \`$NEW_VERSION\` from development version \`$CURRENT-SNAPSHOT\`."
             echo ""
             echo "The [release workflow](../../actions/workflows/release.yml) now builds the"
-            echo "tag and publishes the jars as GitHub release assets."
+            echo "tag, publishes it to Maven Central and attaches the jars to the GitHub release."
           } >> "$GITHUB_STEP_SUMMARY"
