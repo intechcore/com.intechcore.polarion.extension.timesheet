@@ -79,6 +79,8 @@ function openReport(search: string, routes: Route[] = reportRoutes()) {
 /** Sizes the viewport to the page, so the capture holds all of it and nothing more. */
 async function pageShot(name: string, width = 1280) {
   const app = document.querySelector('.app') as HTMLElement;
+  // The width first: the height depends on it, e.g. the day scrollbar of a month that overflows.
+  await page.viewport(width, window.innerHeight);
   await settleLayout();
   await page.viewport(width, Math.ceil(app.scrollHeight) + 40);
   await settleBeforeCapture();
